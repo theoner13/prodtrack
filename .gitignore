@@ -1,0 +1,31 @@
+# Dépendances
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+ios/
+android/
+
+# Secrets
+.env
+.env*.local
+*.pem
+*.p8
+*.p12
+*.key
+*.jks
+*.mobileprovision
+
+# Système / éditeurs
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.*
+.vscode/
+
+# Supabase local
+supabase/.temp/
+supabase/.branches/

@@ -1,0 +1,36 @@
+---
+description: Contexte et règles du projet ProdTrack (toujours appliquées)
+alwaysApply: true
+---
+
+# Projet ProdTrack
+
+Application de gestion de production pour boulangeries (patron, pâtissiers, vendeuses).
+
+**OBLIGATOIRE : suis `AGENTS.md`.** Au début : `git pull` puis lis `docs/AVANCEMENT.md`. À la fin d'une tâche qui marche : mets à jour `docs/AVANCEMENT.md`, puis `git add -A`, `git commit -m "..."` et `git push`. Reste simple, sans sur-ingénierie.
+- Cahier des charges : `cahier-des-charges-mvp.md` (source fonctionnelle, ne pas modifier)
+- Architecture et décisions : `docs/01-ARCHITECTURE.md` (à suivre strictement)
+- Schéma de base de données : `supabase/migrations/0001_schema_initial.sql` (déjà en place dans Supabase)
+
+## Stack imposée
+Expo (React Native) + TypeScript strict + Expo Router + Supabase (supabase-js) + TanStack Query + react-hook-form + zod.
+Style avec StyleSheet et `src/theme.ts`. N'ajoute pas d'autre librairie sans me demander et expliquer pourquoi.
+Installe les paquets Expo avec `npx expo install <paquet>` (pas `npm install`) pour avoir des versions compatibles.
+
+## Règles de code
+- Respecte la structure de dossiers de `docs/01-ARCHITECTURE.md` section 3.
+- Accès aux données uniquement via des hooks dans `src/api/` (un fichier par sujet), jamais d'appel Supabase directement dans un écran.
+- Utilise les types générés `src/types/database.ts`. Pas de `any`.
+- Ne recalcule jamais le stock, le CA ou la prévision dans l'app : lis les vues `stock_actuel`, `ca_journalier` et la table `previsions`.
+- Montants en centimes (entiers) ; affichage en euros via `src/lib/format.ts`.
+- Les droits d'accès sont gérés par la RLS de Supabase. Ne contourne jamais la RLS et n'utilise jamais la clé service_role dans l'app.
+- Ne modifie pas les fichiers SQL existants. Si un changement de base est nécessaire, crée un nouveau fichier `supabase/migrations/000X_description.sql` et explique-moi quoi coller dans Supabase.
+- Chaque écran gère 3 états : chargement, erreur (message en français), liste vide.
+- Tout le texte de l'interface est en français. Les noms de variables métier restent en français comme dans la base (produit, boutique, fabricant...).
+- Ergonomie : gros boutons, compteurs −/+, saisie en moins d'une minute (voir architecture section 7).
+
+## Manière de travailler
+- Je débute en code : explique en 3-5 phrases simples ce que tu as fait à la fin, et dis-moi exactement comment le tester.
+- Fais uniquement ce que demande l'étape en cours. Ne fais pas les étapes suivantes en avance.
+- Si quelque chose dans la demande contredit le cahier des charges ou l'architecture, arrête-toi et pose la question.
+- Vérifie que le code compile (`npx tsc --noEmit`) avant de dire que c'est fini.
