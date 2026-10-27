@@ -113,6 +113,166 @@ async function creerCopie(produit: ProduitImpose, cible: CibleImposee): Promise<
   if (erreurRecette) throw erreurRecette;
 }
 
+export function useMesProduits(userId: string | null) {
+  return useQuery({
+    queryKey: ['produits', 'moi', userId],
+    enabled: Boolean(userId),
+    queryFn: async () => {
+      const base = db();
+      const { data, error } = await base
+        .from('produits')
+        .select('*')
+        .eq('fabricant_id', userId ?? '')
+        .is('archive_le', null)
+        .order('nom');
+      if (error) throw error;
+      const { count, error: erreurCompte } = await base
+        .from('produits')
+        .select('id', { count: 'exact', head: true })
+        .eq('fabricant_id', userId ?? '');
+      if (erreurCompte) throw erreurCompte;
+      return { produits: data, dejaEuUnProduit: (count ?? 0) > 0 };
+    },
+  });
+}
+
+export function useFicheProduit(id: string | null) {
+  return useQuery({
+    queryKey: ['produits', 'fiche', id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const base = db();
+      const { data: produit, error } = await base.from('produits').select('*').eq('id', id ?? '').single();
+      if (error) throw error;
+      const { data: lignes, error: erreurLignes } = await base
+        .from('ingredients_recette')
+        .select('*')
+        .eq('produit_id', produit.id)
+        .order('ordre');
+      if (erreurLignes) throw erreurLignes;
+      return { produit, lignes };
+    },
+  });
+}
+
+export type FicheSaisie = {
+  id?: string;
+  boutiqueId: string;
+  fabricantId: string;
+  nom: string;
+  prixCentimes: number;
+  photoUrl: string | null;
+  conservation: 'frais' | 'surgele';
+  dureeJours: number;
+  seuilMin: number;
+  impose: boolean;
+  lignes: LigneRecette[];
+};
+
+async function remplacerRecette(produitId: string, lignes: LigneRecette[]): Promise<void> {
+  const { error } = await db().from('ingredients_recette').delete().eq('produit_id', produitId);
+  if (error) throw error;
+  if (lignes.length === 0) return;
+  const { error: erreurInsert } = await db()
+    .from('ingredients_recette')
+    .insert(
+      lignes.map((ligne, index) => ({
+        produit_id: produitId,
+        ingredient: ligne.ingredient.trim(),
+        quantite: ligne.quantite,
+        unite: ligne.unite,
+        ordre: index,
+      })),
+    );
+  if (erreurInsert) throw erreurInsert;
+}
+
+export function useEnregistrerMonProduit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (saisie: FicheSaisie) => {
+      const base = db();
+      if (saisie.id) {
+        const patch: {
+          prix_centimes: number;
+          photo_url: string | null;
+          duree_conservation_jours: number;
+          seuil_min: number;
+          nom?: string;
+          conservation?: 'frais' | 'surgele';
+        } = {
+          prix_centimes: saisie.prixCentimes,
+          photo_url: saisie.photoUrl,
+          duree_conservation_jours: saisie.dureeJours,
+          seuil_min: saisie.seuilMin,
+        };
+        if (!saisie.impose) {
+          patch.nom = saisie.nom.trim();
+          patch.conservation = saisie.conservation;
+        }
+        const { error } = await base.from('produits').update(patch).eq('id', saisie.id);
+        if (error) throw error;
+        if (!saisie.impose) await remplacerRecette(saisie.id, saisie.lignes);
+        return saisie.id;
+      }
+
+      const { data, error } = await base
+        .from('produits')
+        .insert({
+          boutique_id: saisie.boutiqueId,
+          fabricant_id: saisie.fabricantId,
+          nom: saisie.nom.trim(),
+          prix_centimes: saisie.prixCentimes,
+          photo_url: saisie.photoUrl,
+          conservation: saisie.conservation,
+          duree_conservation_jours: saisie.dureeJours,
+          seuil_min: saisie.seuilMin,
+          impose_par_admin: false,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      await remplacerRecette(data.id, saisie.lignes);
+      return data.id;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['produits'] }),
+  });
+}
+
+export function useDefinirPhotoProduit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (saisie: { id: string; photoUrl: string | null }) => {
+      const { error } = await db().from('produits').update({ photo_url: saisie.photoUrl }).eq('id', saisie.id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['produits'] }),
+  });
+}
+
+export function useDefinirPhotoProfil() {
+  return useMutation({
+    mutationFn: async (saisie: { id: string; photoUrl: string | null }) => {
+      const { error } = await db().from('profils').update({ photo_url: saisie.photoUrl }).eq('id', saisie.id);
+      if (error) throw error;
+    },
+  });
+}
+
+export function useArchiverMonProduit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await db()
+        .from('produits')
+        .update({ archive_le: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['produits'] }),
+  });
+}
+
 export function useImposerProduits() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -509,6 +509,10 @@ export type Database = {
     Functions: {
       aujourdhui: { Args: never; Returns: string }
       calculer_previsions: { Args: never; Returns: undefined }
+      chemin_photo_uuid: {
+        Args: { p_dossier: string; p_nom: string }
+        Returns: string
+      }
       creer_entreprise: {
         Args: {
           p_nom: string
@@ -525,6 +529,11 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["role_employe"]
       }
+      peut_ecrire_photo_produit: {
+        Args: { p_boutique: string }
+        Returns: boolean
+      }
+      peut_lire_photo_profil: { Args: { p_profil: string }; Returns: boolean }
       peut_modifier_produit: { Args: { p_produit: string }; Returns: boolean }
       peut_voir_boutique: { Args: { p_boutique: string }; Returns: boolean }
       peut_voir_produit: { Args: { p_produit: string }; Returns: boolean }

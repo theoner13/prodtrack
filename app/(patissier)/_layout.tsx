@@ -59,6 +59,7 @@ export default function LayoutPatissier() {
         name="produits"
         options={{
           title: 'Mes produits',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => <Ionicons name="list" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
         }}
       />

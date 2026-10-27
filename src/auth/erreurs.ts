@@ -39,6 +39,20 @@ export function messageErreur(erreur: unknown): string {
   if (texte.includes('produits_nom_unique')) {
     return 'Ce nom de produit est déjà utilisé dans cette boutique.';
   }
+  if (texte.includes('impossible de le retirer') || texte.includes('impossible de le renommer')) {
+    return 'Ce produit est imposé par le patron : vous ne pouvez pas le retirer ni le renommer.';
+  }
+  if (
+    texte.includes('trop lourde') ||
+    texte.includes('payload too large') ||
+    texte.includes('entity too large') ||
+    texte.includes('maximum allowed size')
+  ) {
+    return 'Cette photo est trop lourde. Choisissez une image plus petite.';
+  }
+  if (texte.includes('appareil photo') || texte.includes('galerie')) {
+    return message;
+  }
   if (texte.includes('pâtissier actif') || texte.includes('patissier actif')) {
     return 'Le fabricant doit être un pâtissier actif de cette boutique.';
   }

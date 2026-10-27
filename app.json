@@ -34,6 +34,13 @@
         }
       ],
       "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "ProdTrack utilise l'appareil photo pour photographier vos produits.",
+          "photosPermission": "ProdTrack accède à vos photos pour illustrer vos produits et votre profil."
+        }
+      ],
       "expo-sharing",
       [
         "expo-local-authentication",
