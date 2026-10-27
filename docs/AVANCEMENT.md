@@ -22,6 +22,7 @@
 ## En cours / à savoir
 
 - Base Supabase vide et prête. Confirmation par email désactivée (dev) : à réactiver avant la production.
+- ⏰ 03/11/2026 : renouveler le jeton Supabase « claude-code-prodtrack » (supabase.com/dashboard/account/tokens), puis `npx supabase login --token ...`.
 - Prochaine étape : phase 1 (le `.env` existe déjà, ne pas l'écraser).
 
 ## Journal (le plus récent en haut, une ligne par session)
