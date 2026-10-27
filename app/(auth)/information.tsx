@@ -1,5 +1,73 @@
-import { EcranTitre } from '@/components/ecran-titre';
+import { useState } from 'react';
+import { StyleSheet, Text } from 'react-native';
+
+import { useAuth } from '@/auth/AuthProvider';
+import { messageErreur } from '@/auth/erreurs';
+import { Bouton } from '@/components/bouton';
+import { Ecran } from '@/components/ecran';
+import { supabase } from '@/lib/supabase';
+import { couleurs, tailles } from '@/theme';
 
 export default function EcranInformation() {
-  return <EcranTitre titre="Information" />;
+  const { session, rechargerProfil } = useAuth();
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [chargement, setChargement] = useState(false);
+
+  async function accepter() {
+    if (!supabase || !session) return;
+    setChargement(true);
+    setErreur(null);
+    const { error } = await supabase
+      .from('profils')
+      .update({ information_rgpd_acceptee_le: new Date().toISOString() })
+      .eq('id', session.user.id);
+    if (error) {
+      setErreur(messageErreur(error));
+      setChargement(false);
+      return;
+    }
+    await rechargerProfil();
+    setChargement(false);
+  }
+
+  return (
+    <Ecran titre="Information" defilement>
+      <Text style={styles.texte}>
+        ProdTrack suit le travail de chaque employé pour organiser la production et calculer le
+        chiffre d’affaires.
+      </Text>
+      <Text style={styles.texte}>
+        Données collectées : nom, prénom, email, rôle, boutique, équipe (jour ou nuit), photo
+        facultative, quantités produites ou sorties, et le chiffre d’affaires des produits que vous
+        fabriquez.
+      </Text>
+      <Text style={styles.texte}>
+        Le patron voit le chiffre d’affaires de chaque employé, par produit et par jour. Une
+        vendeuse voit les saisies de sa boutique. Un pâtissier ne voit que son propre chiffre
+        d’affaires.
+      </Text>
+      <Text style={styles.texte}>
+        Ces données sont conservées tant que le compte existe. Si le compte est archivé, l’historique
+        de production et de chiffre d’affaires est conservé.
+      </Text>
+      <Text style={styles.texte}>
+        Vous pouvez demander l’accès à vos données et leur rectification. Le contact est le patron
+        de votre entreprise.
+      </Text>
+      {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
+      <Bouton titre="J'ai lu et compris" chargement={chargement} onPress={accepter} />
+    </Ecran>
+  );
 }
+
+const styles = StyleSheet.create({
+  texte: {
+    fontSize: tailles.normal,
+    color: couleurs.texte,
+    lineHeight: 26,
+  },
+  erreur: {
+    fontSize: tailles.normal,
+    color: couleurs.erreur,
+  },
+});

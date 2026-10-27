@@ -1,5 +1,5 @@
-import { EcranTitre } from '@/components/ecran-titre';
+import { EcranVide } from '@/components/ecran-vide';
 
 export default function EcranStock() {
-  return <EcranTitre titre="Stock" />;
+  return <EcranVide />;
 }

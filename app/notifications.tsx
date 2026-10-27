@@ -1,5 +1,5 @@
-import { EcranTitre } from '@/components/ecran-titre';
+import { Ecran } from '@/components/ecran';
 
 export default function EcranNotifications() {
-  return <EcranTitre titre="Notifications" />;
+  return <Ecran titre="Notifications">{null}</Ecran>;
 }
