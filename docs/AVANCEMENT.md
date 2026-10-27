@@ -24,7 +24,7 @@
 - Base Supabase vide et prête. Confirmation par email désactivée (dev) : à réactiver avant la production.
 - ⏰ 03/11/2026 : renouveler le jeton Supabase « claude-code-prodtrack » (supabase.com/dashboard/account/tokens), puis `npx supabase login --token ...`.
 - Prochaine étape : phase 3 ⭐ (connexion, rôles, PIN). Utiliser le meilleur modèle.
-- Si une page affiche « Requiring unknown module » après ajout de fichiers : relancer le serveur avec `npx expo start --web --clear`.
+- Web en mode « single » (app.json) : le mode « server » restait bloqué sur le chargement sous Windows. Après un changement de app.json, relancer le serveur avec `npx expo start --web --clear`.
 
 ## Journal (le plus récent en haut, une ligne par session)
 
