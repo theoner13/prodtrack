@@ -13,7 +13,7 @@ Ce fichier s'adresse à toute IA de code (Cursor, Claude Code, autres). À lire 
 
 ## 2. Synchronisation avec GitHub (obligatoire)
 
-Dépôt : GitHub, branche unique **`main`**. Plusieurs IA (et plusieurs ordinateurs) travaillent sur le même code. Pour ne jamais travailler sur une version périmée :
+Dépôt : https://github.com/theoner13/prodtrack (privé), branche unique **`main`**. Dossier local : `C:\dev\prodtrack`. Plusieurs IA (et plusieurs ordinateurs) travaillent sur le même code. Pour ne jamais travailler sur une version périmée :
 
 **Au début de chaque session :**
 ```
