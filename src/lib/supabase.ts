@@ -3,6 +3,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
+import type { Database } from '@/types/database';
+
 // SecureStore n'accepte qu'environ 2048 caractères : une session Supabase
 // est parfois plus longue, donc on la découpe en plusieurs clés.
 const TAILLE_MORCEAU = 1800;
@@ -74,12 +76,12 @@ async function supprimer(cle: string): Promise<void> {
   await oublierCle(cle);
 }
 
-function creerClient(): SupabaseClient | null {
+function creerClient(): SupabaseClient<Database> | null {
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   const cleAnon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !cleAnon) return null;
 
-  return createClient(url, cleAnon, {
+  return createClient<Database>(url, cleAnon, {
     auth: {
       storage: {
         getItem: lire,
