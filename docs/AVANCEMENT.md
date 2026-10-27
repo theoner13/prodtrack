@@ -6,7 +6,7 @@
 
 - [x] Préparation : cahier des charges, architecture, SQL, prompts, dépôt GitHub
 - [x] Mise en place Supabase : projet Paris créé, migrations 0001 et 0002 appliquées et testées, pg_cron actif, `.env` rempli
-- [ ] Phase 1 : création du projet Expo
+- [x] Phase 1 : création du projet Expo
 - [ ] Phase 2 : fondations
 - [ ] Phase 3 : inscription, connexion, rôles, PIN et Face ID
 - [ ] Phase 4 : patron (boutiques, employés, produits et prix)
@@ -23,9 +23,10 @@
 
 - Base Supabase vide et prête. Confirmation par email désactivée (dev) : à réactiver avant la production.
 - ⏰ 03/11/2026 : renouveler le jeton Supabase « claude-code-prodtrack » (supabase.com/dashboard/account/tokens), puis `npx supabase login --token ...`.
-- Prochaine étape : phase 1 (le `.env` existe déjà, ne pas l'écraser).
+- Prochaine étape : phase 2 (types, thème, composants). Le `.env` est déjà rempli, ne pas l'écraser.
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-27 : phase 1 — projet Expo (SDK 58), client Supabase, écrans vides. Accueil : « Connexion Supabase OK ».
 - 2026-10-27 : base Supabase créée (Paris), SQL appliqué, règles 4.1/4.2/4.3 testées (Claude Code).
 - 2026-10-27 : préparation du projet, dépôt GitHub créé (Claude Code).
