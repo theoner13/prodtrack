@@ -59,8 +59,25 @@ Règles :
 - Fichiers locaux, jamais commités : `.env` (URL + clé **publishable** pour l'appli) et `.env.supabase.local` (mot de passe de la base). Sur un autre ordinateur, ils n'existent pas : les demander au propriétaire.
 - Interdit dans le code de l'appli : la clé `secret` / `service_role`.
 
-## 5. Fin de tâche : ce que l'IA doit dire au propriétaire
+## 5. Voir l'appli en local (obligatoire après chaque changement)
+
+Pour l'instant, on développe et on teste **uniquement en local**. La mise en ligne (par exemple Vercel) viendra plus tard, à la phase 12. Ne rien déployer avant.
+
+Après chaque changement qui touche l'appli :
+1. Vérifier que le serveur Expo tourne. Sinon, le lancer dans un terminal en arrière-plan, sans bloquer la conversation :
+   ```
+   npx expo start --web
+   ```
+   S'il tourne déjà, ne pas en lancer un second : il se recharge tout seul.
+2. Vérifier qu'il n'y a pas d'erreur dans le terminal ni à l'ouverture de la page. Sinon, corriger avant de continuer.
+3. Donner au propriétaire des **liens cliquables** :
+   - l'appli dans le navigateur : http://localhost:8081 (ou le port affiché par Expo) ;
+   - le lien direct vers l'écran modifié (ex. http://localhost:8081/demo) ;
+   - pour le téléphone : scanner le QR code affiché dans le terminal avec l'appli **Expo Go**, le téléphone étant sur le même Wi-Fi que l'ordinateur.
+
+## 6. Fin de tâche : ce que l'IA doit dire au propriétaire
 
 1. Ce qui a été fait, en 3 à 5 phrases simples.
-2. Comment le tester, étape par étape.
-3. Confirmation que le commit est fait et poussé sur GitHub (ou pourquoi il ne l'est pas).
+2. Les liens pour voir le résultat en local (section 5).
+3. Comment le tester, étape par étape.
+4. Confirmation que le commit est fait et poussé sur GitHub (ou pourquoi il ne l'est pas). Le push est obligatoire à chaque tâche qui fonctionne (section 2).
