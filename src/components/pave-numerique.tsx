@@ -27,8 +27,8 @@ export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
         ))}
       </View>
       <View style={styles.grille}>
-        {TOUCHES.map((touche, index) => {
-          if (touche === '') return <View key={index} style={styles.toucheVide} />;
+        {TOUCHES.map((touche) => {
+          if (touche === '') return <View key="vide" style={styles.toucheVide} />;
           const effacer = touche === 'effacer';
           return (
             <Pressable

@@ -14,6 +14,14 @@ export function formatEuros(centimes: number): string {
   return formateurEuros.format(centimes / 100).replace(/[  ]/g, ' ');
 }
 
+// "12,50" ou "12.5" → 1250. null si la saisie n'est pas un montant valide.
+export function eurosVersCentimes(saisie: string): number | null {
+  const texte = saisie.trim().replace(/\s/g, '').replace(',', '.');
+  if (!/^\d+(\.\d{1,2})?$/.test(texte)) return null;
+  const [entiers, decimales = ''] = texte.split('.');
+  return Number(entiers) * 100 + Number(decimales.padEnd(2, '0'));
+}
+
 // 'YYYY-MM-DD' → Date à midi UTC (évite les décalages d'un jour).
 function versDate(jour: string): Date {
   return new Date(`${jour}T12:00:00Z`);
