@@ -9,7 +9,11 @@ Ce fichier s'adresse à toute IA de code (Cursor, Claude Code, autres). À lire 
 - **Comment le faire** : [docs/01-ARCHITECTURE.md](docs/01-ARCHITECTURE.md). Stack, structure et décisions à respecter.
 - **Ordre du travail** : [docs/02-PHASES-ET-PROMPTS.md](docs/02-PHASES-ET-PROMPTS.md).
 - **Où on en est** : [docs/AVANCEMENT.md](docs/AVANCEMENT.md). **À lire en premier, à mettre à jour en dernier.**
-- Le propriétaire du projet débute en code : explications courtes et simples, en français.
+- Le propriétaire du projet débute en code (et avec Cursor / Claude), mais apprend vite :
+  - explications courtes et simples, en français, avec le « pourquoi » en une phrase pour qu'il apprenne ;
+  - le guider pas à pas et lui donner toujours la prochaine étape concrète ;
+  - **faire les actions soi-même** (lancer les commandes, l'appli, git) plutôt que lui demander de les taper ;
+  - lui proposer d'automatiser ce qui se répète. Ne mettre en place une automatisation qu'après son accord, en respectant la section 3.
 
 ## 2. Synchronisation avec GitHub (obligatoire)
 

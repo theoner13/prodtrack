@@ -24,6 +24,12 @@ android/
 Thumbs.db
 *.log
 npm-debug.*
+yarn-debug.*
+yarn-error.*
+.metro-health-check*
+*.tsbuildinfo
+.kotlin/
+*.orig.*
 .vscode/
 
 # Supabase local
