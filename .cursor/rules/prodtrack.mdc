@@ -24,7 +24,7 @@ Installe les paquets Expo avec `npx expo install <paquet>` (pas `npm install`) p
 - Ne recalcule jamais le stock, le CA ou la prévision dans l'app : lis les vues `stock_actuel`, `ca_journalier` et la table `previsions`.
 - Montants en centimes (entiers) ; affichage en euros via `src/lib/format.ts`.
 - Les droits d'accès sont gérés par la RLS de Supabase. Ne contourne jamais la RLS et n'utilise jamais la clé service_role dans l'app.
-- Ne modifie pas les fichiers SQL existants. Si un changement de base est nécessaire, crée un nouveau fichier `supabase/migrations/000X_description.sql` et explique-moi quoi coller dans Supabase.
+- Ne modifie pas les fichiers SQL existants. Si un changement de base est nécessaire, crée un nouveau fichier `supabase/migrations/000X_description.sql` et applique-le avec la CLI (`npx supabase db push`, voir `AGENTS.md` section 4).
 - Chaque écran gère 3 états : chargement, erreur (message en français), liste vide.
 - Tout le texte de l'interface est en français. Les noms de variables métier restent en français comme dans la base (produit, boutique, fabricant...).
 - Ergonomie : gros boutons, compteurs −/+, saisie en moins d'une minute (voir architecture section 7).

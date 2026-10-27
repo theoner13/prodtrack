@@ -44,10 +44,22 @@ Règles :
 - Pas de nouvelle librairie sans demander et expliquer pourquoi (la stack est fixée dans l'architecture).
 - Pas de refactorisation de code qui marche, sauf si la tâche l'exige.
 - Les calculs métier (stock, CA, prévision) sont dans la base Supabase : l'appli les lit, elle ne les refait pas.
-- Base de données : ne jamais modifier une migration existante. Créer `supabase/migrations/000X_description.sql` et dire au propriétaire quoi coller dans Supabase.
+- Base de données : ne jamais modifier une migration existante. Voir la section 4.
 - Si une demande contredit le cahier des charges ou l'architecture : s'arrêter et poser la question.
 
-## 4. Fin de tâche : ce que l'IA doit dire au propriétaire
+## 4. Supabase (base de données)
+
+- Projet : `prodtrack`, ref `oqltjrtiwqpzkuoucczq`, région Paris. Le dossier est déjà relié au projet (`supabase link`).
+- La CLI s'utilise avec `npx supabase ...` (pas d'installation globale).
+- **Modifier la base** : créer `supabase/migrations/000X_description.sql` (numéro suivant), puis l'appliquer avec la CLI. Le mot de passe de la base est dans `.env.supabase.local` (variable `SUPABASE_DB_PASSWORD`) :
+  ```
+  npx supabase db push --linked -p <SUPABASE_DB_PASSWORD>
+  ```
+  Commiter la migration dans le même commit que le code qui l'utilise. Ne jamais modifier une migration déjà appliquée.
+- Fichiers locaux, jamais commités : `.env` (URL + clé **publishable** pour l'appli) et `.env.supabase.local` (mot de passe de la base). Sur un autre ordinateur, ils n'existent pas : les demander au propriétaire.
+- Interdit dans le code de l'appli : la clé `secret` / `service_role`.
+
+## 5. Fin de tâche : ce que l'IA doit dire au propriétaire
 
 1. Ce qui a été fait, en 3 à 5 phrases simples.
 2. Comment le tester, étape par étape.

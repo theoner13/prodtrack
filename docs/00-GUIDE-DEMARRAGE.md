@@ -20,22 +20,12 @@ git -v
 ```
 Les deux doivent afficher un numéro de version.
 
-## Étape 3 — Créer la base de données Supabase
+## Étape 3 — Base de données Supabase ✅ (fait par Claude Code le 27/10/2026)
 
-1. Crée un compte sur https://supabase.com (gratuit).
-2. **New project** :
-   - Name : `prodtrack`
-   - Database password : génère-le et **garde-le** (gestionnaire de mots de passe).
-   - Region : **Central EU (Frankfurt)** ou **West EU (Paris)**. C'est obligatoire pour le RGPD.
-3. Attends 2 minutes que le projet soit prêt.
-4. Menu de gauche **SQL Editor** > **New query** : colle tout le contenu de `supabase/migrations/0001_schema_initial.sql` puis clique **Run**. Le message doit être « Success. No rows returned ».
-5. Menu **Database > Extensions** : cherche `pg_cron` et active-le.
-6. **SQL Editor** > New query : colle `supabase/migrations/0002_cron.sql` puis **Run**.
-7. Menu **Authentication > Sign In / Providers > Email** : pendant le développement, **désactive « Confirm email »**. Tu pourras créer des comptes de test sans recevoir d'email. Il faudra le réactiver avant la mise en production.
-8. Menu **Project Settings > API** (ou « API Keys ») : note
-   - **Project URL** (`https://xxxx.supabase.co`)
-   - la clé **anon / publishable** (publique, pour l'appli)
-   - ⚠️ ne copie **jamais** la clé `service_role` / `secret` dans le projet.
+- Projet Supabase `prodtrack`, région **Paris (eu-west-3)**, offre gratuite : https://supabase.com/dashboard/project/oqltjrtiwqpzkuoucczq
+- Les 2 migrations SQL sont appliquées et testées avec les exemples 4.1, 4.2 et 4.3 du cahier des charges. Le calcul de nuit (pg_cron) est actif.
+- La confirmation par email est **désactivée** pour le développement. ⚠️ Il faudra la réactiver avant la mise en production.
+- `.env` (URL + clé publique de l'appli) et `.env.supabase.local` (mot de passe de la base) sont **sur ce PC uniquement**, jamais sur GitHub. Garde aussi le mot de passe de la base dans un gestionnaire de mots de passe.
 
 ## Étape 4 — Ouvrir le projet dans Cursor
 

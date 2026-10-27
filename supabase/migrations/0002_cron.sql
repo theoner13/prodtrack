@@ -1,7 +1,8 @@
 -- =====================================================================
 -- ProdTrack — calcul automatique des prévisions chaque nuit
--- AVANT de lancer ce fichier : Supabase > Database > Extensions > activer "pg_cron"
 -- =====================================================================
+
+create extension if not exists pg_cron;
 
 -- Tous les jours à 3h UTC (4h ou 5h heure française)
 select cron.schedule(

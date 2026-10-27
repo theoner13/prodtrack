@@ -38,7 +38,7 @@ Objectif de cette phase : créer la base du projet Expo, rien de plus.
 1. Crée un projet Expo avec TypeScript et Expo Router DANS le dossier actuel (qui contient déjà docs/, supabase/, .cursor/ et cahier-des-charges-mvp.md : ne les supprime pas). Utilise le template officiel le plus récent (create-expo-app). Si l'outil refuse un dossier non vide, crée-le dans un sous-dossier temporaire puis déplace les fichiers à la racine.
 2. Supprime les écrans et composants d'exemple du template.
 3. Installe : @supabase/supabase-js, @tanstack/react-query, react-hook-form, zod, @hookform/resolvers, expo-secure-store, expo-local-authentication, expo-image-picker, expo-sharing, expo-file-system, react-native-url-polyfill (avec npx expo install quand c'est un paquet Expo).
-4. Crée un fichier .env avec EXPO_PUBLIC_SUPABASE_URL et EXPO_PUBLIC_SUPABASE_ANON_KEY (valeurs vides que je remplirai), un .env.example identique, et ajoute .env au .gitignore.
+4. Le fichier .env existe déjà et est rempli (URL + clé publishable Supabase), .env.example aussi : ne les écrase pas. Vérifie seulement que .env est bien dans le .gitignore.
 5. Crée src/lib/supabase.ts : client Supabase qui stocke la session dans expo-secure-store sur mobile et localStorage sur le web, avec autoRefreshToken et persistSession.
 6. Crée la structure de dossiers de l'architecture (section 3) avec des écrans vides qui affichent juste leur titre, et un app/_layout.tsx minimal.
 7. Écran d'accueil temporaire app/index.tsx qui affiche "ProdTrack" et teste la connexion à Supabase (par exemple supabase.auth.getSession()) en affichant "Connexion Supabase OK" ou l'erreur.
@@ -144,7 +144,7 @@ Lis @docs/01-ARCHITECTURE.md (décision D10) et @cahier-des-charges-mvp.md secti
 
 Objectif : le pâtissier gère ses produits et leurs recettes.
 
-1. Base de données — crée supabase/migrations/0003_storage_photos.sql avec les règles d'accès Storage pour le bucket privé "photos" : chemins "produits/{boutique_id}/{fichier}" et "profils/{user_id}/{fichier}". Lecture : utilisateurs connectés qui peuvent voir la boutique (fonction public.peut_voir_boutique) ou leur propre dossier profil (+ le patron de l'entreprise). Écriture : le pâtissier de la boutique ou le patron pour les produits ; soi-même pour son profil. Explique-moi comment l'exécuter dans Supabase.
+1. Base de données — crée supabase/migrations/0003_storage_photos.sql avec les règles d'accès Storage pour le bucket privé "photos" : chemins "produits/{boutique_id}/{fichier}" et "profils/{user_id}/{fichier}". Lecture : utilisateurs connectés qui peuvent voir la boutique (fonction public.peut_voir_boutique) ou leur propre dossier profil (+ le patron de l'entreprise). Écriture : le pâtissier de la boutique ou le patron pour les produits ; soi-même pour son profil. Applique-la avec la CLI Supabase (voir AGENTS.md section 4).
 2. src/api/photos.ts : choisir une photo (galerie ou appareil photo), la réduire (max 1024 px, utilise expo-image-manipulator), l'envoyer dans Storage, et afficher les photos avec des URL signées (mise en cache 1 h).
 3. Onglet Mes produits (dossier app/(patissier)/produits/) : liste de MES produits (fabricant = moi) ; badge "Imposé par le patron" (ces produits ne peuvent être ni renommés ni supprimés). Bouton "Ajouter un produit".
 4. Fiche produit (création et modification) : nom, prix en euros, photo facultative, conservation (Frais / Surgelé), durée de conservation en jours, seuil minimum de stock (avec explication : "Nombre d'unités qui doit toujours rester en stock"). Bouton "Retirer ce produit" (archivage) sauf si imposé.
@@ -331,5 +331,5 @@ Relis le travail de la phase [X] (prompt dans @docs/02-PHASES-ET-PROMPTS.md). V�
 
 **Modifier la base de données :**
 ```
-J'ai besoin de [besoin]. Crée un nouveau fichier de migration SQL dans supabase/migrations/ (ne modifie pas les anciens), mets à jour src/types/database.ts, et explique-moi quoi coller dans l'éditeur SQL Supabase.
+J'ai besoin de [besoin]. Crée un nouveau fichier de migration SQL dans supabase/migrations/ (ne modifie pas les anciens), mets à jour src/types/database.ts, applique-la avec la CLI Supabase (voir AGENTS.md section 4), puis commit et push.
 ```
