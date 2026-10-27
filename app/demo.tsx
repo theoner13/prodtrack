@@ -7,6 +7,7 @@ import { Bouton } from '@/components/bouton';
 import { CarteProduit } from '@/components/carte-produit';
 import { Champ } from '@/components/champ';
 import { Compteur } from '@/components/compteur';
+import { EditeurRecette, type LigneSaisie } from '@/components/editeur-recette';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import {
@@ -23,6 +24,10 @@ export default function Demo() {
   const [quantite, setQuantite] = useState(7);
   const [nom, setNom] = useState('');
   const [message, setMessage] = useState<string | null>(null);
+  const [recette, setRecette] = useState<LigneSaisie[]>([
+    { ingredient: 'Farine T65', quantite: '250', unite: 'g' },
+    { ingredient: 'Eau', quantite: '0,17', unite: 'l' },
+  ]);
   const fermer = useCallback(() => setMessage(null), []);
   const auj = aujourdhuiParis();
 
@@ -44,6 +49,9 @@ export default function Demo() {
       <Text style={styles.section}>Compteur</Text>
       <Compteur valeur={quantite} onChange={setQuantite} libelle="Muffins" />
       <Text style={styles.texte}>Valeur : {quantite}</Text>
+
+      <Text style={styles.section}>Recette</Text>
+      <EditeurRecette lignes={recette} onChange={setRecette} />
 
       <Text style={styles.section}>Carte produit</Text>
       <CarteProduit nom="Muffin" prixCentimes={300} sousTitre="Stock : 57">

@@ -24,10 +24,12 @@
 - Base Supabase vide et prête. Confirmation par email désactivée (dev) : à réactiver avant la production.
 - ⏰ 03/11/2026 : renouveler le jeton Supabase « claude-code-prodtrack » (supabase.com/dashboard/account/tokens), puis `npx supabase login --token ...`.
 - Prochaine étape : phase 5 (pâtissier : mes produits et recettes). Comptes de test : mot de passe `Test1234!`.
+- Phase 5 : réutiliser `src/components/editeur-recette.tsx` pour la recette. Recette facultative pour le pâtissier (un produit peut être créé sans recette).
 - Web en mode « single » (app.json) : le mode « server » restait bloqué sur le chargement sous Windows. Après un changement de app.json, relancer le serveur avec `npx expo start --web --clear`.
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-27 : saisie de recette compacte (une ligne par ingrédient, nouvelle ligne automatique), utilisée pour « Imposer un produit » (Claude Code).
 - 2026-10-27 : phase 4 — écrans patron (boutiques, employés, produits, gamme imposée). Le partage du code sur le web affiche une bannière à copier.
 - 2026-10-27 : phase 3 — connexion, inscription, rôles, mention RGPD, PIN (web : localStorage) et onglets par rôle.
 - 2026-10-27 : phase 2 — types générés depuis Supabase, thème, format euros/dates, composants de base, écran /demo (Claude Code).

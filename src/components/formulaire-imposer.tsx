@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet, Text, View } from 'react-native';
 import { z } from 'zod';
 
@@ -10,12 +10,11 @@ import { useImposerProduits } from '@/api/produits';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
+import { EditeurRecette, estVide, UNITES } from '@/components/editeur-recette';
 import { EtatChargement, EtatErreur } from '@/components/etats';
 import { eurosVersCentimes } from '@/lib/format';
 import { couleurs, tailles } from '@/theme';
 import type { Profil } from '@/types/database';
-
-const UNITES = ['g', 'kg', 'ml', 'l', 'pièce', 'cuillère'] as const;
 
 const schema = z.object({
   nom: z.string().trim().min(1, 'Indiquez le nom du produit.'),
@@ -26,18 +25,23 @@ const schema = z.object({
   duree: z.string().regex(/^[1-9]\d*$/, 'Indiquez une durée en jours (au moins 1).'),
   seuil: z.string().regex(/^\d+$/, 'Indiquez un nombre entier (0 ou plus).'),
   fabricantId: z.string().min(1, 'Choisissez le pâtissier qui fabrique ce produit.'),
+  // Les lignes entièrement vides sont ignorées (la dernière l'est toujours).
   lignes: z
     .array(
-      z.object({
-        ingredient: z.string().trim().min(1, 'Indiquez l’ingrédient.'),
-        quantite: z.string().refine((valeur) => {
-          const nombre = Number(valeur.trim().replace(',', '.'));
-          return Number.isFinite(nombre) && nombre > 0;
-        }, 'Indiquez une quantité supérieure à 0.'),
-        unite: z.enum(UNITES),
-      }),
+      z
+        .object({ ingredient: z.string(), quantite: z.string(), unite: z.enum(UNITES) })
+        .superRefine((ligne, ctx) => {
+          if (estVide(ligne)) return;
+          if (ligne.ingredient.trim() === '') {
+            ctx.addIssue({ code: 'custom', path: ['ingredient'], message: 'Indiquez l’ingrédient.' });
+          }
+          const nombre = Number(ligne.quantite.trim().replace(',', '.'));
+          if (!Number.isFinite(nombre) || nombre <= 0) {
+            ctx.addIssue({ code: 'custom', path: ['quantite'], message: 'Indiquez une quantité supérieure à 0.' });
+          }
+        }),
     )
-    .min(1, 'Ajoutez au moins une ligne de recette.'),
+    .refine((lignes) => lignes.some((ligne) => !estVide(ligne)), 'Ajoutez au moins un ingrédient.'),
 });
 
 type Formulaire = z.infer<typeof schema>;
@@ -64,10 +68,9 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
       duree: '2',
       seuil: '0',
       fabricantId: '',
-      lignes: [{ ingredient: '', quantite: '', unite: 'g' }],
+      lignes: [],
     },
   });
-  const lignes = useFieldArray({ control, name: 'lignes' });
   const conservation = watch('conservation');
   const fabricantId = watch('fabricantId');
 
@@ -116,8 +119,8 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
           conservation: valeurs.conservation,
           dureeJours: Number(valeurs.duree),
           seuilMin: Number(valeurs.seuil),
-          lignes: valeurs.lignes.map((ligne) => ({
-            ingredient: ligne.ingredient,
+          lignes: valeurs.lignes.filter((ligne) => !estVide(ligne)).map((ligne) => ({
+            ingredient: ligne.ingredient.trim(),
             quantite: Number(ligne.quantite.replace(',', '.')),
             unite: ligne.unite,
           })),
@@ -250,24 +253,25 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
       />
 
       <Text style={styles.titre}>Recette</Text>
-      {lignes.fields.map((ligne, index) => (
-        <LigneRecette
-          key={ligne.id}
-          index={index}
-          control={control}
-          unite={watch(`lignes.${index}.unite`)}
-          onUnite={(unite) => setValue(`lignes.${index}.unite`, unite)}
-          onRetirer={lignes.fields.length > 1 ? () => lignes.remove(index) : undefined}
-        />
-      ))}
-      {formState.errors.lignes?.message ? (
-        <Text style={styles.erreur}>{formState.errors.lignes.message}</Text>
-      ) : null}
-      <Bouton
-        titre="Ajouter un ingrédient"
-        variante="secondaire"
-        onPress={() => lignes.append({ ingredient: '', quantite: '', unite: 'g' })}
+      <Controller
+        control={control}
+        name="lignes"
+        render={({ field }) => (
+          <EditeurRecette
+            lignes={field.value}
+            onChange={field.onChange}
+            erreurs={field.value.map((_, index) => {
+              const e = formState.errors.lignes?.[index];
+              return e?.ingredient?.message ?? e?.quantite?.message;
+            })}
+          />
+        )}
       />
+      {formState.errors.lignes?.message || formState.errors.lignes?.root?.message ? (
+        <Text style={styles.erreur}>
+          {formState.errors.lignes?.message ?? formState.errors.lignes?.root?.message}
+        </Text>
+      ) : null}
 
       <Text style={styles.titre}>Imposer aussi dans d’autres boutiques</Text>
       {autres.length === 0 ? (
@@ -328,65 +332,6 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
   );
 }
 
-function LigneRecette({
-  index,
-  control,
-  unite,
-  onUnite,
-  onRetirer,
-}: {
-  index: number;
-  control: ReturnType<typeof useForm<Formulaire>>['control'];
-  unite: Formulaire['lignes'][number]['unite'];
-  onUnite: (unite: Formulaire['lignes'][number]['unite']) => void;
-  onRetirer?: () => void;
-}) {
-  return (
-    <View style={styles.ligne}>
-      <Controller
-        control={control}
-        name={`lignes.${index}.ingredient`}
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Ingrédient"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            erreur={fieldState.error?.message}
-          />
-        )}
-      />
-      <Controller
-        control={control}
-        name={`lignes.${index}.quantite`}
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Quantité"
-            keyboardType="decimal-pad"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            erreur={fieldState.error?.message}
-          />
-        )}
-      />
-      <Text style={styles.libelle}>Unité</Text>
-      <View style={styles.unites}>
-        {UNITES.map((choix) => (
-          <View key={choix} style={styles.unite}>
-            <Bouton
-              titre={choix}
-              variante={unite === choix ? 'principal' : 'secondaire'}
-              onPress={() => onUnite(choix)}
-            />
-          </View>
-        ))}
-      </View>
-      {onRetirer ? <Bouton titre="Retirer cette ligne" variante="danger" onPress={onRetirer} /> : null}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   bloc: {
     gap: 12,
@@ -411,19 +356,5 @@ const styles = StyleSheet.create({
   },
   autre: {
     gap: 8,
-  },
-  ligne: {
-    gap: 8,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: couleurs.bordure,
-  },
-  unites: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  unite: {
-    width: '30%',
   },
 });
