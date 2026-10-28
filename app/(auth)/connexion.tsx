@@ -45,7 +45,8 @@ const afficherConnexionRapide =
   __DEV__ && Boolean(comptesTestBruts?.trim()) && Boolean(mdpTest?.trim());
 
 export default function EcranConnexion() {
-  const { annonce, definirAnnonce } = useAuth();
+  const { annonce, definirAnnonce, comptesAppareil, modeAjoutCompte, annulerAjoutCompte } =
+    useAuth();
   const [erreur, setErreur] = useState<string | null>(null);
   const [emailRapide, setEmailRapide] = useState<string | null>(null);
   const { control, handleSubmit, formState } = useForm<Formulaire>({
@@ -80,9 +81,18 @@ export default function EcranConnexion() {
     }
   }
 
+  const retourChoixCompte = comptesAppareil.length > 0 || modeAjoutCompte;
+
   return (
     <Ecran titre="Connexion" defilement>
       {annonce ? <Text style={styles.erreur}>{annonce}</Text> : null}
+      {retourChoixCompte ? (
+        <Bouton
+          titre="Retour au choix du compte"
+          variante="secondaire"
+          onPress={() => annulerAjoutCompte()}
+        />
+      ) : null}
       <Controller
         control={control}
         name="email"

@@ -44,7 +44,7 @@ function majusculeInitiale(texte: string): string {
 }
 
 export default function EcranFinDeJournee() {
-  const { profil } = useAuth();
+  const { profil, verrouillerApresSaisie } = useAuth();
   const boutiqueId = profil?.boutique_id ?? null;
   const { width } = useWindowDimensions();
   const etroit = width < LARGEUR_TABLETTE;
@@ -186,6 +186,7 @@ export default function EcranFinDeJournee() {
           ? `1 produit enregistré pour le ${formatJourComplet(jour)}.`
           : `${nombre} produits enregistrés pour le ${formatJourComplet(jour)}.`,
       );
+      verrouillerApresSaisie();
     } catch (erreur) {
       setTypeMessage('erreur');
       setMessage(messageErreur(erreur));

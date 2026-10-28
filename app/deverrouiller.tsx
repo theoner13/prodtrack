@@ -10,7 +10,14 @@ import { biometrieActive, verifierPin } from '@/lib/pin';
 import { couleurs, tailles } from '@/theme';
 
 export default function EcranDeverrouiller() {
-  const { session, deverrouiller, deconnexion, definirAnnonce } = useAuth();
+  const {
+    session,
+    deverrouiller,
+    definirAnnonce,
+    preparerAjoutCompte,
+    retirerCompteApresEchecPin,
+    tablettePartagee,
+  } = useAuth();
   const [saisie, setSaisie] = useState('');
   const [erreur, setErreur] = useState<string | null>(null);
   const [avecBiometrie, setAvecBiometrie] = useState(false);
@@ -26,7 +33,10 @@ export default function EcranDeverrouiller() {
   }
 
   useEffect(() => {
-    if (!session || Platform.OS === 'web') return;
+    if (!session || Platform.OS === 'web' || tablettePartagee) {
+      setAvecBiometrie(false);
+      return;
+    }
     let annule = false;
     biometrieActive(session.user.id).then((actif) => {
       if (annule) return;
@@ -36,7 +46,7 @@ export default function EcranDeverrouiller() {
     return () => {
       annule = true;
     };
-  }, [session?.user.id]);
+  }, [session?.user.id, tablettePartagee]);
 
   async function onSaisie(valeur: string) {
     setSaisie(valeur);
@@ -51,7 +61,7 @@ export default function EcranDeverrouiller() {
       definirAnnonce(
         'Trop de codes incorrects. Reconnectez-vous avec votre email et votre mot de passe.',
       );
-      await deconnexion();
+      await retirerCompteApresEchecPin(session.user.id);
       return;
     }
     setErreur(
@@ -69,12 +79,16 @@ export default function EcranDeverrouiller() {
       <PaveNumerique valeur={saisie} onChange={(valeur) => void onSaisie(valeur)} />
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
       {avecBiometrie ? (
-        <Bouton titre="Utiliser Face ID ou l'empreinte" variante="secondaire" onPress={() => void tenterBiometrie()} />
+        <Bouton
+          titre="Utiliser Face ID ou l'empreinte"
+          variante="secondaire"
+          onPress={() => void tenterBiometrie()}
+        />
       ) : null}
       <Bouton
-        titre="Se connecter avec un autre compte"
+        titre="Ajouter un compte sur cet appareil"
         variante="secondaire"
-        onPress={() => void deconnexion()}
+        onPress={() => void preparerAjoutCompte()}
       />
     </Ecran>
   );

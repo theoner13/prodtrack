@@ -31,12 +31,33 @@ export default function LayoutRacine() {
 }
 
 function Gardien() {
-  const { session, profil, chargement, verrouille, pinPresent } = useAuth();
+  const {
+    session,
+    profil,
+    chargement,
+    verrouille,
+    pinPresent,
+    comptesAppareil,
+    tablettePartagee,
+    modeAjoutCompte,
+  } = useAuth();
   const segments = useSegments();
   const pathname = usePathname();
   const params = useGlobalSearchParams<{ changer?: string }>();
   const navigation = useRootNavigationState();
   const retourApresPin = useRef<Href | null>(null);
+  const userIdPrecedent = useRef<string | undefined>(session?.user.id);
+
+  useEffect(() => {
+    if (
+      userIdPrecedent.current &&
+      session?.user.id &&
+      userIdPrecedent.current !== session.user.id
+    ) {
+      retourApresPin.current = null;
+    }
+    userIdPrecedent.current = session?.user.id;
+  }, [session?.user.id]);
 
   useEffect(() => {
     if (!navigation?.key || chargement) return;
@@ -51,9 +72,19 @@ function Gardien() {
       racine,
       suite,
       changer: params.changer === '1',
+      nombreComptes: comptesAppareil.length,
+      tablettePartagee,
+      modeAjoutCompte,
     };
 
-    if (profil && verrouille && pinPresent && racine !== 'deverrouiller' && racine !== '(auth)') {
+    if (
+      profil &&
+      verrouille &&
+      pinPresent &&
+      racine !== 'deverrouiller' &&
+      racine !== 'qui-etes-vous' &&
+      racine !== '(auth)'
+    ) {
       const memorise = adresseApresPin(pathname, racine, profil);
       if (memorise) retourApresPin.current = memorise;
     }
@@ -80,6 +111,9 @@ function Gardien() {
     segments,
     pathname,
     params.changer,
+    comptesAppareil.length,
+    tablettePartagee,
+    modeAjoutCompte,
   ]);
 
   return null;
@@ -87,7 +121,14 @@ function Gardien() {
 
 // Adresse à rouvrir après le code PIN. Jamais un écran de connexion ou de PIN.
 function adresseApresPin(pathname: string, racine: string, profil: Profil): Href | null {
-  if (racine === 'demo' || racine === '(auth)' || racine === 'deverrouiller') return null;
+  if (
+    racine === 'demo' ||
+    racine === '(auth)' ||
+    racine === 'deverrouiller' ||
+    racine === 'qui-etes-vous'
+  ) {
+    return null;
+  }
   if (pathname === '/profil' || pathname === '/notifications') return pathname;
   const groupe =
     profil.role === 'admin' ? '(admin)' : profil.role === 'patissier' ? '(patissier)' : '(vendeuse)';
@@ -111,10 +152,23 @@ function destination(etat: {
   racine: string;
   suite: string;
   changer: boolean;
+  nombreComptes: number;
+  tablettePartagee: boolean;
+  modeAjoutCompte: boolean;
 }): Href | null {
   if (etat.racine === 'demo') return null;
 
+  if (etat.modeAjoutCompte) {
+    if (etat.racine === '(auth)' && etat.suite === 'connexion') return null;
+    return '/connexion';
+  }
+
   if (!etat.connecte) {
+    if (etat.nombreComptes > 0) {
+      if (etat.racine === 'qui-etes-vous') return null;
+      if (etat.racine === '(auth)' && etat.suite === 'connexion') return null;
+      return '/qui-etes-vous';
+    }
     if (etat.racine === '(auth)' && (etat.suite === 'connexion' || etat.suite === 'inscription')) {
       return null;
     }
@@ -144,6 +198,12 @@ function destination(etat: {
   }
 
   if (etat.verrouille) {
+    const multi =
+      etat.nombreComptes >= 2 || etat.tablettePartagee;
+    if (multi) {
+      if (etat.racine === 'qui-etes-vous') return null;
+      return '/qui-etes-vous';
+    }
     if (etat.racine === 'deverrouiller') return null;
     return '/deverrouiller';
   }

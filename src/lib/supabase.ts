@@ -17,7 +17,7 @@ async function oublierCle(cle: string): Promise<void> {
   }
 }
 
-async function lire(cle: string): Promise<string | null> {
+export async function lire(cle: string): Promise<string | null> {
   if (Platform.OS === 'web') {
     if (typeof localStorage === 'undefined') return null;
     return localStorage.getItem(cle);
@@ -44,7 +44,7 @@ async function effacerMorceaux(cle: string): Promise<void> {
   await oublierCle(`${cle}.n`);
 }
 
-async function ecrire(cle: string, valeur: string): Promise<void> {
+export async function ecrire(cle: string, valeur: string): Promise<void> {
   if (Platform.OS === 'web') {
     localStorage.setItem(cle, valeur);
     return;
@@ -67,7 +67,7 @@ async function ecrire(cle: string, valeur: string): Promise<void> {
   await SecureStore.setItemAsync(`${cle}.n`, String(total));
 }
 
-async function supprimer(cle: string): Promise<void> {
+export async function supprimer(cle: string): Promise<void> {
   if (Platform.OS === 'web') {
     localStorage.removeItem(cle);
     return;

@@ -55,7 +55,7 @@ function formatHeure(iso: string): string {
 }
 
 export function SaisieStock({ type }: Props) {
-  const { profil } = useAuth();
+  const { profil, verrouillerApresSaisie } = useAuth();
   const boutiqueId = profil?.boutique_id ?? null;
   const userId = profil?.id ?? null;
 
@@ -192,6 +192,7 @@ export function SaisieStock({ type }: Props) {
       setQuantites({});
       setTypeMessage('succes');
       setMessage(confirmation);
+      verrouillerApresSaisie();
     } catch (erreur) {
       setTypeMessage('erreur');
       setMessage(messageErreur(erreur));
@@ -234,6 +235,7 @@ export function SaisieStock({ type }: Props) {
       setFormulairePerteOuvert(false);
       setTypeMessage('succes');
       setMessage(confirmation);
+      verrouillerApresSaisie();
     } catch (erreur) {
       setTypeMessage('erreur');
       setMessage(messageErreur(erreur));

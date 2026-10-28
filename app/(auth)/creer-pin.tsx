@@ -12,7 +12,7 @@ import { creerPin } from '@/lib/pin';
 import { couleurs, tailles } from '@/theme';
 
 export default function EcranCreerPin() {
-  const { session, rechargerPin, deverrouiller } = useAuth();
+  const { session, rechargerPin, deverrouiller, tablettePartagee } = useAuth();
   const { changer } = useLocalSearchParams<{ changer?: string }>();
   const [etape, setEtape] = useState<'choix' | 'confirmation' | 'biometrie'>('choix');
   const [premier, setPremier] = useState('');
@@ -22,12 +22,15 @@ export default function EcranCreerPin() {
   const [chargement, setChargement] = useState(false);
 
   useEffect(() => {
-    if (Platform.OS === 'web') return;
+    if (Platform.OS === 'web' || tablettePartagee) {
+      setBiometrieDispo(false);
+      return;
+    }
     Promise.all([
       LocalAuthentication.hasHardwareAsync(),
       LocalAuthentication.isEnrolledAsync(),
     ]).then(([materiel, enregistre]) => setBiometrieDispo(materiel && enregistre));
-  }, []);
+  }, [tablettePartagee]);
 
   async function enregistrer(code: string, biometrie: boolean) {
     if (!session) return;
