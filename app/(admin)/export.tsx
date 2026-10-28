@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useBoutiques } from '@/api/boutiques';
 import {
   lireExportMouvements,
+  lireExportPertes,
   lireExportVentes,
   telechargerCsv,
   useCaJournalier,
@@ -38,6 +39,13 @@ const TYPE_FR: Record<'production' | 'sortie' | 'ajustement', string> = {
   production: 'Production',
   sortie: 'Sortie',
   ajustement: 'Ajustement',
+};
+
+const MOTIF_FR: Record<'brule' | 'tombe' | 'rate' | 'autre', string> = {
+  brule: 'Brûlé',
+  tombe: 'Tombé ou abîmé',
+  rate: 'Raté',
+  autre: 'Autre',
 };
 
 export default function EcranExport() {
@@ -82,7 +90,7 @@ export default function EcranExport() {
   }
 
   async function exporter(
-    type: 'ventes' | 'mouvements' | 'ca-employes',
+    type: 'ventes' | 'mouvements' | 'ca-employes' | 'pertes',
   ): Promise<void> {
     if (!dates || erreurPeriode) {
       afficher(erreurPeriode ?? 'Période invalide.', 'erreur');
@@ -146,6 +154,34 @@ export default function EcranExport() {
         );
         nbLignes = lignes.length;
         prefixe = 'mouvements';
+      } else if (type === 'pertes') {
+        const lignes = await lireExportPertes(debut, fin, boutiqueId);
+        if (lignes.length === 0) {
+          afficher('Aucune donnée à exporter sur cette période.', 'erreur');
+          return;
+        }
+        contenu = genererCsv(
+          [
+            'Jour',
+            'Boutique',
+            'Produit',
+            'Quantité',
+            'Motif',
+            'Retirée du stock',
+            'Saisie par',
+          ],
+          lignes.map((l) => [
+            dateCsv(l.jour),
+            l.boutique_nom,
+            l.produit_nom,
+            l.quantite,
+            MOTIF_FR[l.motif],
+            l.dans_le_stock ? 'Oui' : 'Non',
+            l.saisi_par_nom,
+          ]),
+        );
+        nbLignes = lignes.length;
+        prefixe = 'pertes';
       } else {
         const resultat = await ca.refetch();
         if (resultat.error) throw resultat.error;
@@ -316,6 +352,15 @@ export default function EcranExport() {
           void exporter('ca-employes');
         }}
         chargement={exportEnCours === 'ca-employes'}
+        desactive={Boolean(erreurPeriode) || exportEnCours !== null}
+      />
+      <Bouton
+        titre="Exporter les pertes en production"
+        variante="secondaire"
+        onPress={() => {
+          void exporter('pertes');
+        }}
+        chargement={exportEnCours === 'pertes'}
         desactive={Boolean(erreurPeriode) || exportEnCours !== null}
       />
     </Ecran>

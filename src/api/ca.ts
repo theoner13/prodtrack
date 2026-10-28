@@ -44,6 +44,29 @@ export type LigneExportMouvement = {
   saisi_par_nom: string;
 };
 
+export type LignePertePeriode = {
+  id: string;
+  jour: string;
+  produit_id: string;
+  produit_nom: string;
+  boutique_id: string;
+  quantite: number;
+  motif: 'brule' | 'tombe' | 'rate' | 'autre';
+  dans_le_stock: boolean;
+  saisi_par: string;
+  saisi_par_nom: string;
+};
+
+export type LigneExportPerte = {
+  jour: string;
+  boutique_nom: string;
+  produit_nom: string;
+  quantite: number;
+  motif: 'brule' | 'tombe' | 'rate' | 'autre';
+  dans_le_stock: boolean;
+  saisi_par_nom: string;
+};
+
 function nomProfil(prenom: string, nom: string, archiveLe: string | null): string {
   const base = `${prenom} ${nom}`.trim();
   return archiveLe ? `${base} (archivé)` : base;
@@ -223,6 +246,106 @@ export async function lireExportMouvements(
       saisi_par_nom: nomsProfils.get(m.saisi_par) ?? '—',
     };
   });
+}
+
+export function usePertesPeriode(
+  debut: string | null,
+  fin: string | null,
+  boutiqueId: string | null,
+) {
+  return useQuery({
+    queryKey: ['ca', 'pertes', debut, fin, boutiqueId],
+    enabled: Boolean(debut && fin),
+    queryFn: async (): Promise<LignePertePeriode[]> => lirePertesPeriode(debut as string, fin as string, boutiqueId),
+  });
+}
+
+async function lirePertesPeriode(
+  debut: string,
+  fin: string,
+  boutiqueId: string | null,
+): Promise<LignePertePeriode[]> {
+  type ProduitExport = { id: string; nom: string; boutique_id: string };
+  type PerteBrute = {
+    id: string;
+    jour: string;
+    produit_id: string;
+    quantite: number;
+    motif: string;
+    dans_le_stock: boolean;
+    saisi_par: string;
+  };
+
+  const produits = await lireToutesLesLignes<ProduitExport>(() => {
+    let requete = db().from('produits').select('id, nom, boutique_id').order('id');
+    if (boutiqueId) {
+      requete = requete.eq('boutique_id', boutiqueId);
+    }
+    return requete;
+  });
+  if (produits.length === 0) return [];
+
+  const ids = produits.map((p) => p.id);
+  const nomsProduits = new Map(produits.map((p) => [p.id, p.nom]));
+  const boutiqueParProduit = new Map(produits.map((p) => [p.id, p.boutique_id]));
+
+  const pertes: PerteBrute[] = [];
+  for (const paquet of paquetsDe(ids)) {
+    const page = await lireToutesLesLignes<PerteBrute>(() =>
+      db()
+        .from('pertes_production')
+        .select('id, jour, produit_id, quantite, motif, dans_le_stock, saisi_par')
+        .in('produit_id', paquet)
+        .gte('jour', debut)
+        .lte('jour', fin)
+        .order('jour')
+        .order('id'),
+    );
+    pertes.push(...page);
+  }
+
+  const { data: profils, error: errP } = await db()
+    .from('profils')
+    .select('id, prenom, nom, archive_le');
+  if (errP) throw errP;
+  const nomsProfils = new Map(
+    (profils ?? []).map((p) => [p.id, nomProfil(p.prenom, p.nom, p.archive_le)]),
+  );
+
+  return pertes.map((p) => ({
+    id: p.id,
+    jour: p.jour,
+    produit_id: p.produit_id,
+    produit_nom: nomsProduits.get(p.produit_id) ?? '—',
+    boutique_id: boutiqueParProduit.get(p.produit_id) ?? '',
+    quantite: p.quantite,
+    motif: p.motif as LignePertePeriode['motif'],
+    dans_le_stock: p.dans_le_stock,
+    saisi_par: p.saisi_par,
+    saisi_par_nom: nomsProfils.get(p.saisi_par) ?? '—',
+  }));
+}
+
+export async function lireExportPertes(
+  debut: string,
+  fin: string,
+  boutiqueId: string | null,
+): Promise<LigneExportPerte[]> {
+  const lignes = await lirePertesPeriode(debut, fin, boutiqueId);
+
+  const { data: boutiques, error: errB } = await db().from('boutiques').select('id, nom');
+  if (errB) throw errB;
+  const nomsBoutiques = new Map((boutiques ?? []).map((b) => [b.id, b.nom]));
+
+  return lignes.map((l) => ({
+    jour: l.jour,
+    boutique_nom: l.boutique_id ? (nomsBoutiques.get(l.boutique_id) ?? '—') : '—',
+    produit_nom: l.produit_nom,
+    quantite: l.quantite,
+    motif: l.motif,
+    dans_le_stock: l.dans_le_stock,
+    saisi_par_nom: l.saisi_par_nom,
+  }));
 }
 
 /** Web : téléchargement. Téléphone : écriture cache + partage. */

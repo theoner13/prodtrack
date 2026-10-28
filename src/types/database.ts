@@ -203,6 +203,61 @@ export type Database = {
           },
         ]
       }
+      pertes_production: {
+        Row: {
+          created_at: string
+          dans_le_stock: boolean
+          id: string
+          jour: string
+          motif: string
+          produit_id: string
+          quantite: number
+          saisi_par: string
+        }
+        Insert: {
+          created_at?: string
+          dans_le_stock?: boolean
+          id?: string
+          jour?: string
+          motif: string
+          produit_id: string
+          quantite: number
+          saisi_par?: string
+        }
+        Update: {
+          created_at?: string
+          dans_le_stock?: boolean
+          id?: string
+          jour?: string
+          motif?: string
+          produit_id?: string
+          quantite?: number
+          saisi_par?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pertes_production_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: false
+            referencedRelation: "produits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pertes_production_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: false
+            referencedRelation: "stock_actuel"
+            referencedColumns: ["produit_id"]
+          },
+          {
+            foreignKeyName: "pertes_production_saisi_par_fkey"
+            columns: ["saisi_par"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       previsions: {
         Row: {
           calcule_le: string
@@ -728,4 +783,5 @@ export type Prevision = Tables<'previsions'>;
 export type Notification = Tables<'notifications'>;
 export type StockActuel = Tables<'stock_actuel'>;
 export type CaJournalier = Tables<'ca_journalier'>;
+export type PerteProduction = Tables<'pertes_production'>;
 export type RoleEmploye = Enums<'role_employe'>;

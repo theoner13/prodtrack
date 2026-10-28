@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useBoutiques } from '@/api/boutiques';
-import { useCaJournalier, usePatissiersPourCa } from '@/api/ca';
+import { useCaJournalier, usePatissiersPourCa, usePertesPeriode } from '@/api/ca';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
@@ -73,9 +73,30 @@ export default function EcranTableauDeBord() {
 
   const ca = useCaJournalier(dates?.debut ?? null, dates?.fin ?? null, boutiqueId);
   const patissiers = usePatissiersPourCa(boutiqueId);
+  const pertes = usePertesPeriode(dates?.debut ?? null, dates?.fin ?? null, boutiqueId);
 
   const lignes = ca.data ?? [];
   const chiffres = useMemo(() => totaux(lignes), [lignes]);
+
+  const totalPertes = useMemo(
+    () => (pertes.data ?? []).reduce((somme, p) => somme + p.quantite, 0),
+    [pertes.data],
+  );
+
+  const pertesParProduit = useMemo(() => {
+    const map = new Map<string, { nom: string; quantite: number }>();
+    for (const p of pertes.data ?? []) {
+      const existant = map.get(p.produit_id);
+      if (existant) {
+        existant.quantite += p.quantite;
+      } else {
+        map.set(p.produit_id, { nom: p.produit_nom, quantite: p.quantite });
+      }
+    }
+    return [...map.values()].sort(
+      (a, b) => b.quantite - a.quantite || a.nom.localeCompare(b.nom, 'fr'),
+    );
+  }, [pertes.data]);
 
   const classement = useMemo((): EmployeAffiche[] => {
     const parId = new Map(parEmploye(lignes).map((g) => [g.cle, g]));
@@ -144,19 +165,29 @@ export default function EcranTableauDeBord() {
 
   const enChargement =
     boutiques.isLoading ||
-    (Boolean(dates) && (ca.isLoading || patissiers.isLoading));
-  const enErreur = boutiques.isError || ca.isError || patissiers.isError;
-  const aucuneVente = !enChargement && !enErreur && Boolean(dates) && lignes.length === 0;
+    (Boolean(dates) && (ca.isLoading || patissiers.isLoading || pertes.isLoading));
+  const enErreur = boutiques.isError || ca.isError || patissiers.isError || pertes.isError;
+  const aucuneDonnee =
+    !enChargement &&
+    !enErreur &&
+    Boolean(dates) &&
+    lignes.length === 0 &&
+    totalPertes === 0;
 
   async function rafraichir() {
-    await Promise.all([boutiques.refetch(), ca.refetch(), patissiers.refetch()]);
+    await Promise.all([
+      boutiques.refetch(),
+      ca.refetch(),
+      patissiers.refetch(),
+      pertes.refetch(),
+    ]);
   }
 
   return (
     <Ecran
       titre="Tableau de bord"
       defilement
-      enRafraichissement={ca.isRefetching || patissiers.isRefetching}
+      enRafraichissement={ca.isRefetching || patissiers.isRefetching || pertes.isRefetching}
       onRafraichir={() => {
         void rafraichir();
       }}
@@ -228,7 +259,7 @@ export default function EcranTableauDeBord() {
             void rafraichir();
           }}
         />
-      ) : aucuneVente ? (
+      ) : aucuneDonnee ? (
         <EtatVide message="Aucune vente enregistrée sur cette période." />
       ) : (
         <>
@@ -240,6 +271,7 @@ export default function EcranTableauDeBord() {
               libelle="Taux de perte"
               valeur={`${chiffres.tauxPerte.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`}
             />
+            <ChiffreCle libelle="Pertes en production" valeur={String(totalPertes)} />
           </View>
 
           <Text style={styles.section}>Chiffre d'affaires par employé</Text>
@@ -290,18 +322,34 @@ export default function EcranTableauDeBord() {
           })}
 
           <Text style={styles.section}>Produits</Text>
-          <Text style={styles.sousSection}>5 meilleurs</Text>
-          {meilleurs.map((p) => (
-            <Text key={`m-${p.cle}`} style={styles.detailLigne}>
-              {p.nom} — {formatEuros(p.caCentimes)}
-            </Text>
-          ))}
-          <Text style={styles.sousSection}>5 moins bons</Text>
-          {moinsBons.map((p) => (
-            <Text key={`f-${p.cle}`} style={styles.detailLigne}>
-              {p.nom} — {formatEuros(p.caCentimes)}
-            </Text>
-          ))}
+          {produitsClasses.length > 0 ? (
+            <>
+              <Text style={styles.sousSection}>5 meilleurs</Text>
+              {meilleurs.map((p) => (
+                <Text key={`m-${p.cle}`} style={styles.detailLigne}>
+                  {p.nom} — {formatEuros(p.caCentimes)}
+                </Text>
+              ))}
+              <Text style={styles.sousSection}>5 moins bons</Text>
+              {moinsBons.map((p) => (
+                <Text key={`f-${p.cle}`} style={styles.detailLigne}>
+                  {p.nom} — {formatEuros(p.caCentimes)}
+                </Text>
+              ))}
+            </>
+          ) : (
+            <Text style={styles.detailLigne}>Aucune vente sur cette période.</Text>
+          )}
+          {pertesParProduit.length > 0 ? (
+            <>
+              <Text style={styles.sousSection}>Pertes en production par produit</Text>
+              {pertesParProduit.map((p) => (
+                <Text key={p.nom} style={styles.detailLigne}>
+                  {p.nom} — {p.quantite}
+                </Text>
+              ))}
+            </>
+          ) : null}
         </>
       )}
     </Ecran>
