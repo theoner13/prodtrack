@@ -49,6 +49,11 @@ export default function EcranMesProduits() {
       ) : (
         <Bouton titre="Ajouter un produit" onPress={() => ouvrir('nouveau')} />
       )}
+      <Bouton
+        titre="Voir les autres boutiques"
+        variante="secondaire"
+        onPress={() => router.push('/produits/autres-boutiques' as Href)}
+      />
       {produits.length === 0 && !premiereFois ? (
         <EtatVide message="Vous n'avez aucun produit en cours. Ajoutez-en un pour le fabriquer." />
       ) : null}

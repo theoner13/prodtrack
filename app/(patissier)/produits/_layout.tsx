@@ -29,6 +29,8 @@ export default function LayoutMesProduits() {
         name="index"
         options={{ title: 'Mes produits', headerRight: () => <ActionsEntete /> }}
       />
+      <Stack.Screen name="autres-boutiques" options={{ title: 'Autres boutiques' }} />
+      <Stack.Screen name="catalogue/[id]" options={{ title: 'Produit' }} />
       <Stack.Screen name="[id]" options={{ title: 'Produit' }} />
     </Stack>
   );

@@ -60,7 +60,7 @@ function quantiteTexte(valeur: number): string {
 }
 
 export default function EcranFicheProduit() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, ajoute } = useLocalSearchParams<{ id: string; ajoute?: string }>();
   const creation = id === 'nouveau';
   const { profil } = useAuth();
   const fiche = useFicheProduit(creation ? null : (id ?? null));
@@ -68,7 +68,11 @@ export default function EcranFicheProduit() {
   const definirPhoto = useDefinirPhotoProduit();
   const archiver = useArchiverMonProduit();
   const [erreur, setErreur] = useState<string | null>(null);
-  const [confirmation, setConfirmation] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<string | null>(
+    ajoute === '1'
+      ? 'Produit ajouté à votre boutique : vérifiez le prix, le seuil et ajoutez une photo.'
+      : null,
+  );
   const [uriLocale, setUriLocale] = useState<string | null>(null);
   const [demandeRetrait, setDemandeRetrait] = useState(false);
   const fermerConfirmation = useCallback(() => setConfirmation(null), []);

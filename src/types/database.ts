@@ -508,7 +508,38 @@ export type Database = {
     }
     Functions: {
       aujourdhui: { Args: never; Returns: string }
+      boutique_de_mon_entreprise: {
+        Args: { p_boutique: string }
+        Returns: boolean
+      }
       calculer_previsions: { Args: never; Returns: undefined }
+      catalogue_boutiques: {
+        Args: never
+        Returns: {
+          id: string
+          nom: string
+        }[]
+      }
+      catalogue_produits: {
+        Args: { p_boutique: string }
+        Returns: {
+          conservation: Database["public"]["Enums"]["type_conservation"]
+          duree_conservation_jours: number
+          id: string
+          nom: string
+          photo_url: string
+          prix_centimes: number
+        }[]
+      }
+      catalogue_recette: {
+        Args: { p_produit: string }
+        Returns: {
+          ingredient: string
+          ordre: number
+          quantite: number
+          unite: string
+        }[]
+      }
       chemin_photo_uuid: {
         Args: { p_dossier: string; p_nom: string }
         Returns: string
