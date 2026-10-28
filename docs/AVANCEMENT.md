@@ -31,6 +31,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-28 : planning : alerte immédiate des produits sous le seuil, le prévisionnel de nuit reste affiché dessous (Cursor ; vérifiée par Claude Code : Cookies nutella stock 8 / seuil 12 signalé, disparaît après une production).
 - 2026-10-28 : phase 9 — planning de fabrication du pâtissier (semaine, détail 14 jours) et notifications (cloche, écran, marquer comme lu). (Cursor ; vérifiée par Claude Code : script de test lancé, fabrication au plus tard le 30/10 pour environ 41 unités comme calculé à la main, script relançable sans doublon, cloche et notifications, écrans ordinateur, téléphone et tablette).
 - 2026-10-28 : site en ligne réparé — l’URL et la clé Supabase enregistrées sur Vercel commençaient par un caractère invisible (BOM), d’où « Pas de connexion internet » ; valeurs réenregistrées proprement et règle ajoutée dans AGENTS.md (Claude Code).
 - 2026-10-28 : connexion rapide aux comptes de test, en local uniquement (Cursor)

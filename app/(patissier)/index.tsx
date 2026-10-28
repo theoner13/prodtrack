@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-na
 import { useUrlsSignees } from '@/api/photos';
 import { useMesPrevisions, type PrevisionProduit } from '@/api/previsions';
 import { useMesProduits } from '@/api/produits';
+import { useStock } from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
@@ -90,24 +91,27 @@ export default function EcranPlanning() {
   const { profil } = useAuth();
   const { width } = useWindowDimensions();
   const tablette = width >= LARGEUR_TABLETTE;
+  const boutiqueId = profil?.boutique_id ?? null;
   const mes = useMesProduits(profil?.id ?? null);
   const previsions = useMesPrevisions(profil?.id ?? null);
+  const stock = useStock(boutiqueId);
   const [ouvert, setOuvert] = useState<string | null>(null);
 
-  const chemins = (previsions.data ?? [])
-    .map((ligne) => ligne.photoUrl)
-    .filter((chemin): chemin is string => Boolean(chemin));
+  const chemins = [
+    ...(previsions.data ?? []).map((ligne) => ligne.photoUrl),
+    ...(mes.data?.produits ?? []).map((produit) => produit.photo_url),
+  ].filter((chemin): chemin is string => Boolean(chemin));
   const photos = useUrlsSignees(chemins);
 
   async function rafraichir() {
-    await Promise.all([mes.refetch(), previsions.refetch()]);
+    await Promise.all([mes.refetch(), previsions.refetch(), stock.refetch()]);
   }
 
   function basculer(id: string) {
     setOuvert((actuel) => (actuel === id ? null : id));
   }
 
-  if (mes.isLoading || previsions.isLoading) {
+  if (mes.isLoading || previsions.isLoading || stock.isLoading) {
     return (
       <Ecran>
         <EtatChargement />
@@ -115,11 +119,11 @@ export default function EcranPlanning() {
     );
   }
 
-  if (mes.isError || previsions.isError) {
+  if (mes.isError || previsions.isError || stock.isError) {
     return (
       <Ecran>
         <EtatErreur
-          message={messageErreur(mes.error ?? previsions.error)}
+          message={messageErreur(mes.error ?? previsions.error ?? stock.error)}
           onReessayer={() => void rafraichir()}
         />
       </Ecran>
@@ -132,7 +136,7 @@ export default function EcranPlanning() {
       <Ecran
         titre="Planning"
         defilement
-        enRafraichissement={mes.isRefetching || previsions.isRefetching}
+        enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
         onRafraichir={() => void rafraichir()}
       >
         <EtatVide message="Vous n'avez aucun produit. Ajoutez-en dans Mes produits." />
@@ -140,6 +144,24 @@ export default function EcranPlanning() {
       </Ecran>
     );
   }
+
+  const stockParProduit = new Map(
+    (stock.data ?? [])
+      .filter((ligne) => ligne.produit_id)
+      .map((ligne) => [
+        ligne.produit_id as string,
+        { stock: ligne.stock ?? 0, seuil: ligne.seuil_min ?? 0 },
+      ]),
+  );
+  const sousSeuil = produits
+    .map((produit) => {
+      const info = stockParProduit.get(produit.id);
+      const valeur = info?.stock ?? 0;
+      const seuil = info?.seuil ?? produit.seuil_min;
+      return { produit, stock: valeur, seuil, ecart: seuil - valeur };
+    })
+    .filter((ligne) => ligne.stock < ligne.seuil)
+    .sort((a, b) => b.ecart - a.ecart || a.produit.nom.localeCompare(b.produit.nom, 'fr'));
 
   const lignes = previsions.data ?? [];
   const calculees = lignes.filter((ligne) => ligne.calculeLe);
@@ -158,9 +180,24 @@ export default function EcranPlanning() {
     <Ecran
       titre="Planning"
       defilement
-      enRafraichissement={mes.isRefetching || previsions.isRefetching}
+      enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
       onRafraichir={() => void rafraichir()}
     >
+      {sousSeuil.length > 0 ? (
+        <>
+          <Text style={styles.section}>Sous le seuil maintenant</Text>
+          {sousSeuil.map((ligne) => (
+            <CarteProduit
+              key={ligne.produit.id}
+              nom={ligne.produit.nom}
+              photoUrl={ligne.produit.photo_url ? photos.data?.[ligne.produit.photo_url] : null}
+              alerte
+              sousTitre={`Stock ${ligne.stock} · seuil ${ligne.seuil} — à fabriquer dès que possible`}
+            />
+          ))}
+        </>
+      ) : null}
+
       {calculees.length === 0 ? (
         <Text style={styles.texte}>Les prévisions sont calculées chaque nuit. Revenez demain.</Text>
       ) : (
