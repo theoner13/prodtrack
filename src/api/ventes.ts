@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { lireToutesLesLignes, paquetsDe } from '@/api/pagination';
 import { aujourdhuiParis, jourPrecedent } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import type { TablesInsert } from '@/types/database';
@@ -100,17 +101,33 @@ export function useHistoriqueVentes(boutiqueId: string | null) {
         }));
       }
 
-      const { data, error } = await db()
-        .from('saisies_vente')
-        .select('produit_id, jour, vendu, jete, reste, produits(nom)')
-        .in('produit_id', ids)
-        .gte('jour', debut)
-        .lte('jour', aujourdhui);
-      if (error) throw error;
+      type LigneHistorique = {
+        produit_id: string;
+        jour: string;
+        vendu: number;
+        jete: number;
+        reste: number;
+        produits: { nom: string } | null;
+      };
+
+      const data: LigneHistorique[] = [];
+      for (const paquet of paquetsDe(ids)) {
+        const page = await lireToutesLesLignes<LigneHistorique>(() =>
+          db()
+            .from('saisies_vente')
+            .select('produit_id, jour, vendu, jete, reste, produits(nom)')
+            .in('produit_id', paquet)
+            .gte('jour', debut)
+            .lte('jour', aujourdhui)
+            .order('jour')
+            .order('produit_id'),
+        );
+        data.push(...page);
+      }
 
       const parJour = new Map<string, DetailHistorique[]>();
       for (const ligne of data) {
-        const produit = ligne.produits as { nom: string } | null;
+        const produit = ligne.produits;
         const detail: DetailHistorique = {
           produitId: ligne.produit_id,
           nom: produit?.nom ?? 'Produit',
