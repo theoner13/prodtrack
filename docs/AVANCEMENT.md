@@ -26,8 +26,11 @@
 - Prochaine étape : phase 9 (prévision, planning et notifications). Comptes de test : mot de passe `Test1234!`.
 - Web en mode « single » (app.json) : le mode « server » restait bloqué sur le chargement sous Windows. Après un changement de app.json, relancer le serveur avec `npx expo start --web --clear`.
 - Tests des calculs : `npm test`
+- En ligne sur Vercel (avancé avant la phase 12, à la demande du propriétaire) : https://prodtrack-zeta.vercel.app. Chaque push sur `main` redéploie (voir AGENTS.md section 6). La phase 12 garde le manifeste PWA, les icônes et la liste de contrôle avant production.
 
 ## Journal (le plus récent en haut, une ligne par session)
+
+- 2026-10-28 : mise en ligne sur Vercel — CLI installé, projet `prodtrack` relié, variables Supabase ajoutées, vercel.json, déploiement automatique à chaque push (Claude Code).
 
 - 2026-10-28 : phase 8 — chiffre d'affaires du patron (tableau de bord, filtres, classement) et export CSV (ventes, mouvements, CA par employé) (Cursor ; vérifiée par Claude Code : exemple 4.2 A = 15 €, B = 0 €, 1200 lignes sans perte grâce à la lecture par pages, 3 exports CSV relus, écrans ordinateur et téléphone).
 - 2026-10-28 : phase 7 — saisie de fin de journée de la vendeuse (vendu / jeté / reste, aujourd’hui / hier, historique 14 jours, Compteur compact, pied fixe) (Cursor ; vérifiée par Claude Code : exemple 4.2 prix et fabricant copiés, droits, écrans ordinateur, téléphone et tablette).

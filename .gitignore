@@ -38,3 +38,6 @@ supabase/.branches/
 
 # Réglages locaux de Claude Code (propres à cet ordinateur)
 .claude/settings.local.json
+
+# Vercel (lien local du projet)
+.vercel

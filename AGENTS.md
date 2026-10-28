@@ -65,7 +65,7 @@ Règles :
 
 ## 5. Voir l'appli en local (obligatoire après chaque changement)
 
-Pour l'instant, on développe et on teste **uniquement en local**. La mise en ligne (par exemple Vercel) viendra plus tard, à la phase 12. Ne rien déployer avant.
+On développe et on teste d'abord **en local** (ci-dessous). La version en ligne se met à jour toute seule (section 6).
 
 Après chaque changement qui touche l'appli :
 1. Vérifier que le serveur Expo tourne. Sinon, le lancer dans un terminal en arrière-plan, sans bloquer la conversation :
@@ -79,9 +79,19 @@ Après chaque changement qui touche l'appli :
    - le lien direct vers l'écran modifié (ex. http://localhost:8081/demo) ;
    - pour le téléphone : scanner le QR code affiché dans le terminal avec l'appli **Expo Go**, le téléphone étant sur le même Wi-Fi que l'ordinateur.
 
-## 6. Fin de tâche : ce que l'IA doit dire au propriétaire
+## 6. Version en ligne (Vercel)
+
+- Adresse publique : **https://prodtrack-zeta.vercel.app**. Projet Vercel `prodtrack`, équipe `track-app2`, compte `theoner13`.
+- **Déploiement automatique** : chaque `git push` sur `main` reconstruit et met en ligne le site (1 à 2 min). Rien d'autre à faire. Donc : ne jamais pousser du code cassé (section 2), il serait en ligne aussitôt.
+- Config dans [vercel.json](vercel.json) : `npx expo export --platform web` → dossier `dist`, toutes les adresses renvoient vers `index.html` (web en mode « single »). Ne pas la changer sans raison.
+- Variables `EXPO_PUBLIC_SUPABASE_URL` et `EXPO_PUBLIC_SUPABASE_ANON_KEY` : enregistrées dans Vercel (Production et Preview), pas dans le dépôt. Si on en ajoute une dans `.env`, l'ajouter aussi à Vercel : `vercel env add NOM --environment production` (et `preview`), puis redéployer. Jamais de clé `secret` / `service_role`.
+- Vérifier un déploiement : `vercel ls` (liste, statut « Ready » ou « Error ») et `vercel inspect <url> --logs` en cas d'erreur. Forcer un déploiement à la main : `vercel deploy --prod`.
+- CLI : `vercel` installé globalement (`npm i -g vercel`). Sur un autre ordinateur : l'installer, puis `vercel login` et `vercel link --yes --project prodtrack`. Le dossier `.vercel/` et `.env.local` sont locaux, jamais commités.
+- Le site est public alors que l'appli est encore en développement : n'y mettre que des données de test.
+
+## 7. Fin de tâche : ce que l'IA doit dire au propriétaire
 
 1. Ce qui a été fait, en 3 à 5 phrases simples.
-2. Les liens pour voir le résultat en local (section 5).
+2. Les liens pour voir le résultat en local (section 5), et en ligne après le push (section 6).
 3. Comment le tester, étape par étape.
 4. Confirmation que le commit est fait et poussé sur GitHub (ou pourquoi il ne l'est pas). Le push est obligatoire à chaque tâche qui fonctionne (section 2).
