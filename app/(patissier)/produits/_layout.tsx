@@ -1,13 +1,17 @@
 import { Link, Stack } from 'expo-router';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 
+import { ClocheNotifications } from '@/components/cloche-notifications';
 import { couleurs, tailles } from '@/theme';
 
-function LienProfil() {
+function ActionsEntete() {
   return (
-    <Link href="/profil" style={{ marginRight: 16 }}>
-      <Text style={{ color: couleurs.principal, fontSize: tailles.petit, fontWeight: '700' }}>Profil</Text>
-    </Link>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 16 }}>
+      <ClocheNotifications />
+      <Link href="/profil">
+        <Text style={{ color: couleurs.principal, fontSize: tailles.petit, fontWeight: '700' }}>Profil</Text>
+      </Link>
+    </View>
   );
 }
 
@@ -23,7 +27,7 @@ export default function LayoutMesProduits() {
     >
       <Stack.Screen
         name="index"
-        options={{ title: 'Mes produits', headerRight: () => <LienProfil /> }}
+        options={{ title: 'Mes produits', headerRight: () => <ActionsEntete /> }}
       />
       <Stack.Screen name="[id]" options={{ title: 'Produit' }} />
     </Stack>

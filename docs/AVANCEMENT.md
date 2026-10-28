@@ -14,7 +14,7 @@
 - [x] Phase 6 : pâtissier (production, sorties, stock)
 - [x] Phase 7 : vendeuse (saisie de fin de journée)
 - [x] Phase 8 : patron (chiffre d'affaires et export CSV)
-- [ ] Phase 9 : prévision, planning et notifications
+- [x] Phase 9 : prévision, planning et notifications
 - [ ] Phase 10 : tablette partagée
 - [ ] Phase 11 : notifications push et version installable
 - [ ] Phase 12 : vérification finale et mise en ligne
@@ -23,7 +23,7 @@
 
 - Base Supabase vide et prête. Confirmation par email désactivée (dev) : à réactiver avant la production.
 - ⏰ 03/11/2026 : renouveler le jeton Supabase « claude-code-prodtrack » (supabase.com/dashboard/account/tokens), puis `npx supabase login --token ...`.
-- Prochaine étape : phase 9 (prévision, planning et notifications). Comptes de test : mot de passe `Test1234!`.
+- Prochaine étape : phase 10 (tablette partagée). Comptes de test : mot de passe `Test1234!`.
 - Web en mode « single » (app.json) : le mode « server » restait bloqué sur le chargement sous Windows. Après un changement de app.json, relancer le serveur avec `npx expo start --web --clear`.
 - Tests des calculs : `npm test`
 - En ligne sur Vercel (avancé avant la phase 12, à la demande du propriétaire) : https://prodtrack-zeta.vercel.app. Chaque push sur `main` redéploie (voir AGENTS.md section 6). La phase 12 garde le manifeste PWA, les icônes et la liste de contrôle avant production.
@@ -31,6 +31,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-28 : phase 9 — planning de fabrication du pâtissier (semaine, détail 14 jours) et notifications (cloche, écran, marquer comme lu). (Cursor ; vérifiée par Claude Code : script de test lancé, fabrication au plus tard le 30/10 pour environ 41 unités comme calculé à la main, script relançable sans doublon, cloche et notifications, écrans ordinateur, téléphone et tablette).
 - 2026-10-28 : site en ligne réparé — l’URL et la clé Supabase enregistrées sur Vercel commençaient par un caractère invisible (BOM), d’où « Pas de connexion internet » ; valeurs réenregistrées proprement et règle ajoutée dans AGENTS.md (Claude Code).
 - 2026-10-28 : connexion rapide aux comptes de test, en local uniquement (Cursor)
 - 2026-10-28 : mise en ligne sur Vercel — CLI installé, projet `prodtrack` relié, variables Supabase ajoutées, vercel.json, déploiement automatique à chaque push (Claude Code).

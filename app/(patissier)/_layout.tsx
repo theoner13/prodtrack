@@ -1,14 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 
+import { ClocheNotifications } from '@/components/cloche-notifications';
 import { couleurs, tailles } from '@/theme';
 
-function LienProfil() {
+function ActionsEntete() {
   return (
-    <Link href="/profil" style={{ marginRight: 16 }}>
-      <Text style={{ color: couleurs.principal, fontSize: tailles.petit, fontWeight: '700' }}>Profil</Text>
-    </Link>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 16 }}>
+      <ClocheNotifications />
+      <Link href="/profil">
+        <Text style={{ color: couleurs.principal, fontSize: tailles.petit, fontWeight: '700' }}>Profil</Text>
+      </Link>
+    </View>
   );
 }
 
@@ -19,7 +23,7 @@ export default function LayoutPatissier() {
         headerStyle: { backgroundColor: couleurs.fond },
         headerTintColor: couleurs.texte,
         headerTitleStyle: { fontSize: tailles.normal },
-        headerRight: () => <LienProfil />,
+        headerRight: () => <ActionsEntete />,
         tabBarActiveTintColor: couleurs.principal,
         tabBarInactiveTintColor: couleurs.texteSecondaire,
         tabBarStyle: { backgroundColor: couleurs.surface },

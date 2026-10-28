@@ -1,5 +1,350 @@
-import { EcranVide } from '@/components/ecran-vide';
+import { router, type Href } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+
+import { useUrlsSignees } from '@/api/photos';
+import { useMesPrevisions, type PrevisionProduit } from '@/api/previsions';
+import { useMesProduits } from '@/api/produits';
+import { useAuth } from '@/auth/AuthProvider';
+import { messageErreur } from '@/auth/erreurs';
+import { Bouton } from '@/components/bouton';
+import { CarteProduit } from '@/components/carte-produit';
+import { Ecran } from '@/components/ecran';
+import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
+import { aujourdhuiParis } from '@/lib/format';
+import { couleurs, espacements, rayon, tailles } from '@/theme';
+
+const LARGEUR_TABLETTE = 700;
+
+function ajouterJours(jour: string, nombre: number): string {
+  const date = new Date(`${jour}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + nombre);
+  return date.toISOString().slice(0, 10);
+}
+
+function nomJour(jour: string, capitale: boolean): string {
+  const date = new Date(`${jour}T12:00:00Z`);
+  const nom = date.toLocaleDateString('fr-FR', { weekday: 'long', timeZone: 'UTC' });
+  const jj = String(date.getUTCDate()).padStart(2, '0');
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const libelle = `${nom} ${jj}/${mm}`;
+  return capitale ? libelle.charAt(0).toUpperCase() + libelle.slice(1) : libelle;
+}
+
+function formatMoment(iso: string): string {
+  const date = new Date(iso);
+  const jour = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris',
+    weekday: 'long',
+    day: '2-digit',
+    month: '2-digit',
+  }).format(date);
+  const parts = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  const hh = (parts.find((part) => part.type === 'hour')?.value ?? '00').padStart(2, '0');
+  const mm = (parts.find((part) => part.type === 'minute')?.value ?? '00').padStart(2, '0');
+  return `${jour} à ${hh}:${mm}`;
+}
+
+function phraseFabrication(jour: string, quantite: number | null, aujourdhui: string): string {
+  const quand = jour === aujourdhui ? "Aujourd'hui" : `Au plus tard ${nomJour(jour, false)}`;
+  if (quantite === null) return quand;
+  return `${quand} — environ ${quantite} unités`;
+}
+
+function DetailPrevision({ ligne }: { ligne: PrevisionProduit }) {
+  return (
+    <View style={styles.detail}>
+      <Text style={styles.texte}>Stock actuel : {ligne.stockActuel ?? 0}</Text>
+      <Text style={styles.repere}>Seuil : {ligne.seuilMin}</Text>
+      <View style={styles.ligneTableau}>
+        <Text style={[styles.entete, styles.colJour]}>Jour</Text>
+        <Text style={[styles.entete, styles.colNombre]}>Sorties prévues</Text>
+        <Text style={[styles.entete, styles.colNombre]}>Stock prévu en fin de journée</Text>
+      </View>
+      {ligne.detail.map((jour) => {
+        const sousSeuil = jour.stockFin < ligne.seuilMin;
+        return (
+          <View key={jour.jour} style={styles.ligneTableau}>
+            <Text style={[styles.cellule, styles.colJour, sousSeuil && styles.orange]}>
+              {nomJour(jour.jour, true)}
+            </Text>
+            <Text style={[styles.cellule, styles.colNombre, sousSeuil && styles.orange]}>
+              {Math.round(jour.prevu)}
+            </Text>
+            <Text style={[styles.cellule, styles.colNombre, sousSeuil && styles.orange]}>
+              {Math.round(jour.stockFin)}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
 
 export default function EcranPlanning() {
-  return <EcranVide />;
+  const { profil } = useAuth();
+  const { width } = useWindowDimensions();
+  const tablette = width >= LARGEUR_TABLETTE;
+  const mes = useMesProduits(profil?.id ?? null);
+  const previsions = useMesPrevisions(profil?.id ?? null);
+  const [ouvert, setOuvert] = useState<string | null>(null);
+
+  const chemins = (previsions.data ?? [])
+    .map((ligne) => ligne.photoUrl)
+    .filter((chemin): chemin is string => Boolean(chemin));
+  const photos = useUrlsSignees(chemins);
+
+  async function rafraichir() {
+    await Promise.all([mes.refetch(), previsions.refetch()]);
+  }
+
+  function basculer(id: string) {
+    setOuvert((actuel) => (actuel === id ? null : id));
+  }
+
+  if (mes.isLoading || previsions.isLoading) {
+    return (
+      <Ecran>
+        <EtatChargement />
+      </Ecran>
+    );
+  }
+
+  if (mes.isError || previsions.isError) {
+    return (
+      <Ecran>
+        <EtatErreur
+          message={messageErreur(mes.error ?? previsions.error)}
+          onReessayer={() => void rafraichir()}
+        />
+      </Ecran>
+    );
+  }
+
+  const produits = mes.data?.produits ?? [];
+  if (produits.length === 0) {
+      return (
+      <Ecran
+        titre="Planning"
+        defilement
+        enRafraichissement={mes.isRefetching || previsions.isRefetching}
+        onRafraichir={() => void rafraichir()}
+      >
+        <EtatVide message="Vous n'avez aucun produit. Ajoutez-en dans Mes produits." />
+        <Bouton titre="Mes produits" onPress={() => router.push('/(patissier)/produits' as Href)} />
+      </Ecran>
+    );
+  }
+
+  const lignes = previsions.data ?? [];
+  const calculees = lignes.filter((ligne) => ligne.calculeLe);
+  const aujourdhui = aujourdhuiParis();
+  const fin = ajouterJours(aujourdhui, 6);
+  const jours = Array.from({ length: 7 }, (_, index) => ajouterJours(aujourdhui, index));
+  const semaine = calculees
+    .filter((ligne) => ligne.jourFabrication !== null && ligne.jourFabrication >= aujourdhui && ligne.jourFabrication <= fin)
+    .sort((a, b) => a.jourFabrication!.localeCompare(b.jourFabrication!) || a.nom.localeCompare(b.nom, 'fr'));
+  const dernier = calculees.reduce(
+    (max, ligne) => (ligne.calculeLe && ligne.calculeLe > max ? ligne.calculeLe : max),
+    '',
+  );
+
+  return (
+    <Ecran
+      titre="Planning"
+      defilement
+      enRafraichissement={mes.isRefetching || previsions.isRefetching}
+      onRafraichir={() => void rafraichir()}
+    >
+      {calculees.length === 0 ? (
+        <Text style={styles.texte}>Les prévisions sont calculées chaque nuit. Revenez demain.</Text>
+      ) : (
+        <>
+          <Text style={styles.section}>À fabriquer cette semaine</Text>
+          {semaine.length === 0 ? (
+            <Text style={styles.texte}>Rien à fabriquer dans les 7 prochains jours.</Text>
+          ) : (
+            semaine.map((ligne) => {
+              const estAujourdhui = ligne.jourFabrication === aujourdhui;
+              const deplie = ouvert === ligne.produitId;
+              return (
+                <Pressable
+                  key={ligne.produitId}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: deplie }}
+                  onPress={() => basculer(ligne.produitId)}
+                >
+                  <CarteProduit
+                    nom={ligne.nom}
+                    photoUrl={ligne.photoUrl ? photos.data?.[ligne.photoUrl] : null}
+                    alerte={estAujourdhui}
+                    sousLigne={
+                      <View style={styles.sous}>
+                        <Text style={[styles.phrase, estAujourdhui && styles.rouge]}>
+                          {phraseFabrication(ligne.jourFabrication ?? aujourdhui, ligne.quantiteSuggeree, aujourdhui)}
+                        </Text>
+                        {ligne.fiable === false ? (
+                          <Text style={styles.bandeau}>
+                            Prévision indicative : moins de 8 semaines de données.
+                          </Text>
+                        ) : null}
+                        {deplie ? <DetailPrevision ligne={ligne} /> : null}
+                      </View>
+                    }
+                  />
+                </Pressable>
+              );
+            })
+          )}
+
+          <Text style={styles.section}>Vue de la semaine</Text>
+          <View style={tablette ? styles.colonnes : styles.jours}>
+            {jours.map((jour) => {
+              const duJour = semaine.filter((ligne) => ligne.jourFabrication === jour);
+              return (
+                <View key={jour} style={[styles.jour, tablette && styles.jourColonne]}>
+                  <Text style={styles.titreJour}>{nomJour(jour, true)}</Text>
+                  {duJour.length === 0 ? (
+                    <Text style={styles.vide}>—</Text>
+                  ) : (
+                    duJour.map((ligne) => (
+                      <Pressable
+                        key={ligne.produitId}
+                        accessibilityRole="button"
+                        onPress={() => basculer(ligne.produitId)}
+                      >
+                        <Text style={[styles.produitJour, ouvert === ligne.produitId && styles.produitOuvert]}>
+                          {ligne.nom}
+                        </Text>
+                      </Pressable>
+                    ))
+                  )}
+                </View>
+              );
+            })}
+          </View>
+
+          {dernier ? <Text style={styles.calcul}>Dernier calcul : {formatMoment(dernier)}</Text> : null}
+        </>
+      )}
+    </Ecran>
+  );
 }
+
+const styles = StyleSheet.create({
+  section: {
+    fontSize: tailles.grand,
+    fontWeight: '700',
+    color: couleurs.texte,
+    marginTop: espacements.s,
+  },
+  texte: {
+    fontSize: tailles.normal,
+    color: couleurs.texte,
+  },
+  phrase: {
+    fontSize: tailles.normal,
+    fontWeight: '700',
+    color: couleurs.texte,
+  },
+  rouge: {
+    color: couleurs.erreur,
+  },
+  sous: {
+    alignSelf: 'stretch',
+    gap: espacements.s,
+  },
+  bandeau: {
+    fontSize: tailles.petit,
+    fontWeight: '600',
+    color: couleurs.alerte,
+    backgroundColor: couleurs.principalClair,
+    borderColor: couleurs.alerte,
+    borderWidth: 1,
+    borderRadius: rayon,
+    padding: espacements.s,
+  },
+  detail: {
+    gap: espacements.xs,
+    alignSelf: 'stretch',
+  },
+  repere: {
+    fontSize: tailles.normal,
+    fontWeight: '700',
+    color: couleurs.texte,
+  },
+  ligneTableau: {
+    flexDirection: 'row',
+    gap: espacements.s,
+    alignSelf: 'stretch',
+  },
+  colJour: {
+    flex: 1.3,
+  },
+  colNombre: {
+    flex: 1,
+    textAlign: 'right',
+  },
+  entete: {
+    fontSize: tailles.petit,
+    fontWeight: '700',
+    color: couleurs.texteSecondaire,
+  },
+  cellule: {
+    fontSize: tailles.petit,
+    color: couleurs.texte,
+  },
+  orange: {
+    color: couleurs.alerte,
+    fontWeight: '700',
+  },
+  colonnes: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: espacements.s,
+  },
+  jours: {
+    gap: espacements.s,
+  },
+  jour: {
+    gap: espacements.xs,
+    padding: espacements.s,
+    borderRadius: rayon,
+    borderWidth: 1,
+    borderColor: couleurs.bordure,
+    backgroundColor: couleurs.surface,
+  },
+  jourColonne: {
+    flex: 1,
+    minWidth: 0,
+  },
+  titreJour: {
+    fontSize: tailles.petit,
+    fontWeight: '700',
+    color: couleurs.texte,
+  },
+  vide: {
+    fontSize: tailles.normal,
+    color: couleurs.texteSecondaire,
+  },
+  produitJour: {
+    fontSize: tailles.petit,
+    color: couleurs.principalFonce,
+    fontWeight: '600',
+  },
+  produitOuvert: {
+    backgroundColor: couleurs.principalClair,
+    borderRadius: rayon,
+    overflow: 'hidden',
+  },
+  calcul: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    marginTop: espacements.s,
+  },
+});
