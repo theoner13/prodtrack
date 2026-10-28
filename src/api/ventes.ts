@@ -44,14 +44,17 @@ export type JourHistorique = {
 
 async function idsProduitsBoutique(
   boutiqueId: string,
-  avecArchives = false,
+  options: { avecArchives?: boolean; exclusIntermediaires?: boolean } = {},
 ): Promise<string[]> {
   let requete = db()
     .from('produits')
     .select('id')
     .eq('boutique_id', boutiqueId);
-  if (!avecArchives) {
+  if (!options.avecArchives) {
     requete = requete.is('archive_le', null);
+  }
+  if (options.exclusIntermediaires) {
+    requete = requete.eq('intermediaire', false);
   }
   const { data, error } = await requete;
   if (error) throw error;
@@ -63,7 +66,9 @@ export function useSaisiesDuJour(boutiqueId: string | null, jour: string) {
     queryKey: ['ventes', 'jour', boutiqueId, jour],
     enabled: Boolean(boutiqueId),
     queryFn: async (): Promise<SaisieDuJour[]> => {
-      const ids = await idsProduitsBoutique(boutiqueId ?? '');
+      const ids = await idsProduitsBoutique(boutiqueId ?? '', {
+        exclusIntermediaires: true,
+      });
       if (ids.length === 0) return [];
 
       const { data, error } = await db()
@@ -91,7 +96,7 @@ export function useHistoriqueVentes(boutiqueId: string | null) {
       }
       const debut = jours[jours.length - 1]!;
 
-      const ids = await idsProduitsBoutique(boutiqueId ?? '', true);
+      const ids = await idsProduitsBoutique(boutiqueId ?? '', { avecArchives: true });
       if (ids.length === 0) {
         return jours.map((jour) => ({
           jour,

@@ -21,6 +21,7 @@ export type PrevisionProduit = {
   photoUrl: string | null;
   seuilMin: number;
   dureeConservationJours: number | null;
+  intermediaire: boolean;
   stockActuel: number | null;
   jourFabrication: string | null;
   quantiteSuggeree: number | null;
@@ -54,7 +55,7 @@ export function useMesPrevisions(userId: string | null) {
     queryFn: async (): Promise<PrevisionProduit[]> => {
       const { data: produits, error } = await db()
         .from('produits')
-        .select('id, nom, photo_url, seuil_min, duree_conservation_jours')
+        .select('id, nom, photo_url, seuil_min, duree_conservation_jours, intermediaire')
         .eq('fabricant_id', userId ?? '')
         .is('archive_le', null)
         .order('nom');
@@ -78,6 +79,7 @@ export function useMesPrevisions(userId: string | null) {
           produitId: produit.id,
           nom: produit.nom,
           photoUrl: produit.photo_url,
+          intermediaire: produit.intermediaire,
           seuilMin: produit.seuil_min,
           dureeConservationJours: produit.duree_conservation_jours,
           stockActuel: prevision?.stock_actuel ?? null,

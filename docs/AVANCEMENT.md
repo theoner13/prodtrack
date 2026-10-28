@@ -21,6 +21,7 @@
 
 ## En cours / à savoir
 
+- Évolution (hors cahier des charges, validée par le propriétaire) : produits intermédiaires (ex. biscuit cuillère), non vendus, accessibles à tous les pâtissiers de la boutique
 - Évolution (hors cahier des charges, validée par le propriétaire) : pertes en production déclarées par les pâtissiers
 - Évolution (hors cahier des charges, validée par le propriétaire) : catalogue des autres boutiques pour les pâtissiers
 - Base Supabase vide et prête. Confirmation par email désactivée (dev) : à réactiver avant la production.
@@ -33,6 +34,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-28 : produits intermédiaires — non vendus, stock suivi, partagés entre pâtissiers de la boutique (Cursor ; vérifiée par Claude Code : production partagée mais pas sur les produits finis, ventes et prix refusés par la base, invisibles pour la vendeuse, badges, catalogue ; anciens tests base et écrans repassés sans régression).
 - 2026-10-28 : pertes en production — déclaration par les pâtissiers (motif, case stock), suivi et export patron (Cursor ; vérifiée par Claude Code : exemple des 8 cookies brûlés sans changer le stock, perte retirée du stock, droits, stock de tous les produits recalculé à l’identique, écrans ordinateur et téléphone, tableau de bord et export).
 - 2026-10-28 : catalogue des autres boutiques pour les pâtissiers — voir produits/recettes et fabriquer aussi chez soi (Cursor ; vérifiée par Claude Code : 27 contrôles de sécurité — même entreprise seulement, jamais le fabricant ni le code d’invitation, photos en lecture seule — et écrans ordinateur et téléphone).
 - 2026-10-28 : planning : alerte immédiate des produits sous le seuil, le prévisionnel de nuit reste affiché dessous (Cursor ; vérifiée par Claude Code : Cookies nutella stock 8 / seuil 12 signalé, disparaît après une production).

@@ -125,8 +125,11 @@ export default function EcranCatalogueProduit() {
       )}
 
       <Text style={styles.nom}>{produit.nom}</Text>
+      {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
       <Text style={styles.detail}>Boutique : {boutique ?? '—'}</Text>
-      <Text style={styles.prixDiscret}>Prix pratiqué : {formatEuros(produit.prix_centimes)}</Text>
+      {!produit.intermediaire ? (
+        <Text style={styles.prixDiscret}>Prix pratiqué : {formatEuros(produit.prix_centimes)}</Text>
+      ) : null}
       <Text style={styles.detail}>
         Conservation : {conservationLibelle}
         {produit.duree_conservation_jours != null
@@ -191,6 +194,17 @@ const styles = StyleSheet.create({
   prixDiscret: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    overflow: 'hidden',
+    backgroundColor: couleurs.principalClair,
+    color: couleurs.principalFonce,
+    fontSize: tailles.petit,
+    fontWeight: '700',
+    paddingHorizontal: espacements.s,
+    paddingVertical: espacements.xs,
+    borderRadius: rayon,
   },
   titre: {
     fontSize: tailles.grand,

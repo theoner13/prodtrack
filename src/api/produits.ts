@@ -165,6 +165,7 @@ export type FicheSaisie = {
   conservation: 'frais' | 'surgele';
   dureeJours: number;
   seuilMin: number;
+  intermediaire: boolean;
   impose: boolean;
   lignes: LigneRecette[];
 };
@@ -200,8 +201,9 @@ export function useEnregistrerMonProduit() {
           seuil_min: number;
           nom?: string;
           conservation?: 'frais' | 'surgele';
+          intermediaire?: boolean;
         } = {
-          prix_centimes: saisie.prixCentimes,
+          prix_centimes: saisie.intermediaire ? 0 : saisie.prixCentimes,
           photo_url: saisie.photoUrl,
           duree_conservation_jours: saisie.dureeJours,
           seuil_min: saisie.seuilMin,
@@ -209,6 +211,7 @@ export function useEnregistrerMonProduit() {
         if (!saisie.impose) {
           patch.nom = saisie.nom.trim();
           patch.conservation = saisie.conservation;
+          patch.intermediaire = saisie.intermediaire;
         }
         const { error } = await base.from('produits').update(patch).eq('id', saisie.id);
         if (error) throw error;
@@ -222,12 +225,13 @@ export function useEnregistrerMonProduit() {
           boutique_id: saisie.boutiqueId,
           fabricant_id: saisie.fabricantId,
           nom: saisie.nom.trim(),
-          prix_centimes: saisie.prixCentimes,
+          prix_centimes: saisie.intermediaire ? 0 : saisie.prixCentimes,
           photo_url: saisie.photoUrl,
           conservation: saisie.conservation,
           duree_conservation_jours: saisie.dureeJours,
           seuil_min: saisie.seuilMin,
           impose_par_admin: false,
+          intermediaire: saisie.intermediaire,
         })
         .select('id')
         .single();

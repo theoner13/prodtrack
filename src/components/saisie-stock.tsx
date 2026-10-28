@@ -83,7 +83,9 @@ export function SaisieStock({ type }: Props) {
   const listeBase = useMemo(() => {
     const tous = produits.data ?? [];
     if (type === 'production') {
-      return tous.filter((produit) => produit.fabricant_id === userId);
+      return tous.filter(
+        (produit) => produit.fabricant_id === userId || produit.intermediaire,
+      );
     }
     return tous;
   }, [produits.data, type, userId]);
@@ -534,13 +536,20 @@ function LigneSaisie({
 }) {
   const sousTitre =
     type === 'production'
-      ? `Stock : ${stock}`
+      ? produit.intermediaire
+        ? `${produit.fabricantNom} · Stock : ${stock}`
+        : `Stock : ${stock}`
       : `${produit.fabricantNom} · Stock : ${stock}`;
 
   return (
-    <CarteProduit nom={produit.nom} photoUrl={photoUrl} sousTitre={sousTitre} sousLigne={
-      <Compteur valeur={quantite} onChange={onChange} libelle={produit.nom} />
-    } />
+    <CarteProduit
+      nom={produit.nom}
+      photoUrl={photoUrl}
+      sousTitre={sousTitre}
+      sousLigne={<Compteur valeur={quantite} onChange={onChange} libelle={produit.nom} />}
+    >
+      {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
+    </CarteProduit>
   );
 }
 
@@ -649,5 +658,15 @@ const styles = StyleSheet.create({
   aideCase: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+  },
+  badge: {
+    overflow: 'hidden',
+    backgroundColor: couleurs.principalClair,
+    color: couleurs.principalFonce,
+    fontSize: tailles.petit,
+    fontWeight: '700',
+    paddingHorizontal: espacements.s,
+    paddingVertical: espacements.xs,
+    borderRadius: rayon,
   },
 });

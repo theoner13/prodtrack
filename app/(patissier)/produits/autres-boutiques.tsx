@@ -131,8 +131,13 @@ export default function EcranAutresBoutiques() {
           <CarteProduit
             nom={produit.nom}
             photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
-            sousTitre={`Prix pratiqué : ${formatEuros(produit.prix_centimes)}`}
+            sousTitre={
+              produit.intermediaire
+                ? undefined
+                : `Prix pratiqué : ${formatEuros(produit.prix_centimes)}`
+            }
           >
+            {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
             {nomsChezMoi.has(nomNormalise(produit.nom)) ? (
               <Text style={styles.badge}>Déjà dans ma boutique</Text>
             ) : null}

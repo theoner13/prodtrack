@@ -80,10 +80,15 @@ export default function EcranFinDeJournee() {
     return map;
   }, [saisies.data]);
 
+  const listeVendables = useMemo(
+    () => (produits.data ?? []).filter((produit) => !produit.intermediaire),
+    [produits.data],
+  );
+
   useEffect(() => {
     if (!produits.data || !saisies.data) return;
     const prochaines: Record<string, ValeursProduit> = {};
-    for (const produit of produits.data) {
+    for (const produit of listeVendables) {
       const existante = saisiesParProduit.get(produit.id);
       prochaines[produit.id] = {
         vendu: existante?.vendu ?? 0,
@@ -92,9 +97,9 @@ export default function EcranFinDeJournee() {
       };
     }
     setValeurs(prochaines);
-  }, [jour, produits.data, saisies.data, saisiesParProduit]);
+  }, [jour, produits.data, saisies.data, saisiesParProduit, listeVendables]);
 
-  const chemins = (produits.data ?? [])
+  const chemins = listeVendables
     .map((produit) => produit.photo_url)
     .filter((chemin): chemin is string => Boolean(chemin));
   const photos = useUrlsSignees(chemins);
@@ -102,8 +107,7 @@ export default function EcranFinDeJournee() {
   const fermerMessage = useCallback(() => setMessage(null), []);
 
   const lignesAEnvoyer = useMemo((): LigneSaisie[] => {
-    const liste = produits.data ?? [];
-    return liste
+    return listeVendables
       .map((produit) => {
         const v = valeurs[produit.id] ?? { vendu: 0, jete: 0, reste: 0 };
         return {
@@ -118,12 +122,11 @@ export default function EcranFinDeJournee() {
         const deja = saisiesParProduit.has(ligne.produit_id);
         return deja || ligne.vendu > 0 || ligne.jete > 0 || ligne.reste > 0;
       });
-  }, [produits.data, valeurs, jour, saisiesParProduit]);
+  }, [listeVendables, valeurs, jour, saisiesParProduit]);
 
   const nombreModifications = useMemo(() => {
-    const liste = produits.data ?? [];
     let count = 0;
-    for (const produit of liste) {
+    for (const produit of listeVendables) {
       const v = valeurs[produit.id] ?? { vendu: 0, jete: 0, reste: 0 };
       const existante = saisiesParProduit.get(produit.id);
       if (existante) {
@@ -139,7 +142,7 @@ export default function EcranFinDeJournee() {
       }
     }
     return count;
-  }, [produits.data, valeurs, saisiesParProduit]);
+  }, [listeVendables, valeurs, saisiesParProduit]);
 
   const texteModifications =
     nombreModifications === 0
@@ -208,7 +211,7 @@ export default function EcranFinDeJournee() {
     );
   }
 
-  const liste = produits.data ?? [];
+  const liste = listeVendables;
 
   return (
     <Ecran

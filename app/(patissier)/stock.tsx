@@ -10,7 +10,7 @@ import { CarteProduit } from '@/components/carte-produit';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, tailles } from '@/theme';
+import { couleurs, espacements, rayon, tailles } from '@/theme';
 
 function sansAccents(texte: string): string {
   return texte.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -111,6 +111,7 @@ export default function EcranStock() {
             sousTitre={sousTitre}
             alerte={sousSeuil}
           >
+            {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
             <Text
               accessibilityLabel={`Stock ${produit.nom} : ${valeur}`}
               style={styles.chiffre}
@@ -131,5 +132,15 @@ const styles = StyleSheet.create({
     color: couleurs.texte,
     minWidth: 48,
     textAlign: 'right',
+  },
+  badge: {
+    overflow: 'hidden',
+    backgroundColor: couleurs.principalClair,
+    color: couleurs.principalFonce,
+    fontSize: tailles.petit,
+    fontWeight: '700',
+    paddingHorizontal: espacements.s,
+    paddingVertical: espacements.xs,
+    borderRadius: rayon,
   },
 });

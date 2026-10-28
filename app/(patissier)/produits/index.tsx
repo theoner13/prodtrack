@@ -61,9 +61,10 @@ export default function EcranMesProduits() {
         <Pressable key={produit.id} accessibilityRole="button" onPress={() => ouvrir(produit.id)}>
           <CarteProduit
             nom={produit.nom}
-            prixCentimes={produit.prix_centimes}
+            prixCentimes={produit.intermediaire ? undefined : produit.prix_centimes}
             photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
           >
+            {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
             {produit.impose_par_admin ? <Text style={styles.badge}>Imposé par le patron</Text> : null}
           </CarteProduit>
         </Pressable>

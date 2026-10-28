@@ -20,6 +20,7 @@ export type CatalogueProduit = {
   prix_centimes: number;
   conservation: Enums<'type_conservation'>;
   duree_conservation_jours: number | null;
+  intermediaire: boolean;
 };
 
 export type CatalogueLigneRecette = {
@@ -81,18 +82,20 @@ export function useFabriquerAussi() {
       lignes: CatalogueLigneRecette[];
     }): Promise<string> => {
       const base = db();
+      const intermediaire = saisie.produit.intermediaire;
       const { data: cree, error } = await base
         .from('produits')
         .insert({
           boutique_id: saisie.boutiqueId,
           fabricant_id: saisie.fabricantId,
           nom: saisie.produit.nom.trim(),
-          prix_centimes: saisie.produit.prix_centimes,
+          prix_centimes: intermediaire ? 0 : saisie.produit.prix_centimes,
           photo_url: null,
           conservation: saisie.produit.conservation,
           duree_conservation_jours: saisie.produit.duree_conservation_jours,
           seuil_min: 0,
           impose_par_admin: false,
+          intermediaire,
         })
         .select('id')
         .single();

@@ -193,7 +193,11 @@ export default function EcranPlanning() {
               photoUrl={ligne.produit.photo_url ? photos.data?.[ligne.produit.photo_url] : null}
               alerte
               sousTitre={`Stock ${ligne.stock} · seuil ${ligne.seuil} — à fabriquer dès que possible`}
-            />
+            >
+              {ligne.produit.intermediaire ? (
+                <Text style={styles.badge}>Intermédiaire</Text>
+              ) : null}
+            </CarteProduit>
           ))}
         </>
       ) : null}
@@ -233,7 +237,9 @@ export default function EcranPlanning() {
                         {deplie ? <DetailPrevision ligne={ligne} /> : null}
                       </View>
                     }
-                  />
+                  >
+                    {ligne.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
+                  </CarteProduit>
                 </Pressable>
               );
             })
@@ -383,5 +389,15 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     marginTop: espacements.s,
+  },
+  badge: {
+    overflow: 'hidden',
+    backgroundColor: couleurs.principalClair,
+    color: couleurs.principalFonce,
+    fontSize: tailles.petit,
+    fontWeight: '700',
+    paddingHorizontal: espacements.s,
+    paddingVertical: espacements.xs,
+    borderRadius: rayon,
   },
 });

@@ -105,10 +105,15 @@ export default function EcranProduits() {
       ) : null}
       {produits.data?.map((produit) => (
         <View key={produit.id} style={styles.bloc}>
-          <CarteProduit nom={produit.nom} prixCentimes={produit.prix_centimes} sousTitre={produit.fabricantNom}>
+          <CarteProduit
+            nom={produit.nom}
+            prixCentimes={produit.intermediaire ? undefined : produit.prix_centimes}
+            sousTitre={produit.fabricantNom}
+          >
+            {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
             {produit.impose_par_admin ? <Text style={styles.badge}>Imposé</Text> : null}
           </CarteProduit>
-          {prixOuvert === produit.id ? (
+          {!produit.intermediaire && prixOuvert === produit.id ? (
             <>
               <Champ
                 libelle="Nouveau prix (€)"
@@ -123,7 +128,7 @@ export default function EcranProduits() {
               />
               <Bouton titre="Annuler" variante="secondaire" onPress={() => setPrixOuvert(null)} />
             </>
-          ) : (
+          ) : !produit.intermediaire ? (
             <Bouton
               titre="Modifier le prix"
               variante="secondaire"
@@ -133,7 +138,7 @@ export default function EcranProduits() {
                 setSaisiePrix((produit.prix_centimes / 100).toFixed(2).replace('.', ','));
               }}
             />
-          )}
+          ) : null}
           {fabricantOuvert === produit.id ? (
             <>
               <Text style={styles.libelle}>Nouveau fabricant</Text>

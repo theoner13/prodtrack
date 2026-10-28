@@ -24,30 +24,40 @@ import { Banniere } from '@/components/banniere';
 import { eurosVersCentimes } from '@/lib/format';
 import { couleurs, espacements, rayon, tailles } from '@/theme';
 
-const schema = z.object({
-  nom: z.string().trim().min(1, 'Indiquez le nom du produit.'),
-  prix: z.string().refine((valeur) => eurosVersCentimes(valeur) !== null, {
-    message: 'Indiquez un prix en euros, par exemple 3,50.',
-  }),
-  conservation: z.enum(['frais', 'surgele']),
-  duree: z.string().regex(/^[1-9]\d*$/, 'Indiquez une durée en jours (au moins 1).'),
-  seuil: z.string().regex(/^\d+$/, 'Indiquez un nombre entier (0 ou plus).'),
-  photo: z.string(),
-  lignes: z.array(
-    z
-      .object({ ingredient: z.string(), quantite: z.string(), unite: z.enum(UNITES) })
-      .superRefine((ligne, ctx) => {
-        if (estVide(ligne)) return;
-        if (ligne.ingredient.trim() === '') {
-          ctx.addIssue({ code: 'custom', path: ['ingredient'], message: 'Indiquez l’ingrédient.' });
-        }
-        const nombre = Number(ligne.quantite.trim().replace(',', '.'));
-        if (!Number.isFinite(nombre) || nombre <= 0) {
-          ctx.addIssue({ code: 'custom', path: ['quantite'], message: 'Indiquez une quantité supérieure à 0.' });
-        }
-      }),
-  ),
-});
+const schema = z
+  .object({
+    nom: z.string().trim().min(1, 'Indiquez le nom du produit.'),
+    prix: z.string(),
+    conservation: z.enum(['frais', 'surgele']),
+    intermediaire: z.boolean(),
+    duree: z.string().regex(/^[1-9]\d*$/, 'Indiquez une durée en jours (au moins 1).'),
+    seuil: z.string().regex(/^\d+$/, 'Indiquez un nombre entier (0 ou plus).'),
+    photo: z.string(),
+    lignes: z.array(
+      z
+        .object({ ingredient: z.string(), quantite: z.string(), unite: z.enum(UNITES) })
+        .superRefine((ligne, ctx) => {
+          if (estVide(ligne)) return;
+          if (ligne.ingredient.trim() === '') {
+            ctx.addIssue({ code: 'custom', path: ['ingredient'], message: 'Indiquez l’ingrédient.' });
+          }
+          const nombre = Number(ligne.quantite.trim().replace(',', '.'));
+          if (!Number.isFinite(nombre) || nombre <= 0) {
+            ctx.addIssue({ code: 'custom', path: ['quantite'], message: 'Indiquez une quantité supérieure à 0.' });
+          }
+        }),
+    ),
+  })
+  .superRefine((valeurs, ctx) => {
+    if (valeurs.intermediaire) return;
+    if (eurosVersCentimes(valeurs.prix) === null) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['prix'],
+        message: 'Indiquez un prix en euros, par exemple 3,50.',
+      });
+    }
+  });
 
 type Formulaire = z.infer<typeof schema>;
 
@@ -84,6 +94,7 @@ export default function EcranFicheProduit() {
       nom: '',
       prix: '',
       conservation: 'frais',
+      intermediaire: false,
       duree: '2',
       seuil: '0',
       photo: '',
@@ -91,6 +102,7 @@ export default function EcranFicheProduit() {
     },
   });
   const conservation = watch('conservation');
+  const intermediaire = watch('intermediaire');
   const photo = watch('photo');
   const lignes = watch('lignes');
 
@@ -102,6 +114,7 @@ export default function EcranFicheProduit() {
       nom: produit.nom,
       prix: (produit.prix_centimes / 100).toFixed(2).replace('.', ','),
       conservation: produit.conservation,
+      intermediaire: produit.intermediaire,
       duree: String(produit.duree_conservation_jours ?? 2),
       seuil: String(produit.seuil_min),
       photo: produit.photo_url ?? '',
@@ -113,7 +126,12 @@ export default function EcranFicheProduit() {
         }),
       ),
     });
-  }, [fiche.data, reset]);
+    if (ajoute === '1' && produit.intermediaire) {
+      setConfirmation(
+        'Produit ajouté à votre boutique : vérifiez le seuil et ajoutez une photo.',
+      );
+    }
+  }, [fiche.data, reset, ajoute]);
 
   async function photoChange(chemin: string | null) {
     setValue('photo', chemin ?? '');
@@ -129,9 +147,10 @@ export default function EcranFicheProduit() {
       return;
     }
     setErreur(null);
-    const prixCentimes = eurosVersCentimes(valeurs.prix);
-    if (prixCentimes === null) return;
     const impose = fiche.data?.produit.impose_par_admin ?? false;
+    const estIntermediaire = impose ? false : valeurs.intermediaire;
+    const prixCentimes = estIntermediaire ? 0 : eurosVersCentimes(valeurs.prix);
+    if (prixCentimes === null) return;
     let photoUrl = creation ? null : valeurs.photo || null;
     let cheminEnvoye: string | null = null;
     try {
@@ -149,6 +168,7 @@ export default function EcranFicheProduit() {
         conservation: valeurs.conservation,
         dureeJours: Number(valeurs.duree),
         seuilMin: Number(valeurs.seuil),
+        intermediaire: estIntermediaire,
         impose,
         lignes: valeurs.lignes
           .filter((ligne) => !estVide(ligne))
@@ -228,6 +248,25 @@ export default function EcranFicheProduit() {
         <Text style={styles.erreur}>Aucune boutique n’est associée à votre compte.</Text>
       )}
 
+      {!impose ? (
+        <>
+          <Text style={styles.libelle}>Type de produit</Text>
+          <Bouton
+            titre="Produit fini"
+            variante={!intermediaire ? 'principal' : 'secondaire'}
+            onPress={() => setValue('intermediaire', false)}
+          />
+          <Bouton
+            titre="Produit intermédiaire"
+            variante={intermediaire ? 'principal' : 'secondaire'}
+            onPress={() => setValue('intermediaire', true)}
+          />
+          <Text style={styles.aide}>
+            Intermédiaire : sert à fabriquer d’autres produits, n’est pas vendu en boutique.
+          </Text>
+        </>
+      ) : null}
+
       <Controller
         control={control}
         name="nom"
@@ -245,21 +284,23 @@ export default function EcranFicheProduit() {
       {impose ? (
         <Text style={styles.aide}>Imposé par le patron : le nom ne peut pas être modifié.</Text>
       ) : null}
-      <Controller
-        control={control}
-        name="prix"
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Prix (€)"
-            keyboardType="decimal-pad"
-            placeholder="3,50"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            erreur={fieldState.error?.message}
-          />
-        )}
-      />
+      {!intermediaire || impose ? (
+        <Controller
+          control={control}
+          name="prix"
+          render={({ field, fieldState }) => (
+            <Champ
+              libelle="Prix (€)"
+              keyboardType="decimal-pad"
+              placeholder="3,50"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              erreur={fieldState.error?.message}
+            />
+          )}
+        />
+      ) : null}
 
       <Text style={styles.libelle}>Conservation</Text>
       <Bouton

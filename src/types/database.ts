@@ -313,6 +313,7 @@ export type Database = {
           fabricant_id: string
           id: string
           impose_par_admin: boolean
+          intermediaire: boolean
           nom: string
           photo_url: string | null
           prix_centimes: number
@@ -327,6 +328,7 @@ export type Database = {
           fabricant_id: string
           id?: string
           impose_par_admin?: boolean
+          intermediaire?: boolean
           nom: string
           photo_url?: string | null
           prix_centimes: number
@@ -341,6 +343,7 @@ export type Database = {
           fabricant_id?: string
           id?: string
           impose_par_admin?: boolean
+          intermediaire?: boolean
           nom?: string
           photo_url?: string | null
           prix_centimes?: number
@@ -581,6 +584,7 @@ export type Database = {
           conservation: Database["public"]["Enums"]["type_conservation"]
           duree_conservation_jours: number
           id: string
+          intermediaire: boolean
           nom: string
           photo_url: string
           prix_centimes: number
