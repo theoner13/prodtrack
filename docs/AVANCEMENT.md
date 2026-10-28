@@ -31,6 +31,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-28 : site en ligne réparé — l’URL et la clé Supabase enregistrées sur Vercel commençaient par un caractère invisible (BOM), d’où « Pas de connexion internet » ; valeurs réenregistrées proprement et règle ajoutée dans AGENTS.md (Claude Code).
 - 2026-10-28 : connexion rapide aux comptes de test, en local uniquement (Cursor)
 - 2026-10-28 : mise en ligne sur Vercel — CLI installé, projet `prodtrack` relié, variables Supabase ajoutées, vercel.json, déploiement automatique à chaque push (Claude Code).
 
