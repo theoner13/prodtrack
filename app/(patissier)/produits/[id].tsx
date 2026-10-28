@@ -5,6 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet, Text, View } from 'react-native';
 import { z } from 'zod';
 
+import { envoyerPhoto, supprimerPhoto } from '@/api/photos';
 import {
   useArchiverMonProduit,
   useDefinirPhotoProduit,
@@ -68,6 +69,7 @@ export default function EcranFicheProduit() {
   const archiver = useArchiverMonProduit();
   const [erreur, setErreur] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const [uriLocale, setUriLocale] = useState<string | null>(null);
   const [demandeRetrait, setDemandeRetrait] = useState(false);
   const fermerConfirmation = useCallback(() => setConfirmation(null), []);
   const dejaCharge = useRef(false);
@@ -126,14 +128,20 @@ export default function EcranFicheProduit() {
     const prixCentimes = eurosVersCentimes(valeurs.prix);
     if (prixCentimes === null) return;
     const impose = fiche.data?.produit.impose_par_admin ?? false;
+    let photoUrl = creation ? null : valeurs.photo || null;
+    let cheminEnvoye: string | null = null;
     try {
+      if (creation && uriLocale) {
+        cheminEnvoye = await envoyerPhoto(uriLocale, 'produits', profil.boutique_id);
+        photoUrl = cheminEnvoye;
+      }
       const produitId = await enregistrer.mutateAsync({
         id: creation ? undefined : id,
         boutiqueId: profil.boutique_id,
         fabricantId: profil.id,
         nom: valeurs.nom,
         prixCentimes,
-        photoUrl: valeurs.photo || null,
+        photoUrl,
         conservation: valeurs.conservation,
         dureeJours: Number(valeurs.duree),
         seuilMin: Number(valeurs.seuil),
@@ -149,6 +157,13 @@ export default function EcranFicheProduit() {
       if (creation) router.replace(`/produits/${produitId}` as Href);
       else setConfirmation('Produit enregistré.');
     } catch (probleme: unknown) {
+      if (cheminEnvoye) {
+        try {
+          await supprimerPhoto(cheminEnvoye);
+        } catch {
+          // Le fichier envoyé reste orphelin si la suppression échoue aussi.
+        }
+      }
       setErreur(messageErreur(probleme));
     }
   }
@@ -198,9 +213,11 @@ export default function EcranFicheProduit() {
       <Banniere message={confirmation} onFermer={fermerConfirmation} />
       {boutiqueId ? (
         <ChoixPhoto
-          chemin={photo || null}
+          chemin={creation ? uriLocale : photo || null}
           dossier="produits"
           proprietaireId={boutiqueId}
+          envoiDiffere={creation}
+          onPhotoLocale={setUriLocale}
           onChange={photoChange}
         />
       ) : (

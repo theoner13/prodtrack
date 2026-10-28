@@ -1,6 +1,14 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { router, Stack, useGlobalSearchParams, useRootNavigationState, useSegments, type Href } from 'expo-router';
-import { useEffect, useState } from 'react';
+import {
+  router,
+  Stack,
+  useGlobalSearchParams,
+  usePathname,
+  useRootNavigationState,
+  useSegments,
+  type Href,
+} from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import type { Profil } from '@/types/database';
@@ -25,15 +33,17 @@ export default function LayoutRacine() {
 function Gardien() {
   const { session, profil, chargement, verrouille, pinPresent } = useAuth();
   const segments = useSegments();
+  const pathname = usePathname();
   const params = useGlobalSearchParams<{ changer?: string }>();
   const navigation = useRootNavigationState();
+  const retourApresPin = useRef<Href | null>(null);
 
   useEffect(() => {
     if (!navigation?.key || chargement) return;
 
     const racine = segments[0] ? String(segments[0]) : '';
     const suite = segments[1] ? String(segments[1]) : '';
-    const cible = destination({
+    const etat = {
       connecte: session !== null,
       profil,
       pinPresent,
@@ -41,7 +51,24 @@ function Gardien() {
       racine,
       suite,
       changer: params.changer === '1',
-    });
+    };
+
+    if (profil && verrouille && pinPresent && racine !== 'deverrouiller' && racine !== '(auth)') {
+      const memorise = adresseApresPin(pathname, racine, profil);
+      if (memorise) retourApresPin.current = memorise;
+    }
+
+    if (!verrouille && retourApresPin.current) {
+      const retour = retourApresPin.current;
+      if (cheminAtteint(pathname, retour)) {
+        retourApresPin.current = null;
+      } else {
+        router.replace(retour);
+        return;
+      }
+    }
+
+    const cible = destination(etat);
     if (cible) router.replace(cible);
   }, [
     navigation?.key,
@@ -51,10 +78,29 @@ function Gardien() {
     pinPresent,
     verrouille,
     segments,
+    pathname,
     params.changer,
   ]);
 
   return null;
+}
+
+// Adresse à rouvrir après le code PIN. Jamais un écran de connexion ou de PIN.
+function adresseApresPin(pathname: string, racine: string, profil: Profil): Href | null {
+  if (racine === 'demo' || racine === '(auth)' || racine === 'deverrouiller') return null;
+  if (pathname === '/profil' || pathname === '/notifications') return pathname;
+  const groupe =
+    profil.role === 'admin' ? '(admin)' : profil.role === 'patissier' ? '(patissier)' : '(vendeuse)';
+  if (racine !== groupe) return null;
+  if (!pathname || pathname === '/') return `/${groupe}` as Href;
+  return `/${groupe}${pathname}` as Href;
+}
+
+function cheminAtteint(pathname: string, href: Href): boolean {
+  const cible = String(href);
+  if (cible === '/profil' || cible === '/notifications') return pathname === cible;
+  const sansGroupe = cible.replace(/^\/\((admin|patissier|vendeuse)\)/, '') || '/';
+  return pathname === sansGroupe || (sansGroupe === '/' && pathname === '/');
 }
 
 function destination(etat: {

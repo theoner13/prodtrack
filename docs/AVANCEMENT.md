@@ -28,6 +28,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-28 : corrections après vérification de la phase 5 — bouton Retour sur le Profil, photo d’un nouveau produit envoyée seulement à l’enregistrement, retour à l’écran d’origine après le code PIN (Cursor + vérification Claude Code).
 - 2026-10-27 : phase 5 — le pâtissier gère ses produits, leurs photos (appareil photo ou galerie) et leurs recettes. Accès au bucket privé « photos ».
 - 2026-10-27 : saisie de recette compacte (une ligne par ingrédient, nouvelle ligne automatique), utilisée pour « Imposer un produit » (Claude Code).
 - 2026-10-27 : phase 4 — écrans patron (boutiques, employés, produits, gamme imposée). Le partage du code sur le web affiche une bannière à copier.

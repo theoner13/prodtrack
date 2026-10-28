@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 
@@ -32,8 +32,19 @@ export default function EcranProfil() {
     if (chemin) setConfirmation('Photo enregistrée.');
   }
 
+  function retour() {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    const accueil: Href =
+      moi.role === 'admin' ? '/(admin)' : moi.role === 'patissier' ? '/(patissier)' : '/(vendeuse)';
+    router.replace(accueil);
+  }
+
   return (
     <Ecran titre="Profil" defilement>
+      <Bouton titre="Retour" variante="secondaire" onPress={retour} />
       <Banniere message={confirmation} onFermer={fermer} />
       <ChoixPhoto
         chemin={moi.photo_url}

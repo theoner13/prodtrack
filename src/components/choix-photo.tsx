@@ -12,6 +12,9 @@ type Props = {
   proprietaireId: string;
   camera?: 'avant' | 'arriere';
   onChange: (chemin: string | null) => void | Promise<void>;
+  // Création d'un produit : on garde l'aperçu local et on n'envoie qu'à l'enregistrement.
+  envoiDiffere?: boolean;
+  onPhotoLocale?: (uri: string | null) => void;
 };
 
 // Prise de photo, envoi, puis affichage. La bannière de succès est gérée par l'écran.
@@ -21,11 +24,14 @@ export function ChoixPhoto({
   proprietaireId,
   camera = 'arriere',
   onChange,
+  envoiDiffere = false,
+  onPhotoLocale,
 }: Props) {
   const [cameraOk, setCameraOk] = useState(true);
   const [action, setAction] = useState<'camera' | 'galerie' | 'retirer' | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
-  const url = useUrlSignee(chemin);
+  const url = useUrlSignee(envoiDiffere ? null : chemin);
+  const apercu = envoiDiffere ? chemin : url.data;
 
   useEffect(() => {
     void cameraDisponible().then(setCameraOk);
@@ -37,6 +43,10 @@ export function ChoixPhoto({
     try {
       const uri = await choisirPhoto(source, camera);
       if (!uri) return;
+      if (envoiDiffere) {
+        onPhotoLocale?.(uri);
+        return;
+      }
       const nouveau = await envoyerPhoto(uri, dossier, proprietaireId);
       const ancien = chemin;
       await onChange(nouveau);
@@ -59,6 +69,10 @@ export function ChoixPhoto({
     setErreur(null);
     setAction('retirer');
     try {
+      if (envoiDiffere) {
+        onPhotoLocale?.(null);
+        return;
+      }
       await supprimerPhoto(chemin);
       await onChange(null);
     } catch (probleme: unknown) {
@@ -72,8 +86,8 @@ export function ChoixPhoto({
 
   return (
     <View style={styles.bloc}>
-      {chemin && url.data ? (
-        <Image source={{ uri: url.data }} style={styles.photo} accessibilityIgnoresInvertColors />
+      {apercu ? (
+        <Image source={{ uri: apercu }} style={styles.photo} accessibilityIgnoresInvertColors />
       ) : (
         <View style={[styles.photo, styles.vide]}>
           <Text style={styles.videTexte}>Pas de photo</Text>
@@ -83,7 +97,11 @@ export function ChoixPhoto({
         <View style={styles.envoi}>
           <ActivityIndicator color={couleurs.principal} />
           <Text style={styles.envoiTexte}>
-            {action === 'retirer' ? 'Retrait de la photo…' : 'Envoi de la photo…'}
+            {action === 'retirer'
+              ? 'Retrait de la photo…'
+              : envoiDiffere
+                ? 'Préparation de la photo…'
+                : 'Envoi de la photo…'}
           </Text>
         </View>
       ) : null}
