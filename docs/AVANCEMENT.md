@@ -11,7 +11,7 @@
 - [x] Phase 3 : inscription, connexion, rôles, PIN et Face ID
 - [x] Phase 4 : patron (boutiques, employés, produits et prix)
 - [x] Phase 5 : pâtissier (mes produits et recettes)
-- [ ] Phase 6 : pâtissier (production, sorties, stock)
+- [x] Phase 6 : pâtissier (production, sorties, stock)
 - [ ] Phase 7 : vendeuse (saisie de fin de journée)
 - [ ] Phase 8 : patron (chiffre d'affaires et export CSV)
 - [ ] Phase 9 : prévision, planning et notifications
@@ -23,11 +23,12 @@
 
 - Base Supabase vide et prête. Confirmation par email désactivée (dev) : à réactiver avant la production.
 - ⏰ 03/11/2026 : renouveler le jeton Supabase « claude-code-prodtrack » (supabase.com/dashboard/account/tokens), puis `npx supabase login --token ...`.
-- Prochaine étape : phase 6 (pâtissier : production, sorties, stock). Comptes de test : mot de passe `Test1234!`.
+- Prochaine étape : phase 7 (vendeuse : saisie de fin de journée). Comptes de test : mot de passe `Test1234!`.
 - Web en mode « single » (app.json) : le mode « server » restait bloqué sur le chargement sous Windows. Après un changement de app.json, relancer le serveur avec `npx expo start --web --clear`.
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-28 : phase 6 — production, sorties et stock du pâtissier (saisie en moins d’une minute, annulation du jour, RefreshControl) (Cursor ; vérifiée par Claude Code : exemple 7 → 57 → 49, droits, écrans ordinateur et téléphone).
 - 2026-10-28 : corrections après vérification de la phase 5 — bouton Retour sur le Profil, photo d’un nouveau produit envoyée seulement à l’enregistrement, retour à l’écran d’origine après le code PIN (Cursor + vérification Claude Code).
 - 2026-10-27 : phase 5 — le pâtissier gère ses produits, leurs photos (appareil photo ou galerie) et leurs recettes. Accès au bucket privé « photos ».
 - 2026-10-27 : saisie de recette compacte (une ligne par ingrédient, nouvelle ligne automatique), utilisée pour « Imposer un produit » (Claude Code).

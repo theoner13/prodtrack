@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { couleurs, espacements, tailles } from '@/theme';
@@ -8,10 +8,18 @@ type Props = {
   titre?: string;
   defilement?: boolean;
   children: ReactNode;
+  enRafraichissement?: boolean;
+  onRafraichir?: () => void;
 };
 
 // Cadre commun à tous les écrans : marges, fond crème, titre et défilement.
-export function Ecran({ titre, defilement = false, children }: Props) {
+export function Ecran({
+  titre,
+  defilement = false,
+  children,
+  enRafraichissement = false,
+  onRafraichir,
+}: Props) {
   const contenu = (
     <>
       {titre ? <Text style={styles.titre}>{titre}</Text> : null}
@@ -22,7 +30,20 @@ export function Ecran({ titre, defilement = false, children }: Props) {
   return (
     <SafeAreaView style={styles.fond} edges={['top', 'left', 'right']}>
       {defilement ? (
-        <ScrollView contentContainerStyle={styles.contenu} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.contenu}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            onRafraichir ? (
+              <RefreshControl
+                refreshing={enRafraichissement}
+                onRefresh={onRafraichir}
+                colors={[couleurs.principal]}
+                tintColor={couleurs.principal}
+              />
+            ) : undefined
+          }
+        >
           {contenu}
         </ScrollView>
       ) : (

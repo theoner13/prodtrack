@@ -1,5 +1,5 @@
-import { EcranVide } from '@/components/ecran-vide';
+import { SaisieStock } from '@/components/saisie-stock';
 
 export default function EcranProduction() {
-  return <EcranVide />;
+  return <SaisieStock type="production" />;
 }

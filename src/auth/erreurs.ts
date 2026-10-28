@@ -56,6 +56,9 @@ export function messageErreur(erreur: unknown): string {
   if (texte.includes('pâtissier actif') || texte.includes('patissier actif')) {
     return 'Le fabricant doit être un pâtissier actif de cette boutique.';
   }
+  if (texte.includes('row-level security')) {
+    return "Vous n'avez pas le droit de faire cette action.";
+  }
   if (texte.includes('network') || texte.includes('failed to fetch') || texte.includes('fetch')) {
     return 'Pas de connexion internet. Réessayez.';
   }
