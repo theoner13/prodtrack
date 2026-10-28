@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { z } from 'zod';
 
 import { useAuth } from '@/auth/AuthProvider';
@@ -11,7 +11,7 @@ import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { supabase } from '@/lib/supabase';
-import { couleurs, tailles } from '@/theme';
+import { couleurs, espacements, tailles } from '@/theme';
 
 const schema = z.object({
   email: z.email('Adresse email invalide.'),
@@ -20,9 +20,34 @@ const schema = z.object({
 
 type Formulaire = z.infer<typeof schema>;
 
+type CompteTest = { libelle: string; email: string };
+
+const comptesTestBruts = process.env.EXPO_PUBLIC_COMPTES_TEST;
+const mdpTest = process.env.EXPO_PUBLIC_MDP_TEST;
+
+function parserComptesTest(valeur: string | undefined): CompteTest[] {
+  if (!valeur) return [];
+  return valeur
+    .split(';')
+    .map((entree) => {
+      const parties = entree.split('|');
+      if (parties.length !== 2) return null;
+      const libelle = parties[0]?.trim();
+      const email = parties[1]?.trim();
+      if (!libelle || !email) return null;
+      return { libelle, email };
+    })
+    .filter((compte): compte is CompteTest => compte !== null);
+}
+
+const comptesTest = parserComptesTest(comptesTestBruts);
+const afficherConnexionRapide =
+  __DEV__ && Boolean(comptesTestBruts?.trim()) && Boolean(mdpTest?.trim());
+
 export default function EcranConnexion() {
   const { annonce, definirAnnonce } = useAuth();
   const [erreur, setErreur] = useState<string | null>(null);
+  const [emailRapide, setEmailRapide] = useState<string | null>(null);
   const { control, handleSubmit, formState } = useForm<Formulaire>({
     resolver: zodResolver(schema),
     defaultValues: { email: '', motDePasse: '' },
@@ -37,6 +62,22 @@ export default function EcranConnexion() {
       password: valeurs.motDePasse,
     });
     if (error) setErreur(messageErreur(error));
+  }
+
+  async function connecterRapide(email: string) {
+    if (!supabase || !mdpTest) return;
+    setErreur(null);
+    definirAnnonce(null);
+    setEmailRapide(email);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: mdpTest,
+      });
+      if (error) setErreur(messageErreur(error));
+    } finally {
+      setEmailRapide(null);
+    }
   }
 
   return (
@@ -84,6 +125,21 @@ export default function EcranConnexion() {
       <Link href="/inscription" style={styles.lien}>
         Créer un compte
       </Link>
+      {afficherConnexionRapide ? (
+        <View style={styles.rapide}>
+          <Text style={styles.rapideTitre}>Connexion rapide (test)</Text>
+          {comptesTest.map((compte) => (
+            <Bouton
+              key={compte.email}
+              titre={compte.libelle}
+              variante="secondaire"
+              chargement={emailRapide === compte.email}
+              desactive={emailRapide !== null && emailRapide !== compte.email}
+              onPress={() => connecterRapide(compte.email)}
+            />
+          ))}
+        </View>
+      ) : null}
     </Ecran>
   );
 }
@@ -98,5 +154,15 @@ const styles = StyleSheet.create({
     color: couleurs.principal,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  rapide: {
+    marginTop: espacements.l,
+    gap: espacements.s,
+  },
+  rapideTitre: {
+    fontSize: tailles.normal,
+    fontWeight: '700',
+    color: couleurs.texteSecondaire,
+    marginBottom: espacements.xs,
   },
 });
