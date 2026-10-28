@@ -63,6 +63,13 @@ export function aujourdhuiParis(): string {
   return new Date().toLocaleDateString('sv-SE', { timeZone: FUSEAU });
 }
 
+// '2026-10-28' → '2026-10-27' (chaîne AAAA-MM-JJ, sans décalage de fuseau)
+export function jourPrecedent(jour: string): string {
+  const d = versDate(jour);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return versJour(d);
+}
+
 // Lundi de la semaine → 'YYYY-MM-DD'
 export function debutSemaine(date: string | Date): string {
   const d = normaliser(date);

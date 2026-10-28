@@ -10,6 +10,8 @@ type Props = {
   children: ReactNode;
   enRafraichissement?: boolean;
   onRafraichir?: () => void;
+  /** Zone fixe sous la liste (hors défilement), ex. bouton d'enregistrement. */
+  pied?: ReactNode;
 };
 
 // Cadre commun à tous les écrans : marges, fond crème, titre et défilement.
@@ -19,6 +21,7 @@ export function Ecran({
   children,
   enRafraichissement = false,
   onRafraichir,
+  pied,
 }: Props) {
   const contenu = (
     <>
@@ -27,27 +30,37 @@ export function Ecran({
     </>
   );
 
+  const refreshControl = onRafraichir ? (
+    <RefreshControl
+      refreshing={enRafraichissement}
+      onRefresh={onRafraichir}
+      colors={[couleurs.principal]}
+      tintColor={couleurs.principal}
+    />
+  ) : undefined;
+
   return (
-    <SafeAreaView style={styles.fond} edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      style={styles.fond}
+      edges={pied ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}
+    >
       {defilement ? (
-        <ScrollView
-          contentContainerStyle={styles.contenu}
-          keyboardShouldPersistTaps="handled"
-          refreshControl={
-            onRafraichir ? (
-              <RefreshControl
-                refreshing={enRafraichissement}
-                onRefresh={onRafraichir}
-                colors={[couleurs.principal]}
-                tintColor={couleurs.principal}
-              />
-            ) : undefined
-          }
-        >
-          {contenu}
-        </ScrollView>
+        <View style={styles.colonne}>
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={styles.contenu}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={refreshControl}
+          >
+            {contenu}
+          </ScrollView>
+          {pied ? <View style={styles.pied}>{pied}</View> : null}
+        </View>
       ) : (
-        <View style={[styles.contenu, styles.plein]}>{contenu}</View>
+        <View style={[styles.contenu, styles.plein]}>
+          {contenu}
+          {pied ? <View style={styles.pied}>{pied}</View> : null}
+        </View>
       )}
     </SafeAreaView>
   );
@@ -57,6 +70,12 @@ const styles = StyleSheet.create({
   fond: {
     flex: 1,
     backgroundColor: couleurs.fond,
+  },
+  colonne: {
+    flex: 1,
+  },
+  flex: {
+    flex: 1,
   },
   contenu: {
     padding: espacements.m,
@@ -69,5 +88,14 @@ const styles = StyleSheet.create({
     fontSize: tailles.titre,
     fontWeight: '700',
     color: couleurs.texte,
+  },
+  pied: {
+    paddingHorizontal: espacements.m,
+    paddingTop: espacements.s,
+    paddingBottom: espacements.s,
+    gap: espacements.s,
+    borderTopWidth: 1,
+    borderTopColor: couleurs.bordure,
+    backgroundColor: couleurs.fond,
   },
 });
