@@ -9,8 +9,10 @@ import {
   type Href,
 } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
+import { View } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
+import { AnimationAccueil } from '@/components/animation-accueil';
 import type { Profil } from '@/types/database';
 
 export const unstable_settings = {
@@ -22,10 +24,13 @@ export default function LayoutRacine() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-        <Gardien />
-      </AuthProvider>
+      <View style={{ flex: 1 }}>
+        <AuthProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+          <Gardien />
+        </AuthProvider>
+        <AnimationAccueil />
+      </View>
     </QueryClientProvider>
   );
 }
