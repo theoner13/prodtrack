@@ -207,9 +207,11 @@ const styles = StyleSheet.create({
     borderRadius: rayon,
   },
   titre: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
-    color: couleurs.texte,
+    fontSize: tailles.section,
+    fontWeight: '600',
+    color: couleurs.texteSecondaire,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
     marginTop: espacements.s,
   },
   aide: {

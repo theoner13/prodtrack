@@ -14,7 +14,7 @@ type Props = {
   pied?: ReactNode;
 };
 
-// Cadre commun à tous les écrans : marges, fond crème, titre et défilement.
+// Cadre commun à tous les écrans : marges 16, fond blanc, titre et défilement.
 export function Ecran({
   titre,
   defilement = false,
@@ -79,22 +79,23 @@ const styles = StyleSheet.create({
   },
   contenu: {
     padding: espacements.m,
-    gap: espacements.m,
+    gap: espacements.s,
   },
   plein: {
     flex: 1,
   },
   titre: {
     fontSize: tailles.titre,
-    fontWeight: '700',
+    fontWeight: '600',
     color: couleurs.texte,
+    marginBottom: espacements.xs,
   },
   pied: {
     paddingHorizontal: espacements.m,
     paddingTop: espacements.s,
     paddingBottom: espacements.s,
     gap: espacements.s,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: couleurs.bordure,
     backgroundColor: couleurs.fond,
   },

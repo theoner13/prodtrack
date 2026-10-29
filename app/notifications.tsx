@@ -8,7 +8,7 @@ import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, tailles } from '@/theme';
 
 function formatMoment(iso: string): string {
   const date = new Date(iso);
@@ -105,21 +105,19 @@ export default function EcranNotifications() {
 const styles = StyleSheet.create({
   carte: {
     gap: espacements.xs,
-    padding: espacements.m,
-    borderRadius: rayon,
-    backgroundColor: couleurs.surface,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: couleurs.bordure,
   },
   titre: {
     fontSize: tailles.normal,
     color: couleurs.texte,
   },
   nonLue: {
-    fontWeight: '700',
+    fontWeight: '600',
   },
   message: {
-    fontSize: tailles.normal,
+    fontSize: tailles.petit,
     color: couleurs.texte,
   },
   date: {

@@ -20,8 +20,9 @@ export default function LayoutMesProduits() {
     <Stack
       screenOptions={{
         headerStyle: { backgroundColor: couleurs.fond },
+        headerShadowVisible: false,
         headerTintColor: couleurs.texte,
-        headerTitleStyle: { fontSize: tailles.normal },
+        headerTitleStyle: { fontSize: 16, fontWeight: '600' },
         contentStyle: { backgroundColor: couleurs.fond },
       }}
     >

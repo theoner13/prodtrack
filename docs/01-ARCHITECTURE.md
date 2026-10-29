@@ -144,7 +144,7 @@ SQL complet : [supabase/migrations/0001_schema_initial.sql](../supabase/migratio
 
 ## 7. Règles d'ergonomie (saisie en moins d'une minute)
 
-- Gros boutons (hauteur ≥ 56 px), texte ≥ 16 px, utilisable avec des gants ou les mains farinées.
+- Style épuré (fond blanc, brun en touche). Boutons de 40 px de haut, zones de toucher ≥ 44 × 44 px, texte ≥ 13 px (choix du propriétaire, 29/10/2026).
 - Saisie de quantité : **compteur − / +** avec champ numérique au centre (clavier numérique).
 - Listes de produits avec photo + nom, triées par ordre alphabétique, recherche si plus de 10 produits.
 - Saisie vendeuse : **une seule page** avec tous les produits et 3 compteurs par ligne, un bouton « Enregistrer tout ».

@@ -8,7 +8,7 @@ import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
 import { ChoixPhoto } from '@/components/choix-photo';
 import { Ecran } from '@/components/ecran';
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 import type { RoleEmploye } from '@/types/database';
 
 const ROLES: Record<RoleEmploye, string> = {
@@ -160,10 +160,8 @@ const styles = StyleSheet.create({
     color: couleurs.texte,
   },
   section: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
-    color: couleurs.texte,
-    marginTop: espacements.s,
+    ...styleTitreSection,
+    marginTop: espacements.m,
   },
   aide: {
     fontSize: tailles.petit,

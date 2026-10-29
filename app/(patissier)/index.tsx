@@ -13,7 +13,7 @@ import { CarteProduit } from '@/components/carte-produit';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { aujourdhuiParis } from '@/lib/format';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 
 const LARGEUR_TABLETTE = 700;
 
@@ -281,10 +281,8 @@ export default function EcranPlanning() {
 
 const styles = StyleSheet.create({
   section: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
-    color: couleurs.texte,
-    marginTop: espacements.s,
+    ...styleTitreSection,
+    marginTop: espacements.m,
   },
   texte: {
     fontSize: tailles.normal,
@@ -292,7 +290,7 @@ const styles = StyleSheet.create({
   },
   phrase: {
     fontSize: tailles.normal,
-    fontWeight: '700',
+    fontWeight: '600',
     color: couleurs.texte,
   },
   rouge: {
@@ -306,10 +304,8 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     fontWeight: '600',
     color: couleurs.alerte,
-    backgroundColor: couleurs.principalClair,
-    borderColor: couleurs.alerte,
-    borderWidth: 1,
-    borderRadius: rayon,
+    backgroundColor: couleurs.alerteClair,
+    borderRadius: 8,
     padding: espacements.s,
   },
   detail: {
@@ -318,7 +314,7 @@ const styles = StyleSheet.create({
   },
   repere: {
     fontSize: tailles.normal,
-    fontWeight: '700',
+    fontWeight: '600',
     color: couleurs.texte,
   },
   ligneTableau: {
@@ -335,7 +331,7 @@ const styles = StyleSheet.create({
   },
   entete: {
     fontSize: tailles.petit,
-    fontWeight: '700',
+    fontWeight: '600',
     color: couleurs.texteSecondaire,
   },
   cellule: {
@@ -344,7 +340,7 @@ const styles = StyleSheet.create({
   },
   orange: {
     color: couleurs.alerte,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   colonnes: {
     flexDirection: 'row',
@@ -352,23 +348,23 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   jours: {
-    gap: espacements.s,
+    gap: 0,
   },
   jour: {
     gap: espacements.xs,
-    padding: espacements.s,
-    borderRadius: rayon,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
-    backgroundColor: couleurs.surface,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: couleurs.bordure,
   },
   jourColonne: {
     flex: 1,
     minWidth: 0,
+    borderBottomWidth: 0,
+    paddingHorizontal: espacements.xs,
   },
   titreJour: {
     fontSize: tailles.petit,
-    fontWeight: '700',
+    fontWeight: '600',
     color: couleurs.texte,
   },
   vide: {
@@ -381,8 +377,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   produitOuvert: {
-    backgroundColor: couleurs.principalClair,
-    borderRadius: rayon,
+    backgroundColor: couleurs.fondPuce,
+    borderRadius: 8,
     overflow: 'hidden',
   },
   calcul: {
@@ -394,10 +390,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: couleurs.principalClair,
     color: couleurs.principalFonce,
-    fontSize: tailles.petit,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     paddingHorizontal: espacements.s,
-    paddingVertical: espacements.xs,
-    borderRadius: rayon,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
 });

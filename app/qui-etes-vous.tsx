@@ -15,7 +15,7 @@ import { Bouton } from '@/components/bouton';
 import { Ecran } from '@/components/ecran';
 import { PaveNumerique } from '@/components/pave-numerique';
 import type { CompteAppareil } from '@/lib/comptes-appareil';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, tailles } from '@/theme';
 import type { RoleEmploye } from '@/types/database';
 
 const ROLES: Record<RoleEmploye, string> = {
@@ -166,10 +166,8 @@ const styles = StyleSheet.create({
     gap: espacements.s,
     paddingVertical: espacements.m,
     paddingHorizontal: espacements.s,
-    borderRadius: rayon,
-    backgroundColor: couleurs.surface,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
+    borderRadius: 10,
+    backgroundColor: couleurs.fondGroupe,
     minHeight: 160,
   },
   tuileAppuyee: {

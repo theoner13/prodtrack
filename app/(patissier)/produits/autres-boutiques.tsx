@@ -11,7 +11,7 @@ import { CarteProduit } from '@/components/carte-produit';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { formatEuros } from '@/lib/format';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, tailles } from '@/theme';
 
 function nomNormalise(nom: string): string {
   return nom.trim().toLowerCase();
@@ -155,18 +155,14 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   puce: {
-    minHeight: 44,
+    height: 32,
     paddingHorizontal: espacements.m,
-    paddingVertical: espacements.s,
-    borderRadius: rayon,
-    borderWidth: 2,
-    borderColor: couleurs.bordure,
-    backgroundColor: couleurs.surface,
+    borderRadius: 16,
+    backgroundColor: couleurs.fondPuce,
     justifyContent: 'center',
   },
   puceActive: {
-    borderColor: couleurs.principal,
-    backgroundColor: couleurs.principalClair,
+    backgroundColor: couleurs.principal,
   },
   puceTexte: {
     fontSize: tailles.petit,
@@ -174,16 +170,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   puceTexteActive: {
-    color: couleurs.principalFonce,
+    color: couleurs.texteSurPrincipal,
   },
   badge: {
     overflow: 'hidden',
     backgroundColor: couleurs.principalClair,
     color: couleurs.principalFonce,
-    fontSize: tailles.petit,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     paddingHorizontal: espacements.s,
-    paddingVertical: espacements.xs,
-    borderRadius: rayon,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
 });

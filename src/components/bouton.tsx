@@ -10,18 +10,14 @@ type Props = {
   variante?: Variante;
   chargement?: boolean;
   desactive?: boolean;
-};
-
-const fonds: Record<Variante, string> = {
-  principal: couleurs.principal,
-  secondaire: couleurs.surface,
-  danger: couleurs.erreur,
+  /** Bouton fixe en pied d'écran : toute la largeur. */
+  pleineLargeur?: boolean;
 };
 
 const textes: Record<Variante, string> = {
   principal: couleurs.texteSurPrincipal,
-  secondaire: couleurs.principalFonce,
-  danger: couleurs.texteSurPrincipal,
+  secondaire: couleurs.principal,
+  danger: couleurs.erreur,
 };
 
 export function Bouton({
@@ -30,8 +26,10 @@ export function Bouton({
   variante = 'principal',
   chargement = false,
   desactive = false,
+  pleineLargeur = false,
 }: Props) {
   const inactif = desactive || chargement;
+  const texteSeul = variante === 'secondaire' || variante === 'danger';
 
   return (
     <Pressable
@@ -39,17 +37,29 @@ export function Bouton({
       accessibilityState={{ disabled: inactif, busy: chargement }}
       disabled={inactif}
       onPress={onPress}
+      hitSlop={{ top: 2, bottom: 2, left: 4, right: 4 }}
       style={({ pressed }) => [
-        styles.bouton,
-        { backgroundColor: inactif ? couleurs.desactive : fonds[variante] },
-        variante === 'secondaire' && !inactif && styles.bordure,
+        texteSeul ? styles.texteSeul : styles.bouton,
+        !texteSeul && {
+          backgroundColor: inactif ? couleurs.desactive : couleurs.principal,
+        },
+        pleineLargeur ? styles.pleineLargeur : !texteSeul && styles.autoLargeur,
         pressed && styles.appuye,
       ]}
     >
       {chargement ? (
-        <ActivityIndicator color={textes[variante]} />
+        <ActivityIndicator color={inactif ? couleurs.texteSecondaire : textes[variante]} />
       ) : (
-        <Text style={[styles.texte, { color: inactif ? couleurs.texteSecondaire : textes[variante] }]}>
+        <Text
+          style={[
+            texteSeul ? styles.texteLien : styles.texte,
+            {
+              color: inactif
+                ? couleurs.texteSecondaire
+                : textes[variante],
+            },
+          ]}
+        >
           {titre}
         </Text>
       )}
@@ -59,21 +69,35 @@ export function Bouton({
 
 const styles = StyleSheet.create({
   bouton: {
-    minHeight: hauteurBouton,
+    height: hauteurBouton,
     borderRadius: rayon,
-    paddingHorizontal: espacements.l,
+    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bordure: {
-    borderWidth: 2,
-    borderColor: couleurs.principal,
+  autoLargeur: {
+    alignSelf: 'center',
+  },
+  pleineLargeur: {
+    alignSelf: 'stretch',
+  },
+  texteSeul: {
+    minHeight: hauteurBouton,
+    paddingHorizontal: espacements.s,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    backgroundColor: 'transparent',
   },
   appuye: {
     opacity: 0.8,
   },
   texte: {
-    fontSize: tailles.normal,
-    fontWeight: '700',
+    fontSize: tailles.bouton,
+    fontWeight: '600',
+  },
+  texteLien: {
+    fontSize: tailles.bouton,
+    fontWeight: '600',
   },
 });

@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
   },
   champErreur: {
     borderColor: couleurs.erreur,
-    borderWidth: 2,
+    borderWidth: 1,
   },
   erreur: {
     fontSize: tailles.petit,

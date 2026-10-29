@@ -23,7 +23,7 @@ import {
 } from '@/lib/ca';
 import { dateCsv, genererCsv, montantEurosCsv } from '@/lib/csv';
 import { aujourdhuiParis } from '@/lib/format';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 
 type PeriodeChoix = TypePeriode | 'perso';
 
@@ -390,10 +390,8 @@ function Puce({
 
 const styles = StyleSheet.create({
   section: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
-    color: couleurs.texte,
-    marginTop: espacements.s,
+    ...styleTitreSection,
+    marginTop: espacements.m,
   },
   puces: {
     flexDirection: 'row',
@@ -401,18 +399,14 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   puce: {
-    minHeight: 44,
+    height: 32,
     paddingHorizontal: espacements.m,
-    paddingVertical: espacements.s,
-    borderRadius: rayon,
-    borderWidth: 2,
-    borderColor: couleurs.bordure,
-    backgroundColor: couleurs.surface,
+    borderRadius: 16,
+    backgroundColor: couleurs.fondPuce,
     justifyContent: 'center',
   },
   puceActive: {
-    borderColor: couleurs.principal,
-    backgroundColor: couleurs.principalClair,
+    backgroundColor: couleurs.principal,
   },
   puceTexte: {
     fontSize: tailles.petit,
@@ -420,7 +414,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   puceTexteActive: {
-    color: couleurs.principalFonce,
+    color: couleurs.texteSurPrincipal,
   },
   datesPerso: {
     gap: espacements.m,

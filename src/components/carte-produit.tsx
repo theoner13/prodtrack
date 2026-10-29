@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { formatEuros } from '@/lib/format';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, tailles } from '@/theme';
 
 type Props = {
   nom: string;
@@ -14,7 +14,7 @@ type Props = {
   alerte?: boolean; // bordure orange (stock sous le seuil)
 };
 
-// Ligne produit : photo (ou initiale), nom, prix, et un contenu libre à droite.
+// Ligne produit : photo (ou initiale), nom, prix — style liste iOS sans carte.
 export function CarteProduit({
   nom,
   prixCentimes,
@@ -25,7 +25,7 @@ export function CarteProduit({
   alerte = false,
 }: Props) {
   return (
-    <View style={[styles.carte, alerte && styles.alerte]}>
+    <View style={[styles.ligneListe, alerte && styles.alerte]}>
       <View style={styles.ligne}>
         {photoUrl ? (
           <Image source={{ uri: photoUrl }} style={styles.photo} accessibilityIgnoresInvertColors />
@@ -48,20 +48,18 @@ export function CarteProduit({
   );
 }
 
-const TAILLE_PHOTO = 56;
+const TAILLE_PHOTO = 36;
 
 const styles = StyleSheet.create({
-  carte: {
+  ligneListe: {
     gap: espacements.s,
-    padding: espacements.m,
-    borderRadius: rayon,
-    backgroundColor: couleurs.surface,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: couleurs.bordure,
+    backgroundColor: couleurs.fond,
   },
   alerte: {
-    borderColor: couleurs.alerte,
-    borderWidth: 2,
+    backgroundColor: couleurs.alerteClair,
   },
   ligne: {
     flexDirection: 'row',
@@ -71,7 +69,7 @@ const styles = StyleSheet.create({
   photo: {
     width: TAILLE_PHOTO,
     height: TAILLE_PHOTO,
-    borderRadius: rayon,
+    borderRadius: 8,
   },
   initiale: {
     backgroundColor: couleurs.principalClair,
@@ -79,8 +77,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   lettre: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
+    fontSize: tailles.normal,
+    fontWeight: '600',
     color: couleurs.principalFonce,
   },
   textes: {

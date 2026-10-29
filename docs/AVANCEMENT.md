@@ -36,6 +36,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-29 : style épuré blanc minimaliste : listes sans cartes, compteurs ronds discrets, titres et espacements réduits, boutons 40 px (Cursor)
 - 2026-10-29 : phase 12 — vérification finale (tableau de conformité, exemples 4.1 à 4.3), nettoyage (demo supprimée, paquets à jour), icônes ProdTrack et site installable (PWA) (Cursor)
 - 2026-10-29 : corrections après revue complète des phases 1 à 11 : correction du stock par le patron (D8), droits d'un employé archivé, photos des employés et de « Qui êtes-vous ? », messages d'erreur en français, CA par semaine et par mois (Cursor ; revue et vérification par Claude Code : relecture complète du code par un agent, tests de la base phases 4 à 11, 29 contrôles d’accès sans connexion, 25 contrôles des corrections, tous les parcours écrans ordinateur, téléphone et tablette repassés, données réelles intactes).
 - 2026-10-29 : phase 11 — code notifications push et configuration EAS (migration 0007, edge function envoyer-push, enregistrement jeton, eas.json) ; builds téléphone et eas init à faire ensuite (Cursor ; vérifiée par Claude Code côté serveur : jetons protégés, fonction d’envoi sans clé mais à usage unique, envoi réel vers Expo testé ; expo-dev-client ajouté pour le build de développement ; test sur iPhone en attente du compte Apple Developer).

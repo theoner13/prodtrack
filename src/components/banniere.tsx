@@ -42,7 +42,7 @@ export function Banniere({ message, type = 'succes', onFermer, duree = 3000 }: P
 
 const styles = StyleSheet.create({
   banniere: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderRadius: rayon,
     padding: espacements.m,
   },

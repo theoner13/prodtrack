@@ -1,30 +1,35 @@
-// Couleurs, tailles et espacements de l'appli (ambiance boulangerie).
+// Couleurs, tailles et espacements de l'appli (style épuré blanc minimaliste iOS).
 // Tous les écrans et composants prennent leurs valeurs ici.
 
 export const couleurs = {
-  fond: '#FBF6EE', // crème
+  fond: '#FFFFFF',
   surface: '#FFFFFF',
-  bordure: '#E8DCC8',
-  principal: '#A86B2D', // brun doré
-  principalFonce: '#7A4A1C',
-  principalClair: '#F3E3CC',
-  texte: '#2B1D12',
-  texteSecondaire: '#6E5A48',
+  fondGroupe: '#F5F5F7', // tuiles chiffres, groupes discrets
+  fondPuce: '#F2F2F7', // puces, compteurs +/−
+  bordure: '#E5E5EA',
+  principal: '#A86B2D', // brun : boutons, onglets actifs, liens, sélection
+  principalFonce: '#8A5622',
+  principalClair: '#F6EEE4',
+  texte: '#1D1D1F',
+  texteSecondaire: '#6E6E73',
   texteSurPrincipal: '#FFFFFF',
+  ongletInactif: '#8E8E93',
   succes: '#2E7D4F',
-  succesClair: '#E3F2E8',
+  succesClair: '#EAF6EF',
   erreur: '#C0392B',
-  erreurClair: '#FBE6E3',
-  alerte: '#D9822B', // orange : stock sous le seuil
-  desactive: '#CFC4B5',
+  erreurClair: '#FBECEC',
+  alerte: '#D9822B',
+  alerteClair: '#FFF6EB',
+  desactive: '#D1D1D6',
 };
 
-// Jamais en dessous de 16 (lisibilité en boutique).
 export const tailles = {
-  petit: 16,
-  normal: 18,
-  grand: 22,
-  titre: 28,
+  section: 13, // titres de section iOS (MAJUSCULES)
+  bouton: 15,
+  petit: 14,
+  normal: 16, // en-têtes de navigation
+  grand: 20,
+  titre: 22, // titres d'écran
 };
 
 export const espacements = {
@@ -35,6 +40,15 @@ export const espacements = {
   xl: 32,
 };
 
-export const rayon = 12;
+export const rayon = 10;
 
-export const hauteurBouton = 56;
+export const hauteurBouton = 40;
+
+/** Style commun des titres de section (Réglages iOS). */
+export const styleTitreSection = {
+  fontSize: tailles.section,
+  fontWeight: '600' as const,
+  color: couleurs.texteSecondaire,
+  letterSpacing: 0.4,
+  textTransform: 'uppercase' as const,
+};

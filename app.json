@@ -31,7 +31,7 @@
       "shortName": "ProdTrack",
       "lang": "fr",
       "themeColor": "#A86B2D",
-      "backgroundColor": "#FBF6EE",
+      "backgroundColor": "#FFFFFF",
       "display": "standalone"
     },
     "plugins": [

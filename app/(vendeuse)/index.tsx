@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -228,6 +229,7 @@ export default function EcranFinDeJournee() {
             <Banniere message={message} type={typeMessage} onFermer={fermerMessage} duree={5000} />
             <Bouton
               titre="Enregistrer la journée"
+              pleineLargeur
               onPress={() => void soumettre()}
               chargement={enregistrer.isPending}
             />
@@ -237,26 +239,30 @@ export default function EcranFinDeJournee() {
     >
       <Text style={styles.date}>{majusculeInitiale(formatJourComplet(jour))}</Text>
       <View style={styles.choixJour}>
-        <View style={styles.choixBouton}>
-          <Bouton
-            titre="Aujourd'hui"
-            variante={jour === aujourdhui ? 'principal' : 'secondaire'}
-            onPress={() => {
-              setJour(aujourdhui);
-              router.setParams({ jour: aujourdhui });
-            }}
-          />
-        </View>
-        <View style={styles.choixBouton}>
-          <Bouton
-            titre="Hier"
-            variante={jour === hier ? 'principal' : 'secondaire'}
-            onPress={() => {
-              setJour(hier);
-              router.setParams({ jour: hier });
-            }}
-          />
-        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ selected: jour === aujourdhui }}
+          onPress={() => {
+            setJour(aujourdhui);
+            router.setParams({ jour: aujourdhui });
+          }}
+          style={[styles.puce, jour === aujourdhui && styles.puceActive]}
+        >
+          <Text style={[styles.puceTexte, jour === aujourdhui && styles.puceTexteActive]}>
+            Aujourd'hui
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ selected: jour === hier }}
+          onPress={() => {
+            setJour(hier);
+            router.setParams({ jour: hier });
+          }}
+          style={[styles.puce, jour === hier && styles.puceActive]}
+        >
+          <Text style={[styles.puceTexte, jour === hier && styles.puceTexteActive]}>Hier</Text>
+        </Pressable>
       </View>
 
       {liste.length === 0 ? (
@@ -362,15 +368,32 @@ function ChampCompteur({
 const styles = StyleSheet.create({
   date: {
     fontSize: tailles.grand,
-    fontWeight: '700',
+    fontWeight: '600',
     color: couleurs.texte,
   },
   choixJour: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: espacements.s,
   },
-  choixBouton: {
-    flex: 1,
+  puce: {
+    height: 32,
+    paddingHorizontal: espacements.m,
+    borderRadius: 16,
+    backgroundColor: couleurs.fondPuce,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  puceActive: {
+    backgroundColor: couleurs.principal,
+  },
+  puceTexte: {
+    fontSize: tailles.petit,
+    color: couleurs.texte,
+    fontWeight: '600',
+  },
+  puceTexteActive: {
+    color: couleurs.texteSurPrincipal,
   },
   sousLignePleine: {
     alignSelf: 'stretch',

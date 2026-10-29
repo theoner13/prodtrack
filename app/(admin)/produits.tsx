@@ -14,7 +14,7 @@ import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { FormulaireImposer } from '@/components/formulaire-imposer';
 import { eurosVersCentimes } from '@/lib/format';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, tailles } from '@/theme';
 
 export default function EcranProduits() {
   const boutiques = useBoutiques();
@@ -263,11 +263,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: couleurs.principalClair,
     color: couleurs.principalFonce,
-    fontSize: tailles.petit,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     paddingHorizontal: espacements.s,
-    paddingVertical: espacements.xs,
-    borderRadius: rayon,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
   erreur: {
     fontSize: tailles.normal,

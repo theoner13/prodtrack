@@ -10,7 +10,7 @@ import { CarteProduit } from '@/components/carte-produit';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, tailles } from '@/theme';
 
 function sansAccents(texte: string): string {
   return texte.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -137,10 +137,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: couleurs.principalClair,
     color: couleurs.principalFonce,
-    fontSize: tailles.petit,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     paddingHorizontal: espacements.s,
-    paddingVertical: espacements.xs,
-    borderRadius: rayon,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
 });

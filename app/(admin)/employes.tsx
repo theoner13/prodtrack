@@ -10,7 +10,7 @@ import { Bouton } from '@/components/bouton';
 import { CarteProduit } from '@/components/carte-produit';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 import type { Profil } from '@/types/database';
 
 function description(employe: Profil): string {
@@ -136,9 +136,8 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   titreSection: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
-    color: couleurs.texte,
+    ...styleTitreSection,
+    marginTop: espacements.s,
   },
   vide: {
     fontSize: tailles.normal,
@@ -150,7 +149,7 @@ const styles = StyleSheet.create({
   confirmation: {
     gap: espacements.s,
     padding: espacements.m,
-    borderRadius: rayon,
+    borderRadius: 10,
     backgroundColor: couleurs.erreurClair,
   },
   texte: {

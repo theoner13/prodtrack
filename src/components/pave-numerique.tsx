@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { couleurs, espacements, hauteurBouton, rayon, tailles } from '@/theme';
+import { couleurs, espacements, tailles } from '@/theme';
 
 type Props = {
   valeur: string;
@@ -9,6 +9,7 @@ type Props = {
 };
 
 const TOUCHES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'effacer'] as const;
+const DIAMETRE = 56;
 
 export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
   function ajouter(chiffre: string) {
@@ -57,10 +58,10 @@ const styles = StyleSheet.create({
     gap: espacements.m,
   },
   point: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: couleurs.principal,
   },
   pointRempli: {
@@ -73,24 +74,24 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   touche: {
-    width: '30%',
-    minHeight: hauteurBouton,
-    borderRadius: rayon,
-    backgroundColor: couleurs.surface,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
+    width: DIAMETRE,
+    height: DIAMETRE,
+    marginHorizontal: '3%',
+    borderRadius: DIAMETRE / 2,
+    backgroundColor: couleurs.fondPuce,
     alignItems: 'center',
     justifyContent: 'center',
   },
   toucheVide: {
-    width: '30%',
+    width: DIAMETRE,
+    marginHorizontal: '3%',
   },
   appuye: {
-    backgroundColor: couleurs.principalClair,
+    backgroundColor: couleurs.desactive,
   },
   texteTouche: {
-    fontSize: tailles.titre,
-    fontWeight: '700',
+    fontSize: tailles.grand,
+    fontWeight: '400',
     color: couleurs.texte,
   },
 });

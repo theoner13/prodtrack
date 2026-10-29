@@ -19,7 +19,7 @@ import {
   type TypePeriode,
 } from '@/lib/ca';
 import { aujourdhuiParis, formatEuros } from '@/lib/format';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 
 type PeriodeChoix = TypePeriode | 'perso';
 
@@ -417,13 +417,11 @@ function ChiffreCle({ libelle, valeur }: { libelle: string; valeur: string }) {
 
 const styles = StyleSheet.create({
   section: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
-    color: couleurs.texte,
-    marginTop: espacements.s,
+    ...styleTitreSection,
+    marginTop: espacements.m,
   },
   sousSection: {
-    fontSize: tailles.normal,
+    fontSize: tailles.petit,
     fontWeight: '600',
     color: couleurs.texteSecondaire,
   },
@@ -433,18 +431,14 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   puce: {
-    minHeight: 44,
+    height: 32,
     paddingHorizontal: espacements.m,
-    paddingVertical: espacements.s,
-    borderRadius: rayon,
-    borderWidth: 2,
-    borderColor: couleurs.bordure,
-    backgroundColor: couleurs.surface,
+    borderRadius: 16,
+    backgroundColor: couleurs.fondPuce,
     justifyContent: 'center',
   },
   puceActive: {
-    borderColor: couleurs.principal,
-    backgroundColor: couleurs.principalClair,
+    backgroundColor: couleurs.principal,
   },
   puceTexte: {
     fontSize: tailles.petit,
@@ -452,7 +446,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   puceTexteActive: {
-    color: couleurs.principalFonce,
+    color: couleurs.texteSurPrincipal,
   },
   datesPerso: {
     gap: espacements.m,
@@ -464,15 +458,13 @@ const styles = StyleSheet.create({
   chiffres: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: espacements.m,
+    gap: espacements.s,
   },
   chiffre: {
     flexGrow: 1,
     flexBasis: '40%',
-    backgroundColor: couleurs.surface,
-    borderRadius: rayon,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
+    backgroundColor: couleurs.fondGroupe,
+    borderRadius: 10,
     padding: espacements.m,
     gap: espacements.xs,
   },
@@ -482,16 +474,14 @@ const styles = StyleSheet.create({
   },
   chiffreValeur: {
     fontSize: tailles.grand,
-    fontWeight: '700',
+    fontWeight: '600',
     color: couleurs.texte,
   },
   carteEmploye: {
-    backgroundColor: couleurs.surface,
-    borderRadius: rayon,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
-    padding: espacements.m,
+    paddingVertical: 12,
     gap: espacements.s,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: couleurs.bordure,
   },
   ligneEmploye: {
     flexDirection: 'row',
@@ -506,34 +496,37 @@ const styles = StyleSheet.create({
   },
   montantEmploye: {
     fontSize: tailles.normal,
-    fontWeight: '700',
+    fontWeight: '600',
     color: couleurs.principalFonce,
   },
   barreFond: {
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: couleurs.principalClair,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: couleurs.fondPuce,
     overflow: 'hidden',
   },
   barreRemplie: {
     height: '100%',
     backgroundColor: couleurs.principal,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   detail: {
     gap: espacements.xs,
     paddingTop: espacements.s,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: couleurs.bordure,
   },
   detailTitre: {
-    fontSize: tailles.petit,
-    fontWeight: '700',
+    fontSize: tailles.section,
+    fontWeight: '600',
     color: couleurs.texteSecondaire,
     marginTop: espacements.s,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   detailLigne: {
     fontSize: tailles.petit,
     color: couleurs.texte,
+    paddingVertical: 4,
   },
 });

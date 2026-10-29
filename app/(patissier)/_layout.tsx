@@ -20,13 +20,22 @@ export default function LayoutPatissier() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: couleurs.fond },
+        headerStyle: {
+          backgroundColor: couleurs.fond,
+          borderBottomWidth: 1,
+          borderBottomColor: couleurs.bordure,
+        },
+        headerShadowVisible: false,
         headerTintColor: couleurs.texte,
-        headerTitleStyle: { fontSize: tailles.normal },
+        headerTitleStyle: { fontSize: 16, fontWeight: '600' },
         headerRight: () => <ActionsEntete />,
         tabBarActiveTintColor: couleurs.principal,
-        tabBarInactiveTintColor: couleurs.texteSecondaire,
-        tabBarStyle: { backgroundColor: couleurs.surface },
+        tabBarInactiveTintColor: couleurs.ongletInactif,
+        tabBarStyle: {
+          backgroundColor: couleurs.surface,
+          borderTopWidth: 1,
+          borderTopColor: couleurs.bordure,
+        },
         tabBarLabelStyle: { fontSize: tailles.petit },
         sceneStyle: { backgroundColor: couleurs.fond },
       }}

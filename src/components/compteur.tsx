@@ -1,8 +1,9 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { couleurs, hauteurBouton, rayon, tailles } from '@/theme';
+import { couleurs, tailles } from '@/theme';
 
-const TAILLE_COMPACT = 44;
+const DIAMETRE = 32;
+const HIT_SLOP = 6; // 32 + 6×2 = 44
 
 type Props = {
   valeur: number;
@@ -11,30 +12,30 @@ type Props = {
   compact?: boolean; // boutons et champ plus petits (≥ 44 px)
 };
 
-// Compteur − / + avec champ numérique au centre. Valeur entière ≥ 0.
+// Compteur − / + discret (ronds gris) avec champ numérique au centre. Valeur entière ≥ 0.
 export function Compteur({ valeur, onChange, libelle = 'Quantité', compact = false }: Props) {
   function saisir(texte: string) {
     const chiffres = texte.replace(/[^0-9]/g, '');
     onChange(chiffres === '' ? 0 : parseInt(chiffres, 10));
   }
 
-  const taille = compact ? TAILLE_COMPACT : hauteurBouton;
+  const desactiveMoins = valeur <= 0;
 
   return (
     <View style={styles.ligne}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${libelle} : moins un`}
-        disabled={valeur <= 0}
+        disabled={desactiveMoins}
         onPress={() => onChange(Math.max(0, valeur - 1))}
+        hitSlop={HIT_SLOP}
         style={({ pressed }) => [
           styles.bouton,
-          { width: taille, height: taille },
-          valeur <= 0 && styles.inactif,
+          desactiveMoins && styles.inactif,
           pressed && styles.appuye,
         ]}
       >
-        <Text style={[styles.signe, compact && styles.signeCompact]}>−</Text>
+        <Text style={[styles.signe, desactiveMoins && styles.signeInactif]}>−</Text>
       </Pressable>
       <TextInput
         accessibilityLabel={libelle}
@@ -42,19 +43,16 @@ export function Compteur({ valeur, onChange, libelle = 'Quantité', compact = fa
         onChangeText={saisir}
         keyboardType="number-pad"
         selectTextOnFocus
-        style={[styles.champ, compact && styles.champCompact, { height: taille }]}
+        style={[styles.champ, compact && styles.champCompact]}
       />
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${libelle} : plus un`}
         onPress={() => onChange(valeur + 1)}
-        style={({ pressed }) => [
-          styles.bouton,
-          { width: taille, height: taille },
-          pressed && styles.appuye,
-        ]}
+        hitSlop={HIT_SLOP}
+        style={({ pressed }) => [styles.bouton, pressed && styles.appuye]}
       >
-        <Text style={[styles.signe, compact && styles.signeCompact]}>+</Text>
+        <Text style={styles.signe}>+</Text>
       </Pressable>
     </View>
   );
@@ -64,44 +62,45 @@ const styles = StyleSheet.create({
   ligne: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   bouton: {
-    width: hauteurBouton,
-    height: hauteurBouton,
-    borderRadius: rayon,
-    backgroundColor: couleurs.principal,
+    width: DIAMETRE,
+    height: DIAMETRE,
+    borderRadius: DIAMETRE / 2,
+    backgroundColor: couleurs.fondPuce,
     alignItems: 'center',
     justifyContent: 'center',
   },
   inactif: {
-    backgroundColor: couleurs.desactive,
+    backgroundColor: couleurs.fondPuce,
   },
   appuye: {
-    opacity: 0.8,
+    opacity: 0.7,
   },
   signe: {
-    fontSize: tailles.titre,
-    fontWeight: '700',
-    color: couleurs.texteSurPrincipal,
+    fontSize: 18,
+    fontWeight: '500',
+    color: couleurs.texte,
+    lineHeight: 20,
   },
-  signeCompact: {
-    fontSize: tailles.grand,
+  signeInactif: {
+    color: couleurs.desactive,
   },
   champ: {
-    width: 64,
-    height: hauteurBouton,
-    borderWidth: 1,
+    width: 44,
+    height: DIAMETRE,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: couleurs.bordure,
-    borderRadius: rayon,
-    backgroundColor: couleurs.surface,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
     textAlign: 'center',
-    fontSize: tailles.grand,
-    fontWeight: '700',
+    fontSize: tailles.normal,
+    fontWeight: '600',
     color: couleurs.texte,
+    padding: 0,
   },
   champCompact: {
-    width: 48,
-    fontSize: tailles.normal,
+    width: 40,
   },
 });

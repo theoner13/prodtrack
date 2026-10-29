@@ -12,7 +12,7 @@ import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 
 const schema = z.object({
   nom: z.string().trim().min(1, 'Indiquez le nom de la boutique.'),
@@ -137,9 +137,7 @@ export default function EcranBoutiques() {
 
 const styles = StyleSheet.create({
   sousTitre: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
-    color: couleurs.texte,
+    ...styleTitreSection,
   },
   erreur: {
     fontSize: tailles.normal,
@@ -147,24 +145,22 @@ const styles = StyleSheet.create({
   },
   carte: {
     gap: espacements.s,
-    padding: espacements.m,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
-    backgroundColor: couleurs.surface,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: couleurs.bordure,
   },
   nom: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
+    fontSize: tailles.normal,
+    fontWeight: '600',
     color: couleurs.texte,
   },
   adresse: {
-    fontSize: tailles.normal,
+    fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
   },
   code: {
     fontSize: tailles.titre,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: 4,
     color: couleurs.principalFonce,
     textAlign: 'center',

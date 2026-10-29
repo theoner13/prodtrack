@@ -13,7 +13,7 @@ import { Champ } from '@/components/champ';
 import { EditeurRecette, estVide, UNITES } from '@/components/editeur-recette';
 import { EtatChargement, EtatErreur } from '@/components/etats';
 import { eurosVersCentimes } from '@/lib/format';
-import { couleurs, tailles } from '@/theme';
+import { couleurs, styleTitreSection, tailles } from '@/theme';
 import type { Profil } from '@/types/database';
 
 const schema = z.object({
@@ -337,14 +337,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   titre: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
-    color: couleurs.texte,
+    ...styleTitreSection,
   },
   libelle: {
-    fontSize: tailles.petit,
-    fontWeight: '600',
-    color: couleurs.texte,
+    ...styleTitreSection,
   },
   avertissement: {
     fontSize: tailles.normal,

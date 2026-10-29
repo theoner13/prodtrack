@@ -103,7 +103,7 @@ export function EditeurRecette({ lignes, onChange, erreurs = [] }: Props) {
                   accessibilityRole="button"
                   accessibilityLabel={`Retirer ${ligne.ingredient || 'cette ligne'}`}
                   onPress={() => retirer(index)}
-                  hitSlop={8}
+                  hitSlop={12}
                   style={[styles.colRetirer, styles.retirer]}
                 >
                   <Text style={styles.croix}>✕</Text>
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   },
   champErreur: {
     borderColor: couleurs.erreur,
-    borderWidth: 2,
+    borderWidth: 1,
   },
   centre: {
     textAlign: 'center',
@@ -216,12 +216,11 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   puce: {
-    minHeight: 44,
-    minWidth: 56,
+    height: 32,
+    minWidth: 48,
     paddingHorizontal: espacements.m,
-    borderRadius: rayon,
-    borderWidth: 1,
-    borderColor: couleurs.principal,
+    borderRadius: 16,
+    backgroundColor: couleurs.fondPuce,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -230,11 +229,12 @@ const styles = StyleSheet.create({
   },
   textePuce: {
     fontSize: tailles.petit,
-    color: couleurs.principalFonce,
+    color: couleurs.texte,
+    fontWeight: '600',
   },
   textePuceChoisie: {
     color: couleurs.texteSurPrincipal,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   erreur: {
     fontSize: tailles.petit,

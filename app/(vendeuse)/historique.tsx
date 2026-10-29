@@ -13,7 +13,7 @@ import {
   formatDate,
   jourPrecedent,
 } from '@/lib/format';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, tailles } from '@/theme';
 
 export default function EcranHistorique() {
   const { profil } = useAuth();
@@ -125,14 +125,11 @@ function JourHistoriqueCarte({
 
 const styles = StyleSheet.create({
   carte: {
-    borderRadius: rayon,
-    backgroundColor: couleurs.surface,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
-    overflow: 'hidden',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: couleurs.bordure,
   },
   entete: {
-    padding: espacements.m,
+    paddingVertical: 12,
     gap: espacements.xs,
   },
   appuye: {
@@ -140,7 +137,7 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: tailles.normal,
-    fontWeight: '700',
+    fontWeight: '600',
     color: couleurs.texte,
   },
   resume: {
@@ -148,10 +145,9 @@ const styles = StyleSheet.create({
     color: couleurs.texteSecondaire,
   },
   detail: {
-    paddingHorizontal: espacements.m,
     paddingBottom: espacements.m,
     gap: espacements.s,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: couleurs.bordure,
   },
   vide: {

@@ -25,7 +25,7 @@ import { Champ } from '@/components/champ';
 import { Compteur } from '@/components/compteur';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 
 type Props = {
   type: 'production' | 'sortie';
@@ -343,6 +343,7 @@ export function SaisieStock({ type }: Props) {
           ) : null}
           <Bouton
             titre={titreBouton}
+            pleineLargeur
             onPress={() => void soumettre()}
             chargement={enregistrer.isPending}
           />
@@ -561,10 +562,8 @@ const styles = StyleSheet.create({
     color: couleurs.texteSecondaire,
   },
   section: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
-    color: couleurs.texte,
-    marginTop: espacements.s,
+    ...styleTitreSection,
+    marginTop: espacements.m,
   },
   vide: {
     fontSize: tailles.petit,
@@ -572,11 +571,9 @@ const styles = StyleSheet.create({
   },
   saisie: {
     gap: espacements.s,
-    padding: espacements.m,
-    borderRadius: 12,
-    backgroundColor: couleurs.surface,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: couleurs.bordure,
   },
   saisieInfos: {
     flexDirection: 'row',
@@ -603,16 +600,12 @@ const styles = StyleSheet.create({
   },
   formulairePerte: {
     gap: espacements.m,
-    padding: espacements.m,
-    borderRadius: 12,
-    backgroundColor: couleurs.surface,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: couleurs.fondGroupe,
   },
   label: {
-    fontSize: tailles.petit,
-    fontWeight: '600',
-    color: couleurs.texteSecondaire,
+    ...styleTitreSection,
   },
   puces: {
     flexDirection: 'row',
@@ -620,18 +613,14 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   puce: {
-    minHeight: 44,
+    height: 32,
     paddingHorizontal: espacements.m,
-    paddingVertical: espacements.s,
-    borderRadius: rayon,
-    borderWidth: 2,
-    borderColor: couleurs.bordure,
-    backgroundColor: couleurs.fond,
+    borderRadius: 16,
+    backgroundColor: couleurs.fondPuce,
     justifyContent: 'center',
   },
   puceActive: {
-    borderColor: couleurs.principal,
-    backgroundColor: couleurs.principalClair,
+    backgroundColor: couleurs.principal,
   },
   puceTexte: {
     fontSize: tailles.petit,
@@ -639,7 +628,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   puceTexteActive: {
-    color: couleurs.principalFonce,
+    color: couleurs.texteSurPrincipal,
   },
   case: {
     flexDirection: 'row',
@@ -665,10 +654,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: couleurs.principalClair,
     color: couleurs.principalFonce,
-    fontSize: tailles.petit,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     paddingHorizontal: espacements.s,
-    paddingVertical: espacements.xs,
-    borderRadius: rayon,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
 });
