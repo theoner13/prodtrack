@@ -603,6 +603,10 @@ export type Database = {
       }
     }
     Functions: {
+      ajuster_stock: {
+        Args: { p_motif?: string; p_produit: string; p_stock_reel: number }
+        Returns: number
+      }
       aujourdhui: { Args: never; Returns: string }
       boutique_de_mon_entreprise: {
         Args: { p_boutique: string }

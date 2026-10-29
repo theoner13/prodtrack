@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { AppState, Platform, Text, View } from 'react-native';
 
+import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur } from '@/components/etats';
@@ -259,7 +260,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((probleme: unknown) => {
         if (!annule) {
-          setErreur(probleme instanceof Error ? probleme.message : 'Impossible de charger le profil.');
+          setErreur(messageErreur(probleme));
         }
       })
       .finally(() => {

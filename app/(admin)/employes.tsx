@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useBoutiques } from '@/api/boutiques';
 import { useChangerArchivage, useEmployes } from '@/api/employes';
+import { useUrlsSignees } from '@/api/photos';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
@@ -28,6 +29,14 @@ export default function EcranEmployes() {
   const boutiques = useBoutiques();
   const employes = useEmployes(avecArchives);
   const archivage = useChangerArchivage();
+  const chemins = useMemo(
+    () =>
+      (employes.data ?? [])
+        .map((employe) => employe.photo_url)
+        .filter((chemin): chemin is string => Boolean(chemin)),
+    [employes.data],
+  );
+  const photos = useUrlsSignees(chemins);
 
   async function confirmer() {
     if (!confirmation) return;
@@ -77,7 +86,11 @@ export default function EcranEmployes() {
                 <View key={employe.id} style={styles.bloc}>
                   <CarteProduit
                     nom={`${employe.prenom} ${employe.nom}`}
-                    photoUrl={employe.photo_url}
+                    photoUrl={
+                      employe.photo_url
+                        ? (photos.data?.[employe.photo_url] ?? undefined)
+                        : undefined
+                    }
                     sousTitre={description(employe)}
                   />
                   {employe.id === profil?.id ? null : confirmation?.id === employe.id ? (

@@ -1,4 +1,30 @@
 // Traduit les messages techniques (Supabase, réseau) en français.
+const MOTS_ANGLAIS = [
+  'violates',
+  'duplicate',
+  'permission denied',
+  'jwt',
+  'failed',
+  'invalid input',
+  'invalid login',
+  'invalid credentials',
+  'invalid email',
+  'already registered',
+  'already been registered',
+  'email not confirmed',
+  'unable to validate',
+  'row-level security',
+  'network',
+  'fetch',
+  'payload too large',
+  'entity too large',
+  'maximum allowed size',
+];
+
+function contientAnglais(texte: string): boolean {
+  return MOTS_ANGLAIS.some((mot) => texte.includes(mot));
+}
+
 export function messageErreur(erreur: unknown): string {
   const message =
     erreur instanceof Error
@@ -62,5 +88,18 @@ export function messageErreur(erreur: unknown): string {
   if (texte.includes('network') || texte.includes('failed to fetch') || texte.includes('fetch')) {
     return 'Pas de connexion internet. Réessayez.';
   }
-  return brut;
+  if (texte.includes('duplicate key')) {
+    return 'Cet élément existe déjà.';
+  }
+  if (texte.includes('violates check constraint')) {
+    return 'Valeur non autorisée.';
+  }
+  // Messages français déjà écrits dans la base (raise exception) : les garder.
+  if (message && !contientAnglais(texte)) {
+    return message;
+  }
+  if (__DEV__) {
+    console.warn('[messageErreur]', brut);
+  }
+  return 'Une erreur est survenue. Réessayez.';
 }

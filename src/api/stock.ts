@@ -179,3 +179,27 @@ export function useAnnulerMouvement() {
     },
   });
 }
+
+export function useAjusterStock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (saisie: {
+      produitId: string;
+      nom: string;
+      stockActuel: number;
+      stockReel: number;
+    }): Promise<string> => {
+      const { data, error } = await db().rpc('ajuster_stock', {
+        p_produit: saisie.produitId,
+        p_stock_reel: saisie.stockReel,
+      });
+      if (error) throw error;
+      const nouveau = data ?? saisie.stockReel;
+      return `Stock de ${saisie.nom} corrigé : ${saisie.stockActuel} → ${nouveau}.`;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['stock'] });
+      void queryClient.invalidateQueries({ queryKey: ['mouvements'] });
+    },
+  });
+}

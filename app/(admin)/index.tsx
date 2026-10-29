@@ -12,7 +12,9 @@ import {
   parseDateFr,
   parEmploye,
   parJour,
+  parMois,
   parProduit,
+  parSemaine,
   totaux,
   type TypePeriode,
 } from '@/lib/ca';
@@ -158,7 +160,9 @@ export default function EcranTableauDeBord() {
           duFabricant.find((l) => l.produit_id === g.cle)?.produit_nom ?? g.cle,
       }));
       const jours = parJour(duFabricant);
-      return { produits, jours };
+      const semaines = parSemaine(duFabricant);
+      const mois = parMois(duFabricant);
+      return { produits, jours, semaines, mois };
     },
     [lignes],
   );
@@ -314,6 +318,31 @@ export default function EcranTableauDeBord() {
                           {formatDateFr(j.cle)} — {formatEuros(j.caCentimes)}
                         </Text>
                       ))
+                    )}
+                    <Text style={styles.detailTitre}>Par semaine</Text>
+                    {detail.semaines.length === 0 ? (
+                      <Text style={styles.detailLigne}>Aucune vente</Text>
+                    ) : (
+                      detail.semaines.map((s) => (
+                        <Text key={s.cle} style={styles.detailLigne}>
+                          {formatDateFr(s.cle)} — {formatEuros(s.caCentimes)}
+                        </Text>
+                      ))
+                    )}
+                    <Text style={styles.detailTitre}>Par mois</Text>
+                    {detail.mois.length === 0 ? (
+                      <Text style={styles.detailLigne}>Aucune vente</Text>
+                    ) : (
+                      detail.mois.map((m) => {
+                        const [annee, moisNum] = m.cle.split('-');
+                        const libelle =
+                          annee && moisNum ? `${moisNum}/${annee}` : m.cle;
+                        return (
+                          <Text key={m.cle} style={styles.detailLigne}>
+                            {libelle} — {formatEuros(m.caCentimes)}
+                          </Text>
+                        );
+                      })
                     )}
                   </View>
                 ) : null}
