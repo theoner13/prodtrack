@@ -22,8 +22,10 @@ type Formulaire = z.infer<typeof schema>;
 
 type CompteTest = { libelle: string; email: string };
 
-const comptesTestBruts = process.env.EXPO_PUBLIC_COMPTES_TEST;
-const mdpTest = process.env.EXPO_PUBLIC_MDP_TEST;
+// Uniquement en local (__DEV__). En export prod, la branche morte est retirée
+// pour que les comptes / mot de passe de test n'apparaissent pas dans dist/.
+const comptesTestBruts = __DEV__ ? process.env.EXPO_PUBLIC_COMPTES_TEST : undefined;
+const mdpTest = __DEV__ ? process.env.EXPO_PUBLIC_MDP_TEST : undefined;
 
 function parserComptesTest(valeur: string | undefined): CompteTest[] {
   if (!valeur) return [];

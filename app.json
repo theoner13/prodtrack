@@ -8,7 +8,7 @@
     "scheme": "prodtrack",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.prodtrack.app",
       "infoPlist": {
         "NSFaceIDUsageDescription": "ProdTrack utilise Face ID pour déverrouiller l'application."
@@ -17,7 +17,7 @@
     "android": {
       "package": "com.prodtrack.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#A86B2D",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -26,14 +26,20 @@
     },
     "web": {
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "ProdTrack",
+      "shortName": "ProdTrack",
+      "lang": "fr",
+      "themeColor": "#A86B2D",
+      "backgroundColor": "#FBF6EE",
+      "display": "standalone"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#A86B2D",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
@@ -58,7 +64,8 @@
         {
           "color": "#A86B2D"
         }
-      ]
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true,

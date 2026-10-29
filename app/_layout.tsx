@@ -122,7 +122,6 @@ function Gardien() {
 // Adresse à rouvrir après le code PIN. Jamais un écran de connexion ou de PIN.
 function adresseApresPin(pathname: string, racine: string, profil: Profil): Href | null {
   if (
-    racine === 'demo' ||
     racine === '(auth)' ||
     racine === 'deverrouiller' ||
     racine === 'qui-etes-vous'
@@ -156,8 +155,6 @@ function destination(etat: {
   tablettePartagee: boolean;
   modeAjoutCompte: boolean;
 }): Href | null {
-  if (etat.racine === 'demo') return null;
-
   if (etat.modeAjoutCompte) {
     if (etat.racine === '(auth)' && etat.suite === 'connexion') return null;
     return '/connexion';

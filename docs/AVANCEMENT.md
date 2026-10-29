@@ -17,11 +17,12 @@
 - [x] Phase 9 : prévision, planning et notifications
 - [x] Phase 10 : tablette partagée
 - [ ] Phase 11 : notifications push et version installable
-- [ ] Phase 12 : vérification finale et mise en ligne
+- [x] Phase 12 : vérification finale et mise en ligne
 
 ## En cours / à savoir
 
-- Phase 11 : code prêt (push, EAS) ; reste : compte Expo, eas init, build de développement et test sur téléphone
+- Phase 11 : code prêt (push, EAS) ; reste : compte Expo, eas init, build de développement et test sur téléphone (compte Apple Developer)
+- Phase 12 terminée : conformité documentée dans `docs/12-VERIFICATION-FINALE.md`, icônes ProdTrack, PWA (`public/`), nettoyage demo, paquets Expo à jour. Commit local fait ; **push non fait** (consigne du prompt phase 12) — à pousser pour mettre à jour le site Vercel.
 - Évolution (hors cahier des charges, validée par le propriétaire) : produits intermédiaires (ex. biscuit cuillère), non vendus, accessibles à tous les pâtissiers de la boutique
 - Évolution (hors cahier des charges, validée par le propriétaire) : pertes en production déclarées par les pâtissiers
 - Évolution (hors cahier des charges, validée par le propriétaire) : catalogue des autres boutiques pour les pâtissiers
@@ -30,11 +31,12 @@
 - Comptes de test : mot de passe `Test1234!`.
 - Web en mode « single » (app.json) : le mode « server » restait bloqué sur le chargement sous Windows. Après un changement de app.json, relancer le serveur avec `npx expo start --web --clear`.
 - Tests des calculs : `npm test`
-- En ligne sur Vercel (avancé avant la phase 12, à la demande du propriétaire) : https://prodtrack-zeta.vercel.app. Chaque push sur `main` redéploie (voir AGENTS.md section 6). La phase 12 garde le manifeste PWA, les icônes et la liste de contrôle avant production.
+- En ligne sur Vercel : https://prodtrack-zeta.vercel.app. Chaque push sur `main` redéploie (voir AGENTS.md section 6).
 - Connexion rapide : boutons de test sur l'écran de connexion en local (variables EXPO_PUBLIC_COMPTES_TEST et EXPO_PUBLIC_MDP_TEST du .env ; relancer avec npx expo start --web --clear après modification).
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-29 : phase 12 — vérification finale (tableau de conformité, exemples 4.1 à 4.3), nettoyage (demo supprimée, paquets à jour), icônes ProdTrack et site installable (PWA) (Cursor)
 - 2026-10-29 : corrections après revue complète des phases 1 à 11 : correction du stock par le patron (D8), droits d'un employé archivé, photos des employés et de « Qui êtes-vous ? », messages d'erreur en français, CA par semaine et par mois (Cursor ; revue et vérification par Claude Code : relecture complète du code par un agent, tests de la base phases 4 à 11, 29 contrôles d’accès sans connexion, 25 contrôles des corrections, tous les parcours écrans ordinateur, téléphone et tablette repassés, données réelles intactes).
 - 2026-10-29 : phase 11 — code notifications push et configuration EAS (migration 0007, edge function envoyer-push, enregistrement jeton, eas.json) ; builds téléphone et eas init à faire ensuite (Cursor ; vérifiée par Claude Code côté serveur : jetons protégés, fonction d’envoi sans clé mais à usage unique, envoi réel vers Expo testé ; expo-dev-client ajouté pour le build de développement ; test sur iPhone en attente du compte Apple Developer).
 - 2026-10-28 : phase 10 — tablette partagée (plusieurs comptes sur l'appareil, écran Qui êtes-vous ?, bascule par PIN sans signOut, mode tablette partagée avec verrouillage 2 min et après saisie) (Cursor ; vérifiée par Claude Code : bug de bascule trouvé et corrigé — l'appli revenait sur « Qui êtes-vous ? » après le bon code ; 36 contrôles tablette et téléphone : code vérifié avant la bascule, aucun écran de l'ancienne personne, verrouillage après saisie et après 2 min, retrait d'un compte sans toucher les autres ; anciens tests repassés sans régression).
