@@ -26,6 +26,12 @@ import {
   type CompteAppareil,
 } from '@/lib/comptes-appareil';
 import { pinExiste, verifierPin } from '@/lib/pin';
+import {
+  demarrerEcouteNotifications,
+  enregistrerPush,
+  preparerAffichageNotifications,
+  supprimerPush,
+} from '@/lib/push';
 import { supabase } from '@/lib/supabase';
 import { couleurs, tailles } from '@/theme';
 import type { Profil } from '@/types/database';
@@ -115,6 +121,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void rechargerComptesAppareil();
   }, [rechargerComptesAppareil]);
+
+  useEffect(() => {
+    preparerAffichageNotifications();
+    return demarrerEcouteNotifications(queryClient);
+  }, [queryClient]);
+
+  // Une fois connecté, déverrouillé et profil chargé : enregistrer / rattacher le jeton.
+  useEffect(() => {
+    if (!session || !profil || verrouille || chargement) return;
+    void enregistrerPush();
+  }, [session, profil?.id, verrouille, chargement]);
 
   const sauverCompteActif = useCallback(async () => {
     const actuelle = sessionRef.current;
@@ -320,6 +337,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const retirerMonCompte = useCallback(async () => {
     const userId = sessionRef.current?.user.id;
+    await supprimerPush();
     if (userId) {
       const liste = await retirerCompteAppareil(userId);
       setComptesAppareil(liste);

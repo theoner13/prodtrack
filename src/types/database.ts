@@ -175,6 +175,7 @@ export type Database = {
           lu: boolean
           message: string
           profil_id: string
+          push_envoye_le: string | null
           titre: string
         }
         Insert: {
@@ -183,6 +184,7 @@ export type Database = {
           lu?: boolean
           message: string
           profil_id: string
+          push_envoye_le?: string | null
           titre: string
         }
         Update: {
@@ -191,6 +193,7 @@ export type Database = {
           lu?: boolean
           message?: string
           profil_id?: string
+          push_envoye_le?: string | null
           titre?: string
         }
         Relationships: [
@@ -423,6 +426,41 @@ export type Database = {
           },
         ]
       }
+      push_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          jeton: string
+          plateforme: string | null
+          profil_id: string
+          vu_le: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jeton: string
+          plateforme?: string | null
+          profil_id: string
+          vu_le?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jeton?: string
+          plateforme?: string | null
+          profil_id?: string
+          vu_le?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_profil_id_fkey"
+            columns: ["profil_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saisies_vente: {
         Row: {
           fabricant_id: string
@@ -612,6 +650,10 @@ export type Database = {
         }
         Returns: string
       }
+      enregistrer_jeton_push: {
+        Args: { p_jeton: string; p_plateforme: string }
+        Returns: undefined
+      }
       est_admin: { Args: never; Returns: boolean }
       ma_boutique: { Args: never; Returns: string }
       mon_entreprise: { Args: never; Returns: string }
@@ -638,6 +680,7 @@ export type Database = {
         }
         Returns: string
       }
+      supprimer_jeton_push: { Args: { p_jeton: string }; Returns: undefined }
     }
     Enums: {
       role_employe: "admin" | "patissier" | "vendeuse"

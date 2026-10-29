@@ -95,3 +95,21 @@ Après chaque changement qui touche l'appli :
 2. Les liens pour voir le résultat en local (section 5), et en ligne après le push (section 6).
 3. Comment le tester, étape par étape.
 4. Confirmation que le commit est fait et poussé sur GitHub (ou pourquoi il ne l'est pas). Le push est obligatoire à chaque tâche qui fonctionne (section 2).
+
+## 8. Version installable et notifications push
+
+Les push et Face ID nécessitent un **development build** sur un vrai téléphone (pas Expo Go, pas le web). Le propriétaire teste sur iPhone : il doit d’abord prendre le compte Apple Developer (99 €/an). La connexion Expo (`eas-cli login`) se fait par lui (mot de passe). Ensuite :
+
+```
+npx eas-cli login
+npx eas-cli init
+npx eas-cli build --profile development --platform android
+npx eas-cli build --profile development --platform ios
+```
+
+`eas-cli init` ajoute `extra.eas.projectId` dans `app.json` (requis pour enregistrer le jeton push).
+
+Redéployer la fonction d'envoi :
+```
+npx supabase functions deploy envoyer-push --no-verify-jwt --use-api
+```

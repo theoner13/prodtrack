@@ -21,12 +21,13 @@
 
 ## En cours / à savoir
 
+- Phase 11 : code prêt (push, EAS) ; reste : compte Expo, eas init, build de développement et test sur téléphone
 - Évolution (hors cahier des charges, validée par le propriétaire) : produits intermédiaires (ex. biscuit cuillère), non vendus, accessibles à tous les pâtissiers de la boutique
 - Évolution (hors cahier des charges, validée par le propriétaire) : pertes en production déclarées par les pâtissiers
 - Évolution (hors cahier des charges, validée par le propriétaire) : catalogue des autres boutiques pour les pâtissiers
 - Base Supabase vide et prête. Confirmation par email désactivée (dev) : à réactiver avant la production.
 - ⏰ 03/11/2026 : renouveler le jeton Supabase « claude-code-prodtrack » (supabase.com/dashboard/account/tokens), puis `npx supabase login --token ...`.
-- Prochaine étape : phase 11 (notifications push et version installable). Comptes de test : mot de passe `Test1234!`.
+- Comptes de test : mot de passe `Test1234!`.
 - Web en mode « single » (app.json) : le mode « server » restait bloqué sur le chargement sous Windows. Après un changement de app.json, relancer le serveur avec `npx expo start --web --clear`.
 - Tests des calculs : `npm test`
 - En ligne sur Vercel (avancé avant la phase 12, à la demande du propriétaire) : https://prodtrack-zeta.vercel.app. Chaque push sur `main` redéploie (voir AGENTS.md section 6). La phase 12 garde le manifeste PWA, les icônes et la liste de contrôle avant production.
@@ -34,6 +35,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-29 : phase 11 — code notifications push et configuration EAS (migration 0007, edge function envoyer-push, enregistrement jeton, eas.json) ; builds téléphone et eas init à faire ensuite (Cursor).
 - 2026-10-28 : phase 10 — tablette partagée (plusieurs comptes sur l'appareil, écran Qui êtes-vous ?, bascule par PIN sans signOut, mode tablette partagée avec verrouillage 2 min et après saisie) (Cursor ; vérifiée par Claude Code : bug de bascule trouvé et corrigé — l'appli revenait sur « Qui êtes-vous ? » après le bon code ; 36 contrôles tablette et téléphone : code vérifié avant la bascule, aucun écran de l'ancienne personne, verrouillage après saisie et après 2 min, retrait d'un compte sans toucher les autres ; anciens tests repassés sans régression).
 - 2026-10-28 : produits intermédiaires — non vendus, stock suivi, partagés entre pâtissiers de la boutique (Cursor ; vérifiée par Claude Code : production partagée mais pas sur les produits finis, ventes et prix refusés par la base, invisibles pour la vendeuse, badges, catalogue ; anciens tests base et écrans repassés sans régression).
 - 2026-10-28 : pertes en production — déclaration par les pâtissiers (motif, case stock), suivi et export patron (Cursor ; vérifiée par Claude Code : exemple des 8 cookies brûlés sans changer le stock, perte retirée du stock, droits, stock de tous les produits recalculé à l’identique, écrans ordinateur et téléphone, tableau de bord et export).

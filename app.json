@@ -8,9 +8,14 @@
     "scheme": "prodtrack",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.prodtrack.app",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "ProdTrack utilise Face ID pour déverrouiller l'application."
+      }
     },
     "android": {
+      "package": "com.prodtrack.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -46,6 +51,12 @@
         "expo-local-authentication",
         {
           "faceIDPermission": "ProdTrack utilise Face ID pour déverrouiller l'application."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#A86B2D"
         }
       ]
     ],
