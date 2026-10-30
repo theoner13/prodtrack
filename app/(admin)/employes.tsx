@@ -15,7 +15,7 @@ import type { Profil } from '@/types/database';
 
 function description(employe: Profil): string {
   const role =
-    employe.role === 'admin' ? 'Patron' : employe.role === 'patissier' ? 'Pâtissier' : 'Vendeuse';
+    employe.role === 'admin' ? 'Admin' : employe.role === 'patissier' ? 'Pâtissier' : 'Vente';
   const equipe = employe.equipe === 'jour' ? 'Jour' : employe.equipe === 'nuit' ? 'Nuit' : null;
   const archive = employe.archive_le ? 'Archivé' : null;
   return [role, equipe, archive].filter((partie) => partie !== null).join(' · ');
@@ -79,7 +79,7 @@ export default function EcranEmployes() {
             <Text style={styles.titreSection}>{boutique.nom}</Text>
             {liste.length === 0 ? (
               <Text style={styles.vide}>
-                Aucun employé. Partagez le code de la boutique pour inviter un pâtissier ou une vendeuse.
+                Aucun employé. Partagez le code de la boutique pour inviter un pâtissier ou un compte vente.
               </Text>
             ) : (
               liste.map((employe) => (

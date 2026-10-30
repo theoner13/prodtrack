@@ -77,7 +77,6 @@ export default function EcranNotifications() {
 
   return (
     <Ecran
-      titre="Notifications"
       defilement
       enRafraichissement={liste.isRefetching}
       onRafraichir={() => void liste.refetch()}

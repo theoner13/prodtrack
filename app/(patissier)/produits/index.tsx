@@ -65,7 +65,7 @@ export default function EcranMesProduits() {
             photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
           >
             {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
-            {produit.impose_par_admin ? <Text style={styles.badge}>Imposé par le patron</Text> : null}
+            {produit.impose_par_admin ? <Text style={styles.badge}>Imposé par l'admin</Text> : null}
           </CarteProduit>
         </Pressable>
       ))}

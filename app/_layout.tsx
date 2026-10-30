@@ -13,10 +13,25 @@ import { View } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import { AnimationAccueil } from '@/components/animation-accueil';
+import { LogoEntete } from '@/components/logo';
+import { couleurs } from '@/theme';
 import type { Profil } from '@/types/database';
 
 export const unstable_settings = {
   anchor: 'index',
+};
+
+const optionsAvecLogo = {
+  headerShown: true as const,
+  headerStyle: {
+    backgroundColor: couleurs.fond,
+    borderBottomWidth: 1,
+    borderBottomColor: couleurs.bordure,
+  },
+  headerShadowVisible: false,
+  headerTintColor: couleurs.texte,
+  headerTitleStyle: { fontSize: 16, fontWeight: '600' as const },
+  headerLeft: () => <LogoEntete />,
 };
 
 export default function LayoutRacine() {
@@ -26,7 +41,13 @@ export default function LayoutRacine() {
     <QueryClientProvider client={queryClient}>
       <View style={{ flex: 1 }}>
         <AuthProvider>
-          <Stack screenOptions={{ headerShown: false }} />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="profil" options={{ ...optionsAvecLogo, title: 'Profil' }} />
+            <Stack.Screen
+              name="notifications"
+              options={{ ...optionsAvecLogo, title: 'Notifications' }}
+            />
+          </Stack>
           <Gardien />
         </AuthProvider>
         <AnimationAccueil />

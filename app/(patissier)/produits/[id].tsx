@@ -282,7 +282,7 @@ export default function EcranFicheProduit() {
         )}
       />
       {impose ? (
-        <Text style={styles.aide}>Imposé par le patron : le nom ne peut pas être modifié.</Text>
+        <Text style={styles.aide}>Imposé par l'admin : le nom ne peut pas être modifié.</Text>
       ) : null}
       {!intermediaire || impose ? (
         <Controller

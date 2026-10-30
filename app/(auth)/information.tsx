@@ -42,8 +42,8 @@ export default function EcranInformation() {
         fabriquez.
       </Text>
       <Text style={styles.texte}>
-        Le patron voit le chiffre d’affaires de chaque employé, par produit et par jour. Une
-        vendeuse voit les saisies de sa boutique. Un pâtissier ne voit que son propre chiffre
+        L’admin voit le chiffre d’affaires de chaque employé, par produit et par jour. L’équipe
+        vente voit les saisies de sa boutique. Un pâtissier ne voit que son propre chiffre
         d’affaires.
       </Text>
       <Text style={styles.texte}>
@@ -51,7 +51,7 @@ export default function EcranInformation() {
         de production et de chiffre d’affaires est conservé.
       </Text>
       <Text style={styles.texte}>
-        Vous pouvez demander l’accès à vos données et leur rectification. Le contact est le patron
+        Vous pouvez demander l’accès à vos données et leur rectification. Le contact est l’admin
         de votre entreprise.
       </Text>
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}

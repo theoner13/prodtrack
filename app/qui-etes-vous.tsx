@@ -19,9 +19,9 @@ import { couleurs, espacements, tailles } from '@/theme';
 import type { RoleEmploye } from '@/types/database';
 
 const ROLES: Record<RoleEmploye, string> = {
-  admin: 'Patron',
+  admin: 'Admin',
   patissier: 'Pâtissier',
-  vendeuse: 'Vendeuse',
+  vendeuse: 'Vente',
 };
 
 const LARGEUR_TABLETTE = 700;

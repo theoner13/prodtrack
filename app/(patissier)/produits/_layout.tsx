@@ -2,6 +2,7 @@ import { Link, Stack } from 'expo-router';
 import { Text, View } from 'react-native';
 
 import { ClocheNotifications } from '@/components/cloche-notifications';
+import { LogoEntete } from '@/components/logo';
 import { couleurs, tailles } from '@/theme';
 
 function ActionsEntete() {
@@ -28,7 +29,11 @@ export default function LayoutMesProduits() {
     >
       <Stack.Screen
         name="index"
-        options={{ title: 'Mes produits', headerRight: () => <ActionsEntete /> }}
+        options={{
+          title: 'Mes produits',
+          headerLeft: () => <LogoEntete />,
+          headerRight: () => <ActionsEntete />,
+        }}
       />
       <Stack.Screen name="autres-boutiques" options={{ title: 'Autres boutiques' }} />
       <Stack.Screen name="catalogue/[id]" options={{ title: 'Produit' }} />

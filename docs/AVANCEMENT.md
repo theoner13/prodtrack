@@ -21,6 +21,7 @@
 
 ## En cours / à savoir
 
+- Affichage : le rôle admin s'appelle « Admin » et le rôle vendeuse « Vente » (valeurs en base inchangées : admin / vendeuse).
 - Phase 11 : code prêt (push, EAS) ; reste : compte Expo, eas init, build de développement et test sur téléphone (compte Apple Developer)
 - Phase 12 terminée : conformité documentée dans `docs/12-VERIFICATION-FINALE.md`, icônes ProdTrack, PWA (`public/`), nettoyage demo, paquets Expo à jour. Commit local fait ; **push non fait** (consigne du prompt phase 12) — à pousser pour mettre à jour le site Vercel.
 - Évolution (hors cahier des charges, validée par le propriétaire) : produits intermédiaires (ex. biscuit cuillère), non vendus, accessibles à tous les pâtissiers de la boutique
@@ -36,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-30 : rôles affichés Admin / Pâtissier / Vente (au lieu de Patron / Vendeuse), logo en haut à gauche de chaque écran (Cursor)
 - 2026-10-30 : écran du code : logo, pavé plus grand et centré (Cursor)
 - 2026-10-30 : pavé du code : disposition 3 × 3 + 0 rétablie (Cursor)
 - 2026-10-29 : animation d'accueil avec le logo à l'ouverture (Cursor)

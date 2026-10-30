@@ -54,7 +54,7 @@ export function messageErreur(erreur: unknown): string {
     return 'Adresse email invalide.';
   }
   if (texte.includes('code boutique invalide')) {
-    return 'Ce code boutique est invalide. Vérifiez-le auprès du patron.';
+    return 'Ce code boutique est invalide. Vérifiez-le auprès de l\'admin.';
   }
   if (texte.includes('déjà un profil')) {
     return 'Ce compte a déjà un profil.';
@@ -66,7 +66,7 @@ export function messageErreur(erreur: unknown): string {
     return 'Ce nom de produit est déjà utilisé dans cette boutique.';
   }
   if (texte.includes('impossible de le retirer') || texte.includes('impossible de le renommer')) {
-    return 'Ce produit est imposé par le patron : vous ne pouvez pas le retirer ni le renommer.';
+    return 'Ce produit est imposé par l\'admin : vous ne pouvez pas le retirer ni le renommer.';
   }
   if (
     texte.includes('trop lourde') ||

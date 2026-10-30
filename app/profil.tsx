@@ -12,9 +12,9 @@ import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 import type { RoleEmploye } from '@/types/database';
 
 const ROLES: Record<RoleEmploye, string> = {
-  admin: 'Patron',
+  admin: 'Admin',
   patissier: 'Pâtissier',
-  vendeuse: 'Vendeuse',
+  vendeuse: 'Vente',
 };
 
 export default function EcranProfil() {
@@ -75,7 +75,7 @@ export default function EcranProfil() {
   }
 
   return (
-    <Ecran titre="Profil" defilement>
+    <Ecran defilement>
       <Bouton titre="Retour" variante="secondaire" onPress={retour} />
       <Banniere message={confirmation} onFermer={fermer} />
       <ChoixPhoto

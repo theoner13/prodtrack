@@ -1,4 +1,4 @@
-import { Image, type ImageStyle, type StyleProp } from 'react-native';
+import { Image, View, type ImageStyle, type StyleProp } from 'react-native';
 
 type Props = {
   /** Taille du carré en pixels (défaut 72). */
@@ -26,5 +26,14 @@ export function Logo({ taille = 72, style }: Props) {
       importantForAccessibility="no"
       accessibilityIgnoresInvertColors
     />
+  );
+}
+
+/** Petit logo pour headerLeft (marge gauche 16 px). */
+export function LogoEntete() {
+  return (
+    <View style={{ marginLeft: 16, justifyContent: 'center' }}>
+      <Logo taille={28} />
+    </View>
   );
 }

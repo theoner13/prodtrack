@@ -87,7 +87,7 @@ export default function EcranRejoindre() {
         onPress={() => setValue('role', 'patissier', { shouldValidate: true })}
       />
       <Bouton
-        titre="Vendeuse"
+        titre="Vente"
         variante={role === 'vendeuse' ? 'principal' : 'secondaire'}
         onPress={() => setValue('role', 'vendeuse', { shouldValidate: true })}
       />

@@ -3,6 +3,7 @@ import { Link, Tabs } from 'expo-router';
 import { Text, View } from 'react-native';
 
 import { ClocheNotifications } from '@/components/cloche-notifications';
+import { LogoEntete } from '@/components/logo';
 import { couleurs, tailles } from '@/theme';
 
 function ActionsEntete() {
@@ -28,6 +29,7 @@ export default function LayoutVendeuse() {
         headerShadowVisible: false,
         headerTintColor: couleurs.texte,
         headerTitleStyle: { fontSize: 16, fontWeight: '600' },
+        headerLeft: () => <LogoEntete />,
         headerRight: () => <ActionsEntete />,
         tabBarActiveTintColor: couleurs.principal,
         tabBarInactiveTintColor: couleurs.ongletInactif,
