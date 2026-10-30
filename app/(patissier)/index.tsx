@@ -1,27 +1,22 @@
 import { router, type Href } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { useUrlsSignees } from '@/api/photos';
 import { useMesPrevisions, type PrevisionProduit } from '@/api/previsions';
 import { useMesProduits } from '@/api/produits';
 import { useStock } from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
-import { CarteProduit } from '@/components/carte-produit';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { aujourdhuiParis } from '@/lib/format';
+import {
+  construirePlanning,
+  libelleAccessibiliteLigne,
+  type LignePlanning,
+} from '@/lib/planning';
 import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
-
-const LARGEUR_TABLETTE = 700;
-
-function ajouterJours(jour: string, nombre: number): string {
-  const date = new Date(`${jour}T12:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + nombre);
-  return date.toISOString().slice(0, 10);
-}
 
 function nomJour(jour: string, capitale: boolean): string {
   const date = new Date(`${jour}T12:00:00Z`);
@@ -51,21 +46,13 @@ function formatMoment(iso: string): string {
   return `${jour} à ${hh}:${mm}`;
 }
 
-function phraseFabrication(jour: string, quantite: number | null, aujourdhui: string): string {
-  const quand = jour === aujourdhui ? "Aujourd'hui" : `Au plus tard ${nomJour(jour, false)}`;
-  if (quantite === null) return quand;
-  return `${quand} — environ ${quantite} unités`;
-}
-
 function DetailPrevision({ ligne }: { ligne: PrevisionProduit }) {
   return (
     <View style={styles.detail}>
-      <Text style={styles.texte}>Stock actuel : {ligne.stockActuel ?? 0}</Text>
-      <Text style={styles.repere}>Seuil : {ligne.seuilMin}</Text>
       <View style={styles.ligneTableau}>
         <Text style={[styles.entete, styles.colJour]}>Jour</Text>
         <Text style={[styles.entete, styles.colNombre]}>Sorties prévues</Text>
-        <Text style={[styles.entete, styles.colNombre]}>Stock prévu en fin de journée</Text>
+        <Text style={[styles.entete, styles.colNombre]}>Stock prévu</Text>
       </View>
       {ligne.detail.map((jour) => {
         const sousSeuil = jour.stockFin < ligne.seuilMin;
@@ -83,32 +70,83 @@ function DetailPrevision({ ligne }: { ligne: PrevisionProduit }) {
           </View>
         );
       })}
+      <Text style={styles.repere}>Seuil : {ligne.seuilMin}</Text>
     </View>
+  );
+}
+
+function LigneProduitPlanning({
+  ligne,
+  aujourdhui,
+  prevision,
+  deplie,
+  onBasculer,
+}: {
+  ligne: LignePlanning;
+  aujourdhui: string;
+  prevision: PrevisionProduit | undefined;
+  deplie: boolean;
+  onBasculer: () => void;
+}) {
+  const aDetail = Boolean(prevision?.detail.length);
+  const stockTexte = ligne.sousSeuil
+    ? `Stock ${ligne.stock} / seuil ${ligne.seuil}`
+    : `Stock ${ligne.stock}`;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={libelleAccessibiliteLigne(ligne, aujourdhui)}
+      accessibilityState={{ expanded: aDetail ? deplie : undefined }}
+      onPress={aDetail ? onBasculer : undefined}
+      style={styles.ligneProduit}
+    >
+      <View style={styles.ligneHaute}>
+        <View style={styles.pointSlot}>
+          {ligne.sousSeuil ? <View style={styles.point} /> : null}
+        </View>
+        <View style={styles.centre}>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={`Ouvrir la fiche de ${ligne.nom}`}
+            onPress={(event) => {
+              event.stopPropagation?.();
+              router.push(`/produits/${ligne.produitId}` as Href);
+            }}
+          >
+            <Text style={styles.nomLien} numberOfLines={1}>
+              {ligne.nom}
+            </Text>
+          </Pressable>
+          <Text style={styles.stock}>{stockTexte}</Text>
+          {ligne.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
+        </View>
+        <View style={styles.droite}>
+          {ligne.quantite !== null ? (
+            <>
+              <Text style={styles.quantite}>{ligne.quantite}</Text>
+              <Text style={styles.aFaire}>à faire</Text>
+            </>
+          ) : (
+            <Text style={styles.desQuePossible}>dès que possible</Text>
+          )}
+        </View>
+      </View>
+      {deplie && prevision ? <DetailPrevision ligne={prevision} /> : null}
+    </Pressable>
   );
 }
 
 export default function EcranPlanning() {
   const { profil } = useAuth();
-  const { width } = useWindowDimensions();
-  const tablette = width >= LARGEUR_TABLETTE;
   const boutiqueId = profil?.boutique_id ?? null;
   const mes = useMesProduits(profil?.id ?? null);
   const previsions = useMesPrevisions(profil?.id ?? null);
   const stock = useStock(boutiqueId);
   const [ouvert, setOuvert] = useState<string | null>(null);
 
-  const chemins = [
-    ...(previsions.data ?? []).map((ligne) => ligne.photoUrl),
-    ...(mes.data?.produits ?? []).map((produit) => produit.photo_url),
-  ].filter((chemin): chemin is string => Boolean(chemin));
-  const photos = useUrlsSignees(chemins);
-
   async function rafraichir() {
     await Promise.all([mes.refetch(), previsions.refetch(), stock.refetch()]);
-  }
-
-  function basculer(id: string) {
-    setOuvert((actuel) => (actuel === id ? null : id));
   }
 
   if (mes.isLoading || previsions.isLoading || stock.isLoading) {
@@ -132,7 +170,7 @@ export default function EcranPlanning() {
 
   const produits = mes.data?.produits ?? [];
   if (produits.length === 0) {
-      return (
+    return (
       <Ecran
         titre="Planning"
         defilement
@@ -153,24 +191,35 @@ export default function EcranPlanning() {
         { stock: ligne.stock ?? 0, seuil: ligne.seuil_min ?? 0 },
       ]),
   );
-  const sousSeuil = produits
-    .map((produit) => {
-      const info = stockParProduit.get(produit.id);
-      const valeur = info?.stock ?? 0;
-      const seuil = info?.seuil ?? produit.seuil_min;
-      return { produit, stock: valeur, seuil, ecart: seuil - valeur };
-    })
-    .filter((ligne) => ligne.stock < ligne.seuil)
-    .sort((a, b) => b.ecart - a.ecart || a.produit.nom.localeCompare(b.produit.nom, 'fr'));
 
-  const lignes = previsions.data ?? [];
-  const calculees = lignes.filter((ligne) => ligne.calculeLe);
+  const lignesPrevision = previsions.data ?? [];
+  const previsionParId = new Map(lignesPrevision.map((ligne) => [ligne.produitId, ligne]));
   const aujourdhui = aujourdhuiParis();
-  const fin = ajouterJours(aujourdhui, 6);
-  const jours = Array.from({ length: 7 }, (_, index) => ajouterJours(aujourdhui, index));
-  const semaine = calculees
-    .filter((ligne) => ligne.jourFabrication !== null && ligne.jourFabrication >= aujourdhui && ligne.jourFabrication <= fin)
-    .sort((a, b) => a.jourFabrication!.localeCompare(b.jourFabrication!) || a.nom.localeCompare(b.nom, 'fr'));
+
+  const entrees = produits.map((produit) => {
+    const prevision = previsionParId.get(produit.id);
+    const info = stockParProduit.get(produit.id);
+    const stockValeur = info?.stock ?? prevision?.stockActuel ?? 0;
+    const seuil = info?.seuil ?? produit.seuil_min;
+    return {
+      produitId: produit.id,
+      nom: produit.nom,
+      intermediaire: produit.intermediaire,
+      stock: stockValeur,
+      seuil,
+      jourFabrication: prevision?.jourFabrication ?? null,
+      quantiteSuggeree: prevision?.quantiteSuggeree ?? null,
+      fiable: prevision?.fiable ?? null,
+      calculeLe: prevision?.calculeLe ?? null,
+    };
+  });
+
+  const groupes = construirePlanning(entrees, aujourdhui);
+  const aSousSeuil = groupes.some((groupe) => groupe.lignes.some((ligne) => ligne.sousSeuil));
+  const aIndicative = groupes.some((groupe) =>
+    groupe.lignes.some((ligne) => ligne.fiable === false),
+  );
+  const calculees = lignesPrevision.filter((ligne) => ligne.calculeLe);
   const dernier = calculees.reduce(
     (max, ligne) => (ligne.calculeLe && ligne.calculeLe > max ? ligne.calculeLe : max),
     '',
@@ -183,141 +232,139 @@ export default function EcranPlanning() {
       enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
       onRafraichir={() => void rafraichir()}
     >
-      {sousSeuil.length > 0 ? (
-        <>
-          <Text style={styles.section}>Sous le seuil maintenant</Text>
-          {sousSeuil.map((ligne) => (
-            <CarteProduit
-              key={ligne.produit.id}
-              nom={ligne.produit.nom}
-              photoUrl={ligne.produit.photo_url ? photos.data?.[ligne.produit.photo_url] : null}
-              alerte
-              sousTitre={`Stock ${ligne.stock} · seuil ${ligne.seuil} — à fabriquer dès que possible`}
-              onPressNom={() => router.push(`/produits/${ligne.produit.id}` as Href)}
-            >
-              {ligne.produit.intermediaire ? (
-                <Text style={styles.badge}>Intermédiaire</Text>
-              ) : null}
-            </CarteProduit>
-          ))}
-        </>
+      {aIndicative ? (
+        <Text style={styles.indicative}>
+          Prévisions indicatives : moins de 8 semaines de données.
+        </Text>
       ) : null}
 
-      {calculees.length === 0 ? (
-        <Text style={styles.texte}>Les prévisions sont calculées chaque nuit. Revenez demain.</Text>
+      {groupes.length === 0 ? (
+        calculees.length === 0 ? (
+          <EtatVide message="Les prévisions sont calculées chaque nuit. Revenez demain." />
+        ) : (
+          <EtatVide message="Rien à fabriquer dans les 7 prochains jours." />
+        )
       ) : (
-        <>
-          <Text style={styles.section}>À fabriquer cette semaine</Text>
-          {semaine.length === 0 ? (
-            <Text style={styles.texte}>Rien à fabriquer dans les 7 prochains jours.</Text>
-          ) : (
-            semaine.map((ligne) => {
-              const estAujourdhui = ligne.jourFabrication === aujourdhui;
-              const deplie = ouvert === ligne.produitId;
-              return (
-                <Pressable
-                  key={ligne.produitId}
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: deplie }}
-                  onPress={() => basculer(ligne.produitId)}
-                >
-                  <CarteProduit
-                    nom={ligne.nom}
-                    photoUrl={ligne.photoUrl ? photos.data?.[ligne.photoUrl] : null}
-                    alerte={estAujourdhui}
-                    onPressNom={() => router.push(`/produits/${ligne.produitId}` as Href)}
-                    sousLigne={
-                      <View style={styles.sous}>
-                        <Text style={[styles.phrase, estAujourdhui && styles.rouge]}>
-                          {phraseFabrication(ligne.jourFabrication ?? aujourdhui, ligne.quantiteSuggeree, aujourdhui)}
-                        </Text>
-                        {ligne.fiable === false ? (
-                          <Text style={styles.bandeau}>
-                            Prévision indicative : moins de 8 semaines de données.
-                          </Text>
-                        ) : null}
-                        {deplie ? <DetailPrevision ligne={ligne} /> : null}
-                      </View>
-                    }
-                  >
-                    {ligne.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
-                  </CarteProduit>
-                </Pressable>
-              );
-            })
-          )}
-
-          <Text style={styles.section}>Vue de la semaine</Text>
-          <View style={tablette ? styles.colonnes : styles.jours}>
-            {jours.map((jour) => {
-              const duJour = semaine.filter((ligne) => ligne.jourFabrication === jour);
-              return (
-                <View key={jour} style={[styles.jour, tablette && styles.jourColonne]}>
-                  <Text style={styles.titreJour}>{nomJour(jour, true)}</Text>
-                  {duJour.length === 0 ? (
-                    <Text style={styles.vide}>—</Text>
-                  ) : (
-                    duJour.map((ligne) => (
-                      <Pressable
-                        key={ligne.produitId}
-                        accessibilityRole="button"
-                        onPress={() => basculer(ligne.produitId)}
-                      >
-                        <Text style={[styles.produitJour, ouvert === ligne.produitId && styles.produitOuvert]}>
-                          {ligne.nom}
-                        </Text>
-                      </Pressable>
-                    ))
-                  )}
-                </View>
-              );
-            })}
+        groupes.map((groupe) => (
+          <View key={groupe.jour} style={styles.groupe}>
+            <Text style={styles.section}>
+              {groupe.libelle} · {groupe.lignes.length}{' '}
+              {groupe.lignes.length > 1 ? 'produits' : 'produit'}
+            </Text>
+            {groupe.lignes.map((ligne) => (
+              <LigneProduitPlanning
+                key={ligne.produitId}
+                ligne={ligne}
+                aujourdhui={aujourdhui}
+                prevision={previsionParId.get(ligne.produitId)}
+                deplie={ouvert === ligne.produitId}
+                onBasculer={() =>
+                  setOuvert((actuel) => (actuel === ligne.produitId ? null : ligne.produitId))
+                }
+              />
+            ))}
           </View>
-
-          {dernier ? <Text style={styles.calcul}>Dernier calcul : {formatMoment(dernier)}</Text> : null}
-        </>
+        ))
       )}
+
+      {aSousSeuil ? <Text style={styles.legende}>● sous le seuil de stock</Text> : null}
+      {dernier ? <Text style={styles.calcul}>Dernier calcul : {formatMoment(dernier)}</Text> : null}
     </Ecran>
   );
 }
 
 const styles = StyleSheet.create({
+  indicative: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    marginBottom: espacements.s,
+  },
+  groupe: {
+    marginBottom: espacements.s,
+  },
   section: {
     ...styleTitreSection,
     marginTop: espacements.m,
+    marginBottom: espacements.xs,
   },
-  texte: {
-    fontSize: tailles.normal,
-    color: couleurs.texte,
-  },
-  phrase: {
-    fontSize: tailles.normal,
-    fontWeight: '600',
-    color: couleurs.texte,
-  },
-  rouge: {
-    color: couleurs.erreur,
-  },
-  sous: {
-    alignSelf: 'stretch',
+  ligneProduit: {
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: couleurs.bordure,
+    backgroundColor: couleurs.fond,
     gap: espacements.s,
   },
-  bandeau: {
-    fontSize: tailles.petit,
-    fontWeight: '600',
-    color: couleurs.alerte,
-    backgroundColor: couleurs.alerteClair,
-    borderRadius: 8,
-    padding: espacements.s,
+  ligneHaute: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espacements.s,
   },
-  detail: {
-    gap: espacements.xs,
-    alignSelf: 'stretch',
+  pointSlot: {
+    width: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  repere: {
+  point: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: couleurs.alerte,
+  },
+  centre: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  nomLien: {
     fontSize: tailles.normal,
     fontWeight: '600',
+    color: couleurs.principal,
+    textDecorationLine: 'underline',
+  },
+  stock: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    overflow: 'hidden',
+    backgroundColor: couleurs.fondPuce,
+    color: couleurs.texteSecondaire,
+    fontSize: 12,
+    fontWeight: '600',
+    paddingHorizontal: espacements.s,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginTop: 2,
+  },
+  droite: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    minWidth: 56,
+  },
+  quantite: {
+    fontSize: tailles.grand,
+    fontWeight: '700',
     color: couleurs.texte,
+  },
+  aFaire: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+  },
+  desQuePossible: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    textAlign: 'right',
+    maxWidth: 88,
+  },
+  detail: {
+    gap: 2,
+    paddingLeft: 8 + espacements.s,
+  },
+  repere: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    marginTop: 2,
   },
   ligneTableau: {
     flexDirection: 'row',
@@ -332,70 +379,26 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   entete: {
-    fontSize: tailles.petit,
+    fontSize: 12,
     fontWeight: '600',
     color: couleurs.texteSecondaire,
   },
   cellule: {
-    fontSize: tailles.petit,
+    fontSize: 12,
     color: couleurs.texte,
   },
   orange: {
     color: couleurs.alerte,
     fontWeight: '600',
   },
-  colonnes: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    gap: espacements.s,
-  },
-  jours: {
-    gap: 0,
-  },
-  jour: {
-    gap: espacements.xs,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: couleurs.bordure,
-  },
-  jourColonne: {
-    flex: 1,
-    minWidth: 0,
-    borderBottomWidth: 0,
-    paddingHorizontal: espacements.xs,
-  },
-  titreJour: {
+  legende: {
     fontSize: tailles.petit,
-    fontWeight: '600',
-    color: couleurs.texte,
-  },
-  vide: {
-    fontSize: tailles.normal,
     color: couleurs.texteSecondaire,
-  },
-  produitJour: {
-    fontSize: tailles.petit,
-    color: couleurs.principalFonce,
-    fontWeight: '600',
-  },
-  produitOuvert: {
-    backgroundColor: couleurs.fondPuce,
-    borderRadius: 8,
-    overflow: 'hidden',
+    marginTop: espacements.m,
   },
   calcul: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     marginTop: espacements.s,
-  },
-  badge: {
-    overflow: 'hidden',
-    backgroundColor: couleurs.principalClair,
-    color: couleurs.principalFonce,
-    fontSize: 12,
-    fontWeight: '600',
-    paddingHorizontal: espacements.s,
-    paddingVertical: 2,
-    borderRadius: 8,
   },
 });

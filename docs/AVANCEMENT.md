@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-30 : planning pâtissier épuré : liste unique par jour sans doublon, mention indicative unique (Cursor)
 - 2026-10-30 : exports admin lisibles : Excel et PDF (ventes, mouvements, CA, pertes), écran Export homogène (Cursor)
 - 2026-10-30 : tableau de bord : classement des produits par boutique (CA, quantités, pertes) et classement des pertes (Cursor)
 - 2026-10-30 : détail CA employé en tableau : vendus, jetés, CA par produit et par période (Cursor)
