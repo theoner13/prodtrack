@@ -8,7 +8,15 @@ type Props = {
   longueur?: number;
 };
 
-const TOUCHES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'effacer'] as const;
+type Touche = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | 'effacer' | '';
+
+const LIGNES: Touche[][] = [
+  ['1', '2', '3'],
+  ['4', '5', '6'],
+  ['7', '8', '9'],
+  ['', '0', 'effacer'],
+];
+
 const DIAMETRE = 56;
 
 export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
@@ -28,21 +36,27 @@ export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
         ))}
       </View>
       <View style={styles.grille}>
-        {TOUCHES.map((touche) => {
-          if (touche === '') return <View key="vide" style={styles.toucheVide} />;
-          const effacer = touche === 'effacer';
-          return (
-            <Pressable
-              key={touche}
-              accessibilityRole="button"
-              accessibilityLabel={effacer ? 'Effacer' : touche}
-              onPress={() => (effacer ? onChange(valeur.slice(0, -1)) : ajouter(touche))}
-              style={({ pressed }) => [styles.touche, pressed && styles.appuye]}
-            >
-              <Text style={styles.texteTouche}>{effacer ? '⌫' : touche}</Text>
-            </Pressable>
-          );
-        })}
+        {LIGNES.map((ligne, indexLigne) => (
+          <View key={indexLigne} style={styles.ligne}>
+            {ligne.map((touche) => {
+              if (touche === '') {
+                return <View key={`vide-${indexLigne}`} style={styles.toucheVide} />;
+              }
+              const effacer = touche === 'effacer';
+              return (
+                <Pressable
+                  key={touche}
+                  accessibilityRole="button"
+                  accessibilityLabel={effacer ? 'Effacer' : touche}
+                  onPress={() => (effacer ? onChange(valeur.slice(0, -1)) : ajouter(touche))}
+                  style={({ pressed }) => [styles.touche, pressed && styles.appuye]}
+                >
+                  <Text style={styles.texteTouche}>{effacer ? '⌫' : touche}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -68,15 +82,16 @@ const styles = StyleSheet.create({
     backgroundColor: couleurs.principal,
   },
   grille: {
+    gap: espacements.s,
+  },
+  ligne: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'center',
     gap: espacements.s,
   },
   touche: {
     width: DIAMETRE,
     height: DIAMETRE,
-    marginHorizontal: '3%',
     borderRadius: DIAMETRE / 2,
     backgroundColor: couleurs.fondPuce,
     alignItems: 'center',
@@ -84,7 +99,6 @@ const styles = StyleSheet.create({
   },
   toucheVide: {
     width: DIAMETRE,
-    marginHorizontal: '3%',
   },
   appuye: {
     backgroundColor: couleurs.desactive,
