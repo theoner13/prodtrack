@@ -193,6 +193,7 @@ export default function EcranPlanning() {
               photoUrl={ligne.produit.photo_url ? photos.data?.[ligne.produit.photo_url] : null}
               alerte
               sousTitre={`Stock ${ligne.stock} · seuil ${ligne.seuil} — à fabriquer dès que possible`}
+              onPressNom={() => router.push(`/produits/${ligne.produit.id}` as Href)}
             >
               {ligne.produit.intermediaire ? (
                 <Text style={styles.badge}>Intermédiaire</Text>
@@ -224,6 +225,7 @@ export default function EcranPlanning() {
                     nom={ligne.nom}
                     photoUrl={ligne.photoUrl ? photos.data?.[ligne.photoUrl] : null}
                     alerte={estAujourdhui}
+                    onPressNom={() => router.push(`/produits/${ligne.produitId}` as Href)}
                     sousLigne={
                       <View style={styles.sous}>
                         <Text style={[styles.phrase, estAujourdhui && styles.rouge]}>

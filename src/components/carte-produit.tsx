@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatEuros } from '@/lib/format';
 import { couleurs, espacements, tailles } from '@/theme';
@@ -12,6 +12,7 @@ type Props = {
   children?: ReactNode; // contenu libre à droite (compteur, badge…)
   sousLigne?: ReactNode; // contenu sous la ligne photo + nom (ex. compteur)
   alerte?: boolean; // bordure orange (stock sous le seuil)
+  onPressNom?: () => void; // ouvre la fiche produit (lien sur le nom seulement)
 };
 
 // Ligne produit : photo (ou initiale), nom, prix — style liste iOS sans carte.
@@ -23,7 +24,14 @@ export function CarteProduit({
   children,
   sousLigne,
   alerte = false,
+  onPressNom,
 }: Props) {
+  const titre = (
+    <Text style={[styles.nom, onPressNom ? styles.nomLien : null]} numberOfLines={2}>
+      {nom}
+    </Text>
+  );
+
   return (
     <View style={[styles.ligneListe, alerte && styles.alerte]}>
       <View style={styles.ligne}>
@@ -35,9 +43,20 @@ export function CarteProduit({
           </View>
         )}
         <View style={styles.textes}>
-          <Text style={styles.nom} numberOfLines={2}>
-            {nom}
-          </Text>
+          {onPressNom ? (
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={`Ouvrir la fiche de ${nom}`}
+              onPress={(event) => {
+                event.stopPropagation?.();
+                onPressNom();
+              }}
+            >
+              {titre}
+            </Pressable>
+          ) : (
+            titre
+          )}
           {prixCentimes != null ? <Text style={styles.detail}>{formatEuros(prixCentimes)}</Text> : null}
           {sousTitre ? <Text style={styles.detail}>{sousTitre}</Text> : null}
         </View>
@@ -89,6 +108,10 @@ const styles = StyleSheet.create({
     fontSize: tailles.normal,
     fontWeight: '600',
     color: couleurs.texte,
+  },
+  nomLien: {
+    color: couleurs.principal,
+    textDecorationLine: 'underline',
   },
   detail: {
     fontSize: tailles.petit,
