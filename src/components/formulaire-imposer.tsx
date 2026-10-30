@@ -10,6 +10,7 @@ import { useImposerProduits } from '@/api/produits';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
+import { ChoixSegmente } from '@/components/choix-segmente';
 import { EditeurRecette, estVide, UNITES } from '@/components/editeur-recette';
 import { EtatChargement, EtatErreur } from '@/components/etats';
 import { eurosVersCentimes } from '@/lib/format';
@@ -238,18 +239,16 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
         )}
       />
       <Text style={styles.libelle}>Conservation (facultatif, défaut : frais)</Text>
-      <Bouton
-        titre="Frais"
-        variante={conservation === 'frais' ? 'principal' : 'secondaire'}
-        onPress={() => {
-          setValue('conservation', 'frais');
-          setValue('seuil', '');
+      <ChoixSegmente
+        options={[
+          { valeur: 'frais', libelle: 'Frais' },
+          { valeur: 'surgele', libelle: 'Surgelé' },
+        ]}
+        valeur={conservation}
+        onChange={(valeur) => {
+          setValue('conservation', valeur);
+          if (valeur === 'frais') setValue('seuil', '');
         }}
-      />
-      <Bouton
-        titre="Surgelé"
-        variante={conservation === 'surgele' ? 'principal' : 'secondaire'}
-        onPress={() => setValue('conservation', 'surgele')}
       />
       <Controller
         control={control}

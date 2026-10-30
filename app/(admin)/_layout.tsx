@@ -46,35 +46,65 @@ export default function LayoutAdmin() {
         name="index"
         options={{
           title: 'Tableau de bord',
-          tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'stats-chart' : 'stats-chart-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="boutiques"
         options={{
           title: 'Boutiques',
-          tabBarIcon: ({ color, size }) => <Ionicons name="storefront" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'storefront' : 'storefront-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="employes"
         options={{
           title: 'Employés',
-          tabBarIcon: ({ color, size }) => <Ionicons name="people" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'people' : 'people-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="produits"
         options={{
           title: 'Produits',
-          tabBarIcon: ({ color, size }) => <Ionicons name="cube" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'cube' : 'cube-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="export"
         options={{
           title: 'Export',
-          tabBarIcon: ({ color, size }) => <Ionicons name="download" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'download' : 'download-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
     </Tabs>

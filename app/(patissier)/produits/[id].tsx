@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, Stack, useLocalSearchParams, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { z } from 'zod';
 
 import { envoyerPhoto, supprimerPhoto } from '@/api/photos';
@@ -19,6 +19,7 @@ import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
 import { ChoixPhoto } from '@/components/choix-photo';
+import { ChoixSegmente } from '@/components/choix-segmente';
 import { Compteur } from '@/components/compteur';
 import { Ecran } from '@/components/ecran';
 import { EditeurRecette, estVide, UNITES, type LigneSaisie, type Unite } from '@/components/editeur-recette';
@@ -74,6 +75,8 @@ function quantiteTexte(valeur: number): string {
 export default function EcranFicheProduit() {
   const { id, ajoute } = useLocalSearchParams<{ id: string; ajoute?: string }>();
   const creation = id === 'nouveau';
+  const { width } = useWindowDimensions();
+  const deuxColonnes = width >= 360;
   const { profil, verrouillerApresSaisie } = useAuth();
   const fiche = useFicheProduit(creation ? null : (id ?? null));
   const stockBoutique = useStock(profil?.boutique_id ?? null);
@@ -279,11 +282,12 @@ export default function EcranFicheProduit() {
 
   const impose = produit?.impose_par_admin ?? false;
   const boutiqueId = profil?.boutique_id;
+  const afficherPrix = !intermediaire || impose;
 
   const zoneStock =
     peutAjouterStock && produit ? (
       <View style={styles.zoneStock}>
-        <Text style={styles.titreStock}>Ajouter du stock</Text>
+        <Text style={styles.titreSection}>Ajouter du stock</Text>
         <Text style={styles.texte}>Stock actuel : {stockActuel}</Text>
         <Compteur
           valeur={quantiteProduction}
@@ -313,174 +317,188 @@ export default function EcranFicheProduit() {
     );
   }
 
-  return (
-    <Ecran titre={creation ? 'Nouveau produit' : (produit?.nom ?? 'Produit')} defilement>
-      <Stack.Screen options={{ title: creation ? 'Nouveau produit' : 'Modifier le produit' }} />
-      <Banniere message={confirmation} onFermer={fermerConfirmation} />
-      {boutiqueId ? (
-        <ChoixPhoto
-          chemin={creation ? uriLocale : photo || null}
-          dossier="produits"
-          proprietaireId={boutiqueId}
-          envoiDiffere={creation}
-          onPhotoLocale={setUriLocale}
-          onChange={photoChange}
+  const champNom = (
+    <Controller
+      control={control}
+      name="nom"
+      render={({ field, fieldState }) => (
+        <Champ
+          libelle="Nom"
+          value={field.value}
+          onChangeText={field.onChange}
+          onBlur={field.onBlur}
+          editable={!impose}
+          erreur={fieldState.error?.message}
         />
-      ) : (
-        <Text style={styles.erreur}>Aucune boutique n’est associée à votre compte.</Text>
       )}
+    />
+  );
 
-      {zoneStock}
+  return (
+    <Ecran defilement>
+      <Stack.Screen options={{ title: creation ? 'Nouveau produit' : 'Modifier le produit' }} />
+      <View style={styles.formulaire}>
+        <Banniere message={confirmation} onFermer={fermerConfirmation} />
 
-      {!impose ? (
-        <>
-          <Text style={styles.libelle}>Type de produit</Text>
-          <Bouton
-            titre="Produit fini"
-            variante={!intermediaire ? 'principal' : 'secondaire'}
-            onPress={() => setValue('intermediaire', false)}
-          />
-          <Bouton
-            titre="Produit intermédiaire"
-            variante={intermediaire ? 'principal' : 'secondaire'}
-            onPress={() => setValue('intermediaire', true)}
-          />
-          <Text style={styles.aide}>
-            Intermédiaire : sert à fabriquer d’autres produits, n’est pas vendu en boutique.
-          </Text>
-        </>
-      ) : null}
-      <Controller
-        control={control}
-        name="nom"
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Nom"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            editable={!impose}
-            erreur={fieldState.error?.message}
-          />
+        {boutiqueId ? (
+          <ChoixPhoto
+            compact
+            chemin={creation ? uriLocale : photo || null}
+            dossier="produits"
+            proprietaireId={boutiqueId}
+            envoiDiffere={creation}
+            onPhotoLocale={setUriLocale}
+            onChange={photoChange}
+          >
+            {champNom}
+          </ChoixPhoto>
+        ) : (
+          <>
+            <Text style={styles.erreur}>Aucune boutique n’est associée à votre compte.</Text>
+            {champNom}
+          </>
         )}
-      />
-      {impose ? (
-        <Text style={styles.aide}>Imposé par l'admin : le nom ne peut pas être modifié.</Text>
-      ) : null}
-      {!intermediaire || impose ? (
-        <Controller
-          control={control}
-          name="prix"
-          render={({ field, fieldState }) => (
-            <Champ
-              libelle="Prix (€)"
-              keyboardType="decimal-pad"
-              placeholder="3,50"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              erreur={fieldState.error?.message}
+        {impose ? (
+          <Text style={styles.aide}>Imposé par l'admin : le nom ne peut pas être modifié.</Text>
+        ) : null}
+
+        {zoneStock}
+
+        {!impose ? (
+          <View style={styles.bloc}>
+            <Text style={styles.titreSection}>Type</Text>
+            <ChoixSegmente
+              options={[
+                { valeur: 'fini', libelle: 'Produit fini' },
+                { valeur: 'intermediaire', libelle: 'Produit intermédiaire' },
+              ]}
+              valeur={intermediaire ? 'intermediaire' : 'fini'}
+              onChange={(valeur) => setValue('intermediaire', valeur === 'intermediaire')}
+            />
+            <Text style={styles.aide}>
+              Intermédiaire : sert à fabriquer d’autres produits, n’est pas vendu en boutique.
+            </Text>
+          </View>
+        ) : null}
+
+        <View style={[styles.ligneChamps, !deuxColonnes && styles.colonne]}>
+          {afficherPrix ? (
+            <View style={styles.colonneChamp}>
+              <Controller
+                control={control}
+                name="prix"
+                render={({ field, fieldState }) => (
+                  <Champ
+                    libelle="Prix (€)"
+                    keyboardType="decimal-pad"
+                    placeholder="3,50"
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    onBlur={field.onBlur}
+                    erreur={fieldState.error?.message}
+                  />
+                )}
+              />
+            </View>
+          ) : null}
+          <View style={afficherPrix ? styles.colonneChamp : styles.pleineLargeur}>
+            <Text style={styles.libelle}>Conservation</Text>
+            <ChoixSegmente
+              options={[
+                { valeur: 'frais', libelle: 'Frais' },
+                { valeur: 'surgele', libelle: 'Surgelé' },
+              ]}
+              valeur={conservation}
+              desactive={impose}
+              onChange={(valeur) => {
+                setValue('conservation', valeur);
+                if (valeur === 'frais') setValue('seuil', '0');
+              }}
+            />
+          </View>
+        </View>
+
+        <View style={[styles.ligneChamps, !deuxColonnes && styles.colonne]}>
+          <View style={styles.colonneChamp}>
+            <Controller
+              control={control}
+              name="duree"
+              render={({ field, fieldState }) => (
+                <Champ
+                  libelle="Durée de conservation (jours)"
+                  keyboardType="number-pad"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  erreur={fieldState.error?.message}
+                />
+              )}
+            />
+          </View>
+          {conservation === 'surgele' ? (
+            <View style={styles.colonneChamp}>
+              <Controller
+                control={control}
+                name="seuil"
+                render={({ field, fieldState }) => (
+                  <Champ
+                    libelle="Seuil minimum (surgelé seulement)"
+                    keyboardType="number-pad"
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    onBlur={field.onBlur}
+                    erreur={fieldState.error?.message}
+                  />
+                )}
+              />
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.bloc}>
+          <Text style={styles.titreSection}>Recette · facultatif</Text>
+          {impose ? (
+            <RecetteLecture lignes={fiche.data?.lignes ?? []} />
+          ) : (
+            <EditeurRecette
+              lignes={lignes}
+              onChange={(valeur) => setValue('lignes', valeur, { shouldValidate: true })}
+              erreurs={lignes.map((_, index) => {
+                const e = formState.errors.lignes?.[index];
+                return e?.ingredient?.message ?? e?.quantite?.message;
+              })}
             />
           )}
+        </View>
+
+        {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
+        <Bouton
+          titre={creation ? 'Enregistrer le produit' : 'Enregistrer les modifications'}
+          chargement={formState.isSubmitting}
+          pleineLargeur
+          onPress={handleSubmit(sauver)}
         />
-      ) : null}
 
-      <Text style={styles.libelle}>Conservation</Text>
-      <Bouton
-        titre="Frais"
-        variante={conservation === 'frais' ? 'principal' : 'secondaire'}
-        desactive={impose}
-        onPress={() => {
-          setValue('conservation', 'frais');
-          setValue('seuil', '0');
-        }}
-      />
-      <Bouton
-        titre="Surgelé"
-        variante={conservation === 'surgele' ? 'principal' : 'secondaire'}
-        desactive={impose}
-        onPress={() => setValue('conservation', 'surgele')}
-      />
-
-      <Controller
-        control={control}
-        name="duree"
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Durée de conservation (jours)"
-            keyboardType="number-pad"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            erreur={fieldState.error?.message}
-          />
-        )}
-      />
-      {conservation === 'surgele' ? (
-        <>
-          <Controller
-            control={control}
-            name="seuil"
-            render={({ field, fieldState }) => (
-              <Champ
-                libelle="Seuil minimum de stock"
-                keyboardType="number-pad"
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                erreur={fieldState.error?.message}
+        {!creation && !impose ? (
+          demandeRetrait ? (
+            <View style={styles.confirmation}>
+              <Text style={styles.texte}>
+                Retirer ce produit ? Il n’apparaîtra plus dans vos listes. L’historique de production
+                est conservé.
+              </Text>
+              <Bouton
+                titre="Retirer ce produit"
+                variante="danger"
+                chargement={archiver.isPending}
+                onPress={() => void confirmerRetrait()}
               />
-            )}
-          />
-          <Text style={styles.aide}>Nombre d’unités qui doit toujours rester en stock.</Text>
-        </>
-      ) : null}
-
-      <Text style={styles.titre}>Recette</Text>
-      {impose ? (
-        <RecetteLecture lignes={fiche.data?.lignes ?? []} />
-      ) : (
-        <>
-          <Text style={styles.aide}>
-            Facultatif : vous pouvez enregistrer le produit sans recette et la compléter plus tard.
-          </Text>
-          <EditeurRecette
-            lignes={lignes}
-            onChange={(valeur) => setValue('lignes', valeur, { shouldValidate: true })}
-            erreurs={lignes.map((_, index) => {
-              const e = formState.errors.lignes?.[index];
-              return e?.ingredient?.message ?? e?.quantite?.message;
-            })}
-          />
-        </>
-      )}
-
-      {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
-      <Bouton
-        titre={creation ? 'Enregistrer le produit' : 'Enregistrer les modifications'}
-        chargement={formState.isSubmitting}
-        onPress={handleSubmit(sauver)}
-      />
-
-      {!creation && !impose ? (
-        demandeRetrait ? (
-          <View style={styles.confirmation}>
-            <Text style={styles.texte}>
-              Retirer ce produit ? Il n’apparaîtra plus dans vos listes. L’historique de production
-              est conservé.
-            </Text>
-            <Bouton
-              titre="Retirer ce produit"
-              variante="danger"
-              chargement={archiver.isPending}
-              onPress={() => void confirmerRetrait()}
-            />
-            <Bouton titre="Annuler" variante="secondaire" onPress={() => setDemandeRetrait(false)} />
-          </View>
-        ) : (
-          <Bouton titre="Retirer ce produit" variante="danger" onPress={() => setDemandeRetrait(true)} />
-        )
-      ) : null}
+              <Bouton titre="Annuler" variante="secondaire" onPress={() => setDemandeRetrait(false)} />
+            </View>
+          ) : (
+            <Bouton titre="Retirer ce produit" variante="danger" onPress={() => setDemandeRetrait(true)} />
+          )
+        ) : null}
+      </View>
     </Ecran>
   );
 }
@@ -505,23 +523,38 @@ function RecetteLecture({
 }
 
 const styles = StyleSheet.create({
+  formulaire: {
+    gap: espacements.m,
+  },
   libelle: {
     fontSize: tailles.petit,
     fontWeight: '600',
     color: couleurs.texte,
+    marginBottom: espacements.xs,
   },
-  titre: {
-    fontSize: tailles.section,
-    fontWeight: '600',
-    color: couleurs.texteSecondaire,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-  },
-  titreStock: {
+  titreSection: {
     ...styleTitreSection,
+  },
+  bloc: {
+    gap: espacements.s,
   },
   zoneStock: {
     gap: espacements.m,
+  },
+  ligneChamps: {
+    flexDirection: 'row',
+    gap: espacements.m,
+    alignItems: 'flex-start',
+  },
+  colonne: {
+    flexDirection: 'column',
+  },
+  colonneChamp: {
+    flex: 1,
+    minWidth: 0,
+  },
+  pleineLargeur: {
+    flex: 1,
   },
   aide: {
     fontSize: tailles.petit,

@@ -46,14 +46,26 @@ export default function LayoutVendeuse() {
         name="index"
         options={{
           title: 'Fin de journée',
-          tabBarIcon: ({ color, size }) => <Ionicons name="sunny" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'sunny' : 'sunny-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="historique"
         options={{
           title: 'Historique',
-          tabBarIcon: ({ color, size }) => <Ionicons name="time" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'time' : 'time-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
     </Tabs>

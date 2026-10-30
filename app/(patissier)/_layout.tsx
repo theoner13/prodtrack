@@ -46,28 +46,52 @@ export default function LayoutPatissier() {
         name="index"
         options={{
           title: 'Planning',
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'calendar' : 'calendar-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="production"
         options={{
           title: 'Production',
-          tabBarIcon: ({ color, size }) => <Ionicons name="restaurant" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'add-circle' : 'add-circle-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="sorties"
         options={{
           title: 'Sorties',
-          tabBarIcon: ({ color, size }) => <Ionicons name="exit" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'arrow-redo' : 'arrow-redo-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="stock"
         options={{
           title: 'Stock',
-          tabBarIcon: ({ color, size }) => <Ionicons name="layers" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'cube' : 'cube-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -75,7 +99,13 @@ export default function LayoutPatissier() {
         options={{
           title: 'Mes produits',
           headerShown: false,
-          tabBarIcon: ({ color, size }) => <Ionicons name="list" color={typeof color === 'string' ? color : couleurs.texte} size={size} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'pricetags' : 'pricetags-outline'}
+              color={typeof color === 'string' ? color : couleurs.texte}
+              size={22}
+            />
+          ),
         }}
       />
     </Tabs>

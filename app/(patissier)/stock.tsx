@@ -1,5 +1,5 @@
 import { router, type Href } from 'expo-router';
-import { Fragment, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { useUrlsSignees } from '@/api/photos';
@@ -38,15 +38,19 @@ export default function EcranStock() {
     return map;
   }, [stock.data]);
 
-  const liste = useMemo(() => {
-    // Produits sans pâtissier : absents du stock jusqu'à ce qu'ils soient pris.
-    const tous = (produits.data ?? []).filter((produit) => produit.fabricant_id != null);
-    const terme = sansAccents(recherche.trim());
-    if (!terme) return tous;
-    return tous.filter((produit) => sansAccents(produit.nom).includes(terme));
-  }, [produits.data, recherche]);
+  // Uniquement les produits dont le pâtissier connecté est le fabricant.
+  const mesProduits = useMemo(
+    () => (produits.data ?? []).filter((produit) => produit.fabricant_id === userId),
+    [produits.data, userId],
+  );
 
-  const chemins = (produits.data ?? [])
+  const liste = useMemo(() => {
+    const terme = sansAccents(recherche.trim());
+    if (!terme) return mesProduits;
+    return mesProduits.filter((produit) => sansAccents(produit.nom).includes(terme));
+  }, [mesProduits, recherche]);
+
+  const chemins = mesProduits
     .map((produit) => produit.photo_url)
     .filter((chemin): chemin is string => Boolean(chemin));
   const photos = useUrlsSignees(chemins);
@@ -74,8 +78,6 @@ export default function EcranStock() {
     );
   }
 
-  const avecFabricant = (produits.data ?? []).filter((produit) => produit.fabricant_id != null);
-
   return (
     <Ecran
       titre="Stock"
@@ -83,7 +85,7 @@ export default function EcranStock() {
       enRafraichissement={produits.isRefetching || stock.isRefetching}
       onRafraichir={() => void rafraichir()}
     >
-      {avecFabricant.length > 10 ? (
+      {mesProduits.length > 10 ? (
         <Champ
           libelle="Rechercher un produit"
           value={recherche}
@@ -93,8 +95,8 @@ export default function EcranStock() {
         />
       ) : null}
 
-      {avecFabricant.length === 0 ? (
-        <EtatVide message="Aucun produit dans cette boutique." />
+      {mesProduits.length === 0 ? (
+        <EtatVide message="Vous n’avez encore aucun produit." />
       ) : null}
 
       {liste.map((produit) => {
@@ -102,33 +104,8 @@ export default function EcranStock() {
         const valeur = info?.stock ?? 0;
         const seuil = info?.seuil ?? produit.seuil_min;
         // Alerte « sous le seuil » réservée aux surgelés (les frais n’ont pas de seuil métier).
-        const sousSeuil =
-          produit.conservation === 'surgele' && valeur < seuil;
-        const sousTitre = sousSeuil
-          ? `${produit.fabricantNom} · Sous le seuil (min. ${seuil})`
-          : produit.fabricantNom;
-        const peutOuvrirFiche = produit.fabricant_id === userId || produit.intermediaire;
-
-        const carte = (
-          <CarteProduit
-            nom={produit.nom}
-            photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
-            sousTitre={sousTitre}
-            alerte={sousSeuil}
-          >
-            {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
-            <Text
-              accessibilityLabel={`Stock ${produit.nom} : ${valeur}`}
-              style={styles.chiffre}
-            >
-              {valeur}
-            </Text>
-          </CarteProduit>
-        );
-
-        if (!peutOuvrirFiche) {
-          return <Fragment key={produit.id}>{carte}</Fragment>;
-        }
+        const sousSeuil = produit.conservation === 'surgele' && valeur < seuil;
+        const sousTitre = sousSeuil ? `Sous le seuil (min. ${seuil})` : undefined;
 
         return (
           <Pressable
@@ -137,7 +114,20 @@ export default function EcranStock() {
             accessibilityLabel={`Ouvrir la fiche de ${produit.nom}`}
             onPress={() => router.push(`/produits/${produit.id}` as Href)}
           >
-            {carte}
+            <CarteProduit
+              nom={produit.nom}
+              photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
+              sousTitre={sousTitre}
+              alerte={sousSeuil}
+            >
+              {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
+              <Text
+                accessibilityLabel={`Stock ${produit.nom} : ${valeur}`}
+                style={styles.chiffre}
+              >
+                {valeur}
+              </Text>
+            </CarteProduit>
           </Pressable>
         );
       })}

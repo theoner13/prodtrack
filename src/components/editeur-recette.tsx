@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRef, useState, type ComponentRef } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -97,7 +98,9 @@ export function EditeurRecette({ lignes, onChange, erreurs = [] }: Props) {
                 </Text>
               </Pressable>
               {derniere ? (
-                <View style={styles.colRetirer} />
+                <View style={[styles.colRetirer, styles.retirer]}>
+                  <Ionicons name="add-circle-outline" size={22} color={couleurs.texteSecondaire} />
+                </View>
               ) : (
                 <Pressable
                   accessibilityRole="button"
@@ -106,7 +109,7 @@ export function EditeurRecette({ lignes, onChange, erreurs = [] }: Props) {
                   hitSlop={12}
                   style={[styles.colRetirer, styles.retirer]}
                 >
-                  <Text style={styles.croix}>✕</Text>
+                  <Ionicons name="close-outline" size={22} color={couleurs.erreur} />
                 </Pressable>
               )}
             </View>
@@ -175,7 +178,7 @@ const styles = StyleSheet.create({
   },
   champ: {
     height: hauteurBouton,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: couleurs.bordure,
     borderRadius: rayon,
     paddingHorizontal: espacements.s,
@@ -193,22 +196,17 @@ const styles = StyleSheet.create({
   unite: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: couleurs.principalClair,
+    backgroundColor: couleurs.fond,
   },
   texteUnite: {
     fontSize: tailles.petit,
     fontWeight: '600',
-    color: couleurs.principalFonce,
+    color: couleurs.texte,
   },
   retirer: {
     height: hauteurBouton,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  croix: {
-    fontSize: tailles.normal,
-    color: couleurs.erreur,
-    fontWeight: '700',
   },
   choixUnites: {
     flexDirection: 'row',
@@ -219,13 +217,16 @@ const styles = StyleSheet.create({
     height: 32,
     minWidth: 48,
     paddingHorizontal: espacements.m,
-    borderRadius: 16,
-    backgroundColor: couleurs.fondPuce,
+    borderRadius: rayon,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: couleurs.bordure,
+    backgroundColor: couleurs.fond,
     alignItems: 'center',
     justifyContent: 'center',
   },
   puceChoisie: {
     backgroundColor: couleurs.principal,
+    borderColor: couleurs.principal,
   },
   textePuce: {
     fontSize: tailles.petit,

@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-31 : stock du pâtissier limité à ses produits ; formulaire produit compact ; icônes fines (Cursor)
 - 2026-10-30 : tableau de bord admin sans la liste 5 meilleurs / 5 moins bons ; écran du code centré avec logo (Cursor)
 - 2026-10-30 : planning en agenda par jour ; seuil, prévisions et alertes réservés aux surgelés (Cursor)
 - 2026-10-30 : planning pâtissier épuré : liste unique par jour sans doublon, mention indicative unique (Cursor)
