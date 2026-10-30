@@ -1,7 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-import { Platform } from 'react-native';
 
 import { lireToutesLesLignes, paquetsDe } from '@/api/pagination';
 import { supabase } from '@/lib/supabase';
@@ -37,6 +34,7 @@ export type LigneExportVente = {
 
 export type LigneExportMouvement = {
   jour: string;
+  created_at: string;
   boutique_nom: string;
   produit_nom: string;
   type: 'production' | 'sortie' | 'ajustement';
@@ -189,6 +187,7 @@ export async function lireExportMouvements(
   type ProduitExport = { id: string; nom: string; boutique_id: string };
   type MouvementExport = {
     jour: string;
+    created_at: string;
     produit_id: string;
     type: 'production' | 'sortie' | 'ajustement';
     quantite: number;
@@ -217,7 +216,7 @@ export async function lireExportMouvements(
     const page = await lireToutesLesLignes<MouvementExport>(() =>
       db()
         .from('mouvements_stock')
-        .select('jour, produit_id, type, quantite, saisi_par')
+        .select('jour, created_at, produit_id, type, quantite, saisi_par')
         .in('produit_id', paquet)
         .gte('jour', debut)
         .lte('jour', fin)
@@ -239,12 +238,30 @@ export async function lireExportMouvements(
     const boutiqueProduit = boutiqueParProduit.get(m.produit_id);
     return {
       jour: m.jour,
+      created_at: m.created_at,
       boutique_nom: boutiqueProduit ? (nomsBoutiques.get(boutiqueProduit) ?? '—') : '—',
       produit_nom: nomsProduits.get(m.produit_id) ?? '—',
       type: m.type,
       quantite: m.quantite,
       saisi_par_nom: nomsProfils.get(m.saisi_par) ?? '—',
     };
+  });
+}
+
+/** Nom de l’entreprise du profil connecté (pour le titre des exports). */
+export function useNomEntreprise(entrepriseId: string | null) {
+  return useQuery({
+    queryKey: ['entreprise', 'nom', entrepriseId],
+    enabled: Boolean(entrepriseId),
+    queryFn: async (): Promise<string> => {
+      const { data, error } = await db()
+        .from('entreprises')
+        .select('nom')
+        .eq('id', entrepriseId as string)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.nom ?? 'Entreprise';
+    },
   });
 }
 
@@ -348,34 +365,3 @@ export async function lireExportPertes(
   }));
 }
 
-/** Web : téléchargement. Téléphone : écriture cache + partage. */
-export async function telechargerCsv(nomFichier: string, contenu: string): Promise<void> {
-  if (Platform.OS === 'web') {
-    const blob = new Blob([contenu], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const lien = document.createElement('a');
-    lien.href = url;
-    lien.download = nomFichier;
-    document.body.appendChild(lien);
-    lien.click();
-    lien.remove();
-    URL.revokeObjectURL(url);
-    return;
-  }
-
-  const fichier = new File(Paths.cache, nomFichier);
-  if (fichier.exists) {
-    fichier.delete();
-  }
-  fichier.create();
-  await fichier.write(contenu);
-  const partageable = await Sharing.isAvailableAsync();
-  if (!partageable) {
-    throw new Error("Le partage de fichiers n'est pas disponible sur cet appareil.");
-  }
-  await Sharing.shareAsync(fichier.uri, {
-    mimeType: 'text/csv',
-    dialogTitle: nomFichier,
-    UTI: 'public.comma-separated-values-text',
-  });
-}

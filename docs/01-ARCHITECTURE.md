@@ -16,7 +16,7 @@ Document de référence pour le développement. La source fonctionnelle est [cah
 | Face ID / empreinte | **expo-local-authentication** | Natif iOS et Android. |
 | Stockage sécurisé sur l'appareil | **expo-secure-store** | Session et code PIN chiffrés. |
 | Photos | **expo-image-picker** + Supabase Storage (bucket privé `photos`) | |
-| Export CSV | Génération dans l'app + **expo-sharing** (mobile) / téléchargement (web) | |
+| Export Excel / PDF | **exceljs** (fichiers .xlsx formatés) + **expo-print** (PDF via HTML) + **expo-sharing** (mobile) / téléchargement (web) | Lisibilité sur téléphone et Mac ; remplace l’ancien CSV. |
 | Notifications push | **expo-notifications** (phase 11) | Nécessite un « development build » (pas Expo Go). |
 | Style | `StyleSheet` de React Native + un fichier `src/theme.ts` | Pas de librairie UI : moins de problèmes de versions. |
 
@@ -69,7 +69,7 @@ prodtrack/
 │  │  ├─ boutiques.tsx           # + code d'invitation à partager
 │  │  ├─ employes.tsx            # liste, archivage
 │  │  ├─ produits.tsx            # tous les produits, prix, produits imposés
-│  │  └─ export.tsx              # CSV
+│  │  └─ export.tsx              # Excel + PDF
 │  ├─ (patissier)/
 │  │  ├─ _layout.tsx
 │  │  ├─ index.tsx               # Planning (accueil)

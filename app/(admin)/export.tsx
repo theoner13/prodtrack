@@ -6,9 +6,10 @@ import {
   lireExportMouvements,
   lireExportPertes,
   lireExportVentes,
-  telechargerCsv,
   useCaJournalier,
+  useNomEntreprise,
 } from '@/api/ca';
+import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
@@ -21,11 +22,22 @@ import {
   parseDateFr,
   type TypePeriode,
 } from '@/lib/ca';
-import { dateCsv, genererCsv, montantEurosCsv } from '@/lib/csv';
+import { telechargerPdf, telechargerXlsx } from '@/lib/exports-fichier';
+import {
+  genererHtmlRapport,
+  nomFichierExport,
+  preparerCaEmployes,
+  preparerMouvements,
+  preparerPertes,
+  preparerVentes,
+  type TableauExport,
+} from '@/lib/exports';
 import { aujourdhuiParis } from '@/lib/format';
 import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 
 type PeriodeChoix = TypePeriode | 'perso';
+type TypeExport = 'ventes' | 'mouvements' | 'ca-employes' | 'pertes';
+type FormatExport = 'xlsx' | 'pdf';
 
 const PERIODES: { id: PeriodeChoix; libelle: string }[] = [
   { id: 'aujourdhui', libelle: "Aujourd'hui" },
@@ -35,22 +47,43 @@ const PERIODES: { id: PeriodeChoix; libelle: string }[] = [
   { id: 'perso', libelle: 'Personnalisée' },
 ];
 
-const TYPE_FR: Record<'production' | 'sortie' | 'ajustement', string> = {
-  production: 'Production',
-  sortie: 'Sortie',
-  ajustement: 'Ajustement',
-};
-
-const MOTIF_FR: Record<'brule' | 'tombe' | 'rate' | 'autre', string> = {
-  brule: 'Brûlé',
-  tombe: 'Tombé ou abîmé',
-  rate: 'Raté',
-  autre: 'Autre',
-};
+const EXPORTS: {
+  id: TypeExport;
+  titre: string;
+  description: string;
+  libelleFichier: string;
+}[] = [
+  {
+    id: 'ventes',
+    titre: 'Ventes',
+    description: 'Détail des ventes : produit, pâtissier, quantités et chiffre d’affaires.',
+    libelleFichier: 'Ventes',
+  },
+  {
+    id: 'mouvements',
+    titre: 'Mouvements de stock',
+    description: 'Productions, sorties et corrections saisies sur la période.',
+    libelleFichier: 'Mouvements de stock',
+  },
+  {
+    id: 'ca-employes',
+    titre: 'CA par employé',
+    description: 'Chiffre d’affaires, vendus et jetés par employé et par jour.',
+    libelleFichier: 'CA par employé',
+  },
+  {
+    id: 'pertes',
+    titre: 'Pertes en production',
+    description: 'Pertes déclarées : motif, quantité et retrait éventuel du stock.',
+    libelleFichier: 'Pertes en production',
+  },
+];
 
 export default function EcranExport() {
   const aujourdhui = aujourdhuiParis();
+  const { profil } = useAuth();
   const boutiques = useBoutiques();
+  const entreprise = useNomEntreprise(profil?.entreprise_id ?? null);
 
   const [boutiqueId, setBoutiqueId] = useState<string | null>(null);
   const [periode, setPeriode] = useState<PeriodeChoix>('aujourdhui');
@@ -81,155 +114,90 @@ export default function EcranExport() {
     return null;
   }, [periode, duTexte, auTexte]);
 
-  // Précharge le CA pour l'export « par employé et par jour »
   const ca = useCaJournalier(dates?.debut ?? null, dates?.fin ?? null, boutiqueId);
+
+  const nomsBoutiques = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const b of boutiques.data ?? []) {
+      map.set(b.id, b.nom);
+    }
+    return map;
+  }, [boutiques.data]);
+
+  const contexteExport = useMemo(() => {
+    if (boutiqueId) {
+      return nomsBoutiques.get(boutiqueId) ?? 'Boutique';
+    }
+    return entreprise.data ?? 'Toutes les boutiques';
+  }, [boutiqueId, nomsBoutiques, entreprise.data]);
 
   function afficher(texte: string, type: 'succes' | 'erreur') {
     setTypeMessage(type);
     setMessage(texte);
   }
 
-  async function exporter(
-    type: 'ventes' | 'mouvements' | 'ca-employes' | 'pertes',
-  ): Promise<void> {
+  async function construireTableau(
+    type: TypeExport,
+    debut: string,
+    fin: string,
+  ): Promise<TableauExport | null> {
+    if (type === 'ventes') {
+      const brutes = await lireExportVentes(debut, fin, boutiqueId);
+      if (brutes.length === 0) return null;
+      return preparerVentes(brutes, debut, fin, contexteExport).tableau;
+    }
+    if (type === 'mouvements') {
+      const brutes = await lireExportMouvements(debut, fin, boutiqueId);
+      if (brutes.length === 0) return null;
+      return preparerMouvements(brutes, debut, fin, contexteExport).tableau;
+    }
+    if (type === 'pertes') {
+      const brutes = await lireExportPertes(debut, fin, boutiqueId);
+      if (brutes.length === 0) return null;
+      return preparerPertes(brutes, debut, fin, contexteExport).tableau;
+    }
+
+    const resultat = await ca.refetch();
+    if (resultat.error) throw resultat.error;
+    const { tableau, lignes } = preparerCaEmployes(
+      resultat.data ?? [],
+      (id) => (id ? (nomsBoutiques.get(id) ?? '—') : '—'),
+      debut,
+      fin,
+      contexteExport,
+    );
+    if (lignes.length === 0) return null;
+    return tableau;
+  }
+
+  async function exporter(type: TypeExport, format: FormatExport): Promise<void> {
     if (!dates || erreurPeriode) {
       afficher(erreurPeriode ?? 'Période invalide.', 'erreur');
       return;
     }
-    setExportEnCours(type);
+    const cle = `${type}-${format}`;
+    setExportEnCours(cle);
     try {
       const { debut, fin } = dates;
-      let contenu: string;
-      let nbLignes: number;
-      let prefixe: string;
+      const meta = EXPORTS.find((e) => e.id === type);
+      if (!meta) return;
 
-      if (type === 'ventes') {
-        const lignes = await lireExportVentes(debut, fin, boutiqueId);
-        if (lignes.length === 0) {
-          afficher('Aucune donnée à exporter sur cette période.', 'erreur');
-          return;
-        }
-        contenu = genererCsv(
-          [
-            'Jour',
-            'Boutique',
-            'Produit',
-            'Fabricant',
-            'Vendu',
-            'Jeté',
-            'Reste',
-            'Prix unitaire (€)',
-            'CA (€)',
-          ],
-          lignes.map((l) => [
-            dateCsv(l.jour),
-            l.boutique_nom,
-            l.produit_nom,
-            l.fabricant_nom,
-            l.vendu,
-            l.jete,
-            l.reste,
-            montantEurosCsv(l.prix_unitaire_centimes),
-            montantEurosCsv(l.ca_centimes),
-          ]),
-        );
-        nbLignes = lignes.length;
-        prefixe = 'ventes';
-      } else if (type === 'mouvements') {
-        const lignes = await lireExportMouvements(debut, fin, boutiqueId);
-        if (lignes.length === 0) {
-          afficher('Aucune donnée à exporter sur cette période.', 'erreur');
-          return;
-        }
-        contenu = genererCsv(
-          ['Jour', 'Boutique', 'Produit', 'Type', 'Quantité', 'Saisi par'],
-          lignes.map((l) => [
-            dateCsv(l.jour),
-            l.boutique_nom,
-            l.produit_nom,
-            TYPE_FR[l.type],
-            l.quantite,
-            l.saisi_par_nom,
-          ]),
-        );
-        nbLignes = lignes.length;
-        prefixe = 'mouvements';
-      } else if (type === 'pertes') {
-        const lignes = await lireExportPertes(debut, fin, boutiqueId);
-        if (lignes.length === 0) {
-          afficher('Aucune donnée à exporter sur cette période.', 'erreur');
-          return;
-        }
-        contenu = genererCsv(
-          [
-            'Jour',
-            'Boutique',
-            'Produit',
-            'Quantité',
-            'Motif',
-            'Retirée du stock',
-            'Saisie par',
-          ],
-          lignes.map((l) => [
-            dateCsv(l.jour),
-            l.boutique_nom,
-            l.produit_nom,
-            l.quantite,
-            MOTIF_FR[l.motif],
-            l.dans_le_stock ? 'Oui' : 'Non',
-            l.saisi_par_nom,
-          ]),
-        );
-        nbLignes = lignes.length;
-        prefixe = 'pertes';
-      } else {
-        const resultat = await ca.refetch();
-        if (resultat.error) throw resultat.error;
-        const lignesCa = resultat.data ?? [];
-
-        const map = new Map<
-          string,
-          { jour: string; employe: string; ca: number; vendu: number; jete: number }
-        >();
-        for (const l of lignesCa) {
-          if (!l.jour || !l.fabricant_id) continue;
-          const cle = `${l.jour}|${l.fabricant_id}`;
-          const existant = map.get(cle) ?? {
-            jour: l.jour,
-            employe: l.fabricant_nom,
-            ca: 0,
-            vendu: 0,
-            jete: 0,
-          };
-          existant.ca += l.ca_centimes ?? 0;
-          existant.vendu += l.vendu ?? 0;
-          existant.jete += l.jete ?? 0;
-          map.set(cle, existant);
-        }
-        const lignes = [...map.values()].sort(
-          (a, b) => a.jour.localeCompare(b.jour) || a.employe.localeCompare(b.employe, 'fr'),
-        );
-        if (lignes.length === 0) {
-          afficher('Aucune donnée à exporter sur cette période.', 'erreur');
-          return;
-        }
-        contenu = genererCsv(
-          ['Jour', 'Employé', 'CA (€)', 'Vendu', 'Jeté'],
-          lignes.map((l) => [
-            dateCsv(l.jour),
-            l.employe,
-            montantEurosCsv(l.ca),
-            l.vendu,
-            l.jete,
-          ]),
-        );
-        nbLignes = lignes.length;
-        prefixe = 'ca-employes';
+      const tableau = await construireTableau(type, debut, fin);
+      if (!tableau) {
+        afficher('Aucune donnée à exporter sur cette période.', 'erreur');
+        return;
       }
 
-      const nom = `prodtrack-${prefixe}-${debut}_${fin}.csv`;
-      await telechargerCsv(nom, contenu);
-      afficher(`Fichier prêt : ${nbLignes} ligne${nbLignes > 1 ? 's' : ''}.`, 'succes');
+      const nom = nomFichierExport(meta.libelleFichier, debut, fin, format);
+      if (format === 'xlsx') {
+        await telechargerXlsx(nom, tableau);
+      } else {
+        await telechargerPdf(nom, genererHtmlRapport(tableau, undefined, nom));
+      }
+      afficher(
+        `Fichier prêt : ${tableau.lignes.length} ligne${tableau.lignes.length > 1 ? 's' : ''}.`,
+        'succes',
+      );
     } catch (probleme: unknown) {
       afficher(messageErreur(probleme), 'erreur');
     } finally {
@@ -257,6 +225,8 @@ export default function EcranExport() {
       </Ecran>
     );
   }
+
+  const desactive = Boolean(erreurPeriode) || exportEnCours !== null;
 
   return (
     <Ecran titre="Export" defilement>
@@ -325,44 +295,39 @@ export default function EcranExport() {
       ) : null}
 
       <Text style={styles.aide}>
-        Les fichiers CSV s’ouvrent dans Excel (séparateur point-virgule, accents conservés).
+        Chaque export est disponible en Excel (.xlsx) et en PDF, lisibles sur téléphone et ordinateur.
       </Text>
 
-      <Bouton
-        titre="Exporter les ventes"
-        onPress={() => {
-          void exporter('ventes');
-        }}
-        chargement={exportEnCours === 'ventes'}
-        desactive={Boolean(erreurPeriode) || exportEnCours !== null}
-      />
-      <Bouton
-        titre="Exporter les mouvements de stock"
-        variante="secondaire"
-        onPress={() => {
-          void exporter('mouvements');
-        }}
-        chargement={exportEnCours === 'mouvements'}
-        desactive={Boolean(erreurPeriode) || exportEnCours !== null}
-      />
-      <Bouton
-        titre="Exporter le CA par employé et par jour"
-        variante="secondaire"
-        onPress={() => {
-          void exporter('ca-employes');
-        }}
-        chargement={exportEnCours === 'ca-employes'}
-        desactive={Boolean(erreurPeriode) || exportEnCours !== null}
-      />
-      <Bouton
-        titre="Exporter les pertes en production"
-        variante="secondaire"
-        onPress={() => {
-          void exporter('pertes');
-        }}
-        chargement={exportEnCours === 'pertes'}
-        desactive={Boolean(erreurPeriode) || exportEnCours !== null}
-      />
+      {EXPORTS.map((item) => (
+        <View key={item.id} style={styles.blocExport}>
+          <Text style={styles.titreExport}>{item.titre}</Text>
+          <Text style={styles.descExport}>{item.description}</Text>
+          <View style={styles.rangBoutons}>
+            <View style={styles.boutonFlex}>
+              <Bouton
+                titre="Excel"
+                pleineLargeur
+                onPress={() => {
+                  void exporter(item.id, 'xlsx');
+                }}
+                chargement={exportEnCours === `${item.id}-xlsx`}
+                desactive={desactive}
+              />
+            </View>
+            <View style={styles.boutonFlex}>
+              <Bouton
+                titre="PDF"
+                pleineLargeur
+                onPress={() => {
+                  void exporter(item.id, 'pdf');
+                }}
+                chargement={exportEnCours === `${item.id}-pdf`}
+                desactive={desactive}
+              />
+            </View>
+          </View>
+        </View>
+      ))}
     </Ecran>
   );
 }
@@ -426,5 +391,28 @@ const styles = StyleSheet.create({
   aide: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    marginBottom: espacements.s,
+  },
+  blocExport: {
+    gap: espacements.s,
+    paddingVertical: espacements.m,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: couleurs.bordure,
+  },
+  titreExport: {
+    fontSize: tailles.normal,
+    fontWeight: '600',
+    color: couleurs.texte,
+  },
+  descExport: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+  },
+  rangBoutons: {
+    flexDirection: 'row',
+    gap: espacements.s,
+  },
+  boutonFlex: {
+    flex: 1,
   },
 });
