@@ -12,17 +12,19 @@ import {
   useEnregistrerMonProduit,
   useFicheProduit,
 } from '@/api/produits';
+import { useEnregistrerMouvements, useStock } from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
+import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
 import { ChoixPhoto } from '@/components/choix-photo';
+import { Compteur } from '@/components/compteur';
 import { Ecran } from '@/components/ecran';
 import { EditeurRecette, estVide, UNITES, type LigneSaisie, type Unite } from '@/components/editeur-recette';
 import { EtatChargement, EtatErreur } from '@/components/etats';
-import { Banniere } from '@/components/banniere';
 import { eurosVersCentimes } from '@/lib/format';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, rayon, styleTitreSection, tailles } from '@/theme';
 
 const schema = z
   .object({
@@ -72,9 +74,11 @@ function quantiteTexte(valeur: number): string {
 export default function EcranFicheProduit() {
   const { id, ajoute } = useLocalSearchParams<{ id: string; ajoute?: string }>();
   const creation = id === 'nouveau';
-  const { profil } = useAuth();
+  const { profil, verrouillerApresSaisie } = useAuth();
   const fiche = useFicheProduit(creation ? null : (id ?? null));
+  const stockBoutique = useStock(profil?.boutique_id ?? null);
   const enregistrer = useEnregistrerMonProduit();
+  const enregistrerProduction = useEnregistrerMouvements();
   const definirPhoto = useDefinirPhotoProduit();
   const archiver = useArchiverMonProduit();
   const [erreur, setErreur] = useState<string | null>(null);
@@ -83,9 +87,13 @@ export default function EcranFicheProduit() {
       ? 'Produit ajouté à votre boutique : vérifiez le prix, le seuil et ajoutez une photo.'
       : null,
   );
+  const [messageStock, setMessageStock] = useState<string | null>(null);
+  const [typeMessageStock, setTypeMessageStock] = useState<'succes' | 'erreur'>('succes');
+  const [quantiteProduction, setQuantiteProduction] = useState(0);
   const [uriLocale, setUriLocale] = useState<string | null>(null);
   const [demandeRetrait, setDemandeRetrait] = useState(false);
   const fermerConfirmation = useCallback(() => setConfirmation(null), []);
+  const fermerMessageStock = useCallback(() => setMessageStock(null), []);
   const dejaCharge = useRef(false);
 
   const { control, handleSubmit, reset, setValue, watch, formState } = useForm<Formulaire>({
@@ -203,7 +211,30 @@ export default function EcranFicheProduit() {
     }
   }
 
-  if (!creation && fiche.isLoading) {
+  async function soumettreProduction() {
+    const produitCourant = fiche.data?.produit;
+    if (!produitCourant || !id) return;
+    if (quantiteProduction <= 0) {
+      setTypeMessageStock('erreur');
+      setMessageStock('Indiquez au moins une quantité.');
+      return;
+    }
+    try {
+      const confirmationStock = await enregistrerProduction.mutateAsync({
+        type: 'production',
+        lignes: [{ produitId: produitCourant.id, quantite: quantiteProduction, nom: produitCourant.nom }],
+      });
+      setQuantiteProduction(0);
+      setTypeMessageStock('succes');
+      setMessageStock(confirmationStock);
+      verrouillerApresSaisie();
+    } catch (probleme: unknown) {
+      setTypeMessageStock('erreur');
+      setMessageStock(messageErreur(probleme));
+    }
+  }
+
+  if (!creation && (fiche.isLoading || stockBoutique.isLoading)) {
     return (
       <Ecran>
         <EtatChargement />
@@ -220,7 +251,13 @@ export default function EcranFicheProduit() {
   }
 
   const produit = fiche.data?.produit;
-  if (!creation && produit && profil && produit.fabricant_id !== profil.id) {
+  const estMien = Boolean(produit && profil && produit.fabricant_id === profil.id);
+  const peutOuvrir = Boolean(
+    produit &&
+      profil &&
+      (estMien || (produit.intermediaire && produit.boutique_id === profil.boutique_id)),
+  );
+  if (!creation && produit && profil && !peutOuvrir) {
     return (
       <Ecran>
         <EtatErreur message="Ce produit ne fait pas partie de vos produits." />
@@ -228,8 +265,53 @@ export default function EcranFicheProduit() {
     );
   }
 
+  const peutAjouterStock = Boolean(
+    !creation &&
+      produit &&
+      !produit.archive_le &&
+      profil &&
+      produit.boutique_id === profil.boutique_id &&
+      (produit.fabricant_id === profil.id || produit.intermediaire),
+  );
+
+  const stockActuel =
+    (stockBoutique.data ?? []).find((entree) => entree.produit_id === produit?.id)?.stock ?? 0;
+
   const impose = produit?.impose_par_admin ?? false;
   const boutiqueId = profil?.boutique_id;
+
+  const zoneStock =
+    peutAjouterStock && produit ? (
+      <View style={styles.zoneStock}>
+        <Text style={styles.titreStock}>Ajouter du stock</Text>
+        <Text style={styles.texte}>Stock actuel : {stockActuel}</Text>
+        <Compteur
+          valeur={quantiteProduction}
+          onChange={setQuantiteProduction}
+          libelle={`Quantité produite de ${produit.nom}`}
+        />
+        <Banniere
+          message={messageStock}
+          type={typeMessageStock}
+          onFermer={fermerMessageStock}
+          duree={5000}
+        />
+        <Bouton
+          titre="Enregistrer la production"
+          chargement={enregistrerProduction.isPending}
+          onPress={() => void soumettreProduction()}
+        />
+      </View>
+    ) : null;
+
+  if (!creation && produit && !estMien) {
+    return (
+      <Ecran titre={produit.nom} defilement>
+        <Stack.Screen options={{ title: produit.nom }} />
+        {zoneStock}
+      </Ecran>
+    );
+  }
 
   return (
     <Ecran titre={creation ? 'Nouveau produit' : (produit?.nom ?? 'Produit')} defilement>
@@ -247,6 +329,8 @@ export default function EcranFicheProduit() {
       ) : (
         <Text style={styles.erreur}>Aucune boutique n’est associée à votre compte.</Text>
       )}
+
+      {zoneStock}
 
       {!impose ? (
         <>
@@ -266,7 +350,6 @@ export default function EcranFicheProduit() {
           </Text>
         </>
       ) : null}
-
       <Controller
         control={control}
         name="nom"
@@ -426,6 +509,12 @@ const styles = StyleSheet.create({
     color: couleurs.texteSecondaire,
     letterSpacing: 0.4,
     textTransform: 'uppercase',
+  },
+  titreStock: {
+    ...styleTitreSection,
+  },
+  zoneStock: {
+    gap: espacements.m,
   },
   aide: {
     fontSize: tailles.petit,

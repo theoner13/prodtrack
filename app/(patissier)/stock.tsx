@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { router, type Href } from 'expo-router';
+import { Fragment, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { useUrlsSignees } from '@/api/photos';
 import { useProduits } from '@/api/produits';
@@ -19,6 +20,7 @@ function sansAccents(texte: string): string {
 export default function EcranStock() {
   const { profil } = useAuth();
   const boutiqueId = profil?.boutique_id ?? null;
+  const userId = profil?.id ?? null;
   const produits = useProduits(boutiqueId);
   const stock = useStock(boutiqueId);
   const [recherche, setRecherche] = useState('');
@@ -102,10 +104,10 @@ export default function EcranStock() {
         const sousTitre = sousSeuil
           ? `${produit.fabricantNom} · Sous le seuil (min. ${seuil})`
           : produit.fabricantNom;
+        const peutOuvrirFiche = produit.fabricant_id === userId || produit.intermediaire;
 
-        return (
+        const carte = (
           <CarteProduit
-            key={produit.id}
             nom={produit.nom}
             photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
             sousTitre={sousTitre}
@@ -119,6 +121,21 @@ export default function EcranStock() {
               {valeur}
             </Text>
           </CarteProduit>
+        );
+
+        if (!peutOuvrirFiche) {
+          return <Fragment key={produit.id}>{carte}</Fragment>;
+        }
+
+        return (
+          <Pressable
+            key={produit.id}
+            accessibilityRole="button"
+            accessibilityLabel={`Ouvrir la fiche de ${produit.nom}`}
+            onPress={() => router.push(`/produits/${produit.id}` as Href)}
+          >
+            {carte}
+          </Pressable>
         );
       })}
     </Ecran>
