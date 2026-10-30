@@ -20,7 +20,6 @@ import {
   parseDateFr,
   parBoutique,
   parEmploye,
-  parProduit,
   totaux,
   type ProduitClasse,
   type TriClassementProduit,
@@ -203,20 +202,6 @@ export default function EcranTableauDeBord() {
     () => avecSuffixeBoutiqueSiToutes(classementPertes(lignes, null)),
     [lignes, boutiqueId, nomsBoutiques],
   );
-
-  const produitsClasses = useMemo(() => {
-    const groupes = parProduit(lignes);
-    const noms = new Map(
-      lignes.map((l) => [l.produit_id ?? '', l.produit_nom ?? 'Produit']),
-    );
-    return groupes.map((g) => ({
-      ...g,
-      nom: noms.get(g.cle) ?? g.cle,
-    }));
-  }, [lignes]);
-
-  const meilleurs = produitsClasses.slice(0, 5);
-  const moinsBons = [...produitsClasses].reverse().slice(0, 5);
 
   const enChargement =
     boutiques.isLoading ||
@@ -428,25 +413,6 @@ export default function EcranTableauDeBord() {
             );
           })}
 
-          <Text style={styles.section}>Produits</Text>
-          {produitsClasses.length > 0 ? (
-            <>
-              <Text style={styles.sousSection}>5 meilleurs</Text>
-              {meilleurs.map((p) => (
-                <Text key={`m-${p.cle}`} style={styles.detailLigne}>
-                  {p.nom} — {formatEuros(p.caCentimes)}
-                </Text>
-              ))}
-              <Text style={styles.sousSection}>5 moins bons</Text>
-              {moinsBons.map((p) => (
-                <Text key={`f-${p.cle}`} style={styles.detailLigne}>
-                  {p.nom} — {formatEuros(p.caCentimes)}
-                </Text>
-              ))}
-            </>
-          ) : (
-            <Text style={styles.detailLigne}>Aucune vente sur cette période.</Text>
-          )}
           {pertesParProduit.length > 0 ? (
             <>
               <Text style={styles.sousSection}>Pertes en production par produit</Text>

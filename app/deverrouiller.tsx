@@ -82,19 +82,19 @@ export default function EcranDeverrouiller() {
         <Text style={styles.consigne}>Saisissez votre code à 4 chiffres.</Text>
         <PaveNumerique valeur={saisie} onChange={(valeur) => void onSaisie(valeur)} />
         {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
-      </View>
-      {avecBiometrie ? (
+        {avecBiometrie ? (
+          <Bouton
+            titre="Utiliser Face ID ou l'empreinte"
+            variante="secondaire"
+            onPress={() => void tenterBiometrie()}
+          />
+        ) : null}
         <Bouton
-          titre="Utiliser Face ID ou l'empreinte"
+          titre="Ajouter un compte sur cet appareil"
           variante="secondaire"
-          onPress={() => void tenterBiometrie()}
+          onPress={() => void preparerAjoutCompte()}
         />
-      ) : null}
-      <Bouton
-        titre="Ajouter un compte sur cet appareil"
-        variante="secondaire"
-        onPress={() => void preparerAjoutCompte()}
-      />
+      </View>
     </Ecran>
   );
 }

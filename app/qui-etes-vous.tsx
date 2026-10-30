@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -13,6 +14,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
 import { Ecran } from '@/components/ecran';
+import { Logo } from '@/components/logo';
 import { PaveNumerique } from '@/components/pave-numerique';
 import type { CompteAppareil } from '@/lib/comptes-appareil';
 import { couleurs, espacements, tailles } from '@/theme';
@@ -75,23 +77,32 @@ export default function EcranQuiEtesVous() {
 
   if (compteChoisi) {
     return (
-      <Ecran titre={`Code de ${compteChoisi.prenom}`} defilement>
+      <Ecran>
         <Banniere
           message={annonce}
           type="erreur"
           onFermer={() => definirAnnonce(null)}
         />
-        <PaveNumerique valeur={saisie} onChange={(valeur) => void onSaisie(valeur)} />
-        {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
-        <Bouton
-          titre="Retour"
-          variante="secondaire"
-          onPress={() => {
-            setCompteChoisi(null);
-            setSaisie('');
-            setErreur(null);
-          }}
-        />
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.centreScroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Logo />
+          <Text style={styles.titreCode}>Code de {compteChoisi.prenom}</Text>
+          <Text style={styles.consigne}>Saisissez votre code à 4 chiffres.</Text>
+          <PaveNumerique valeur={saisie} onChange={(valeur) => void onSaisie(valeur)} />
+          {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
+          <Bouton
+            titre="Retour"
+            variante="secondaire"
+            onPress={() => {
+              setCompteChoisi(null);
+              setSaisie('');
+              setErreur(null);
+            }}
+          />
+        </ScrollView>
       </Ecran>
     );
   }
@@ -153,6 +164,27 @@ export default function EcranQuiEtesVous() {
 const TAILLE_PHOTO = 88;
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+    width: '100%',
+  },
+  centreScroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: espacements.m,
+  },
+  titreCode: {
+    fontSize: tailles.titre,
+    fontWeight: '600',
+    color: couleurs.texte,
+    textAlign: 'center',
+  },
+  consigne: {
+    fontSize: tailles.normal,
+    color: couleurs.texte,
+    textAlign: 'center',
+  },
   grille: {
     flexDirection: 'row',
     flexWrap: 'wrap',
