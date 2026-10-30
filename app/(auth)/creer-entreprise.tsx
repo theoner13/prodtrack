@@ -9,7 +9,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
-import { Ecran } from '@/components/ecran';
+import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
 import { couleurs, tailles } from '@/theme';
 
@@ -47,7 +47,7 @@ export default function EcranCreerEntreprise() {
   }
 
   return (
-    <Ecran titre="Créer l'entreprise" defilement>
+    <EcranAuth titre="Créer l'entreprise">
       <Controller
         control={control}
         name="entreprise"
@@ -109,7 +109,7 @@ export default function EcranCreerEntreprise() {
         onPress={handleSubmit(creer)}
       />
       <Bouton titre="Retour" variante="secondaire" onPress={() => router.back()} />
-    </Ecran>
+    </EcranAuth>
   );
 }
 

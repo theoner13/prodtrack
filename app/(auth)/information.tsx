@@ -4,7 +4,7 @@ import { StyleSheet, Text } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
-import { Ecran } from '@/components/ecran';
+import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
 import { couleurs, tailles } from '@/theme';
 
@@ -31,7 +31,7 @@ export default function EcranInformation() {
   }
 
   return (
-    <Ecran titre="Information" defilement>
+    <EcranAuth titre="Information" largeurMax={600} centrerVerticalement={false} avecLogo={false}>
       <Text style={styles.texte}>
         ProdTrack suit le travail de chaque employé pour organiser la production et calculer le
         chiffre d’affaires.
@@ -56,7 +56,7 @@ export default function EcranInformation() {
       </Text>
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
       <Bouton titre="J'ai lu et compris" chargement={chargement} onPress={accepter} />
-    </Ecran>
+    </EcranAuth>
   );
 }
 

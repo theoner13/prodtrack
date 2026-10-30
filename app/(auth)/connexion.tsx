@@ -9,7 +9,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
-import { Ecran } from '@/components/ecran';
+import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
 import { couleurs, espacements, tailles } from '@/theme';
 
@@ -86,7 +86,7 @@ export default function EcranConnexion() {
   const retourChoixCompte = comptesAppareil.length > 0 || modeAjoutCompte;
 
   return (
-    <Ecran titre="Connexion" defilement>
+    <EcranAuth titre="Connexion">
       {annonce ? <Text style={styles.erreur}>{annonce}</Text> : null}
       {retourChoixCompte ? (
         <Bouton
@@ -152,7 +152,7 @@ export default function EcranConnexion() {
           ))}
         </View>
       ) : null}
-    </Ecran>
+    </EcranAuth>
   );
 }
 

@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
-import { Ecran } from '@/components/ecran';
+import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
 import { couleurs, tailles } from '@/theme';
 
@@ -51,7 +51,7 @@ export default function EcranInscription() {
   }
 
   return (
-    <Ecran titre="Inscription" defilement>
+    <EcranAuth titre="Inscription">
       <Controller
         control={control}
         name="email"
@@ -110,7 +110,7 @@ export default function EcranInscription() {
       <Link href="/connexion" style={styles.lien}>
         J'ai déjà un compte
       </Link>
-    </Ecran>
+    </EcranAuth>
   );
 }
 

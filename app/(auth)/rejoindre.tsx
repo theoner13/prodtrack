@@ -9,7 +9,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
-import { Ecran } from '@/components/ecran';
+import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
 import { couleurs, tailles } from '@/theme';
 
@@ -56,7 +56,7 @@ export default function EcranRejoindre() {
   }
 
   return (
-    <Ecran titre="Rejoindre une boutique" defilement>
+    <EcranAuth titre="Rejoindre une boutique">
       <Controller
         control={control}
         name="code"
@@ -143,7 +143,7 @@ export default function EcranRejoindre() {
         onPress={handleSubmit(rejoindre)}
       />
       <Bouton titre="Retour" variante="secondaire" onPress={() => router.back()} />
-    </Ecran>
+    </EcranAuth>
   );
 }
 

@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-30 : écrans de connexion et d'inscription centrés avec le logo (Cursor)
 - 2026-10-30 : fiche produit : ajout de stock direct ; écran Stock : produit cliquable vers sa fiche (Cursor)
 - 2026-10-30 : planning : nom du produit cliquable vers sa fiche (Cursor)
 - 2026-10-30 : rôles affichés Admin / Pâtissier / Vente (au lieu de Patron / Vendeuse), logo en haut à gauche de chaque écran (Cursor)
