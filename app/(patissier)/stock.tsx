@@ -39,7 +39,8 @@ export default function EcranStock() {
   }, [stock.data]);
 
   const liste = useMemo(() => {
-    const tous = produits.data ?? [];
+    // Produits sans pâtissier : absents du stock jusqu'à ce qu'ils soient pris.
+    const tous = (produits.data ?? []).filter((produit) => produit.fabricant_id != null);
     const terme = sansAccents(recherche.trim());
     if (!terme) return tous;
     return tous.filter((produit) => sansAccents(produit.nom).includes(terme));
@@ -73,7 +74,7 @@ export default function EcranStock() {
     );
   }
 
-  const tous = produits.data ?? [];
+  const avecFabricant = (produits.data ?? []).filter((produit) => produit.fabricant_id != null);
 
   return (
     <Ecran
@@ -82,7 +83,7 @@ export default function EcranStock() {
       enRafraichissement={produits.isRefetching || stock.isRefetching}
       onRafraichir={() => void rafraichir()}
     >
-      {tous.length > 10 ? (
+      {avecFabricant.length > 10 ? (
         <Champ
           libelle="Rechercher un produit"
           value={recherche}
@@ -92,7 +93,7 @@ export default function EcranStock() {
         />
       ) : null}
 
-      {tous.length === 0 ? (
+      {avecFabricant.length === 0 ? (
         <EtatVide message="Aucun produit dans cette boutique." />
       ) : null}
 

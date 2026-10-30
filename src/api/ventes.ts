@@ -54,7 +54,7 @@ async function idsProduitsBoutique(
     requete = requete.is('archive_le', null);
   }
   if (options.exclusIntermediaires) {
-    requete = requete.eq('intermediaire', false);
+    requete = requete.eq('intermediaire', false).not('fabricant_id', 'is', null);
   }
   const { data, error } = await requete;
   if (error) throw error;

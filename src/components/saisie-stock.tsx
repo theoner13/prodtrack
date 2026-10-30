@@ -81,7 +81,7 @@ export function SaisieStock({ type }: Props) {
   const [perteDansLeStock, setPerteDansLeStock] = useState(false);
 
   const listeBase = useMemo(() => {
-    const tous = produits.data ?? [];
+    const tous = (produits.data ?? []).filter((produit) => produit.fabricant_id != null);
     if (type === 'production') {
       return tous.filter(
         (produit) => produit.fabricant_id === userId || produit.intermediaire,

@@ -28,7 +28,7 @@ export type ProduitImpose = {
 
 export type CibleImposee = {
   boutiqueId: string;
-  fabricantId: string;
+  fabricantId: string | null;
   nomBoutique: string;
 };
 
@@ -46,7 +46,13 @@ export function useProduits(boutiqueId: string | null) {
         .order('nom');
       if (error) throw error;
 
-      const ids = [...new Set(produits.map((produit) => produit.fabricant_id))];
+      const ids = [
+        ...new Set(
+          produits
+            .map((produit) => produit.fabricant_id)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
       const noms = new Map<string, string>();
       if (ids.length > 0) {
         const { data: profils, error: erreurProfils } = await base
@@ -61,7 +67,9 @@ export function useProduits(boutiqueId: string | null) {
 
       return produits.map((produit) => ({
         ...produit,
-        fabricantNom: noms.get(produit.fabricant_id) ?? 'Fabricant inconnu',
+        fabricantNom: produit.fabricant_id
+          ? (noms.get(produit.fabricant_id) ?? 'Fabricant inconnu')
+          : 'Sans pâtissier',
       }));
     },
   });
@@ -132,6 +140,41 @@ export function useMesProduits(userId: string | null) {
         .eq('fabricant_id', userId ?? '');
       if (erreurCompte) throw erreurCompte;
       return { produits: data, dejaEuUnProduit: (count ?? 0) > 0 };
+    },
+  });
+}
+
+/** Produits imposés sans fabricant, à prendre par un pâtissier de la boutique. */
+export function useProduitsAPrendre(boutiqueId: string | null) {
+  return useQuery({
+    queryKey: ['produits', 'a-prendre', boutiqueId],
+    enabled: Boolean(boutiqueId),
+    queryFn: async (): Promise<Produit[]> => {
+      const { data, error } = await db()
+        .from('produits')
+        .select('*')
+        .eq('boutique_id', boutiqueId ?? '')
+        .eq('impose_par_admin', true)
+        .is('fabricant_id', null)
+        .is('archive_le', null)
+        .order('nom');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function usePrendreProduit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (produitId: string) => {
+      const { error } = await db().rpc('prendre_produit', { p_produit: produitId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['produits'] });
+      void queryClient.invalidateQueries({ queryKey: ['previsions'] });
+      void queryClient.invalidateQueries({ queryKey: ['stock'] });
     },
   });
 }

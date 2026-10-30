@@ -16,32 +16,45 @@ import { eurosVersCentimes } from '@/lib/format';
 import { couleurs, styleTitreSection, tailles } from '@/theme';
 import type { Profil } from '@/types/database';
 
+/** Chaîne vide = aucun pâtissier (premier qui le prend). */
+const AUCUN_PATISSIER = '';
+
 const schema = z.object({
   nom: z.string().trim().min(1, 'Indiquez le nom du produit.'),
   prix: z.string().refine((valeur) => eurosVersCentimes(valeur) !== null, {
     message: 'Indiquez un prix en euros, par exemple 3,50.',
   }),
   conservation: z.enum(['frais', 'surgele']),
-  duree: z.string().regex(/^[1-9]\d*$/, 'Indiquez une durée en jours (au moins 1).'),
-  seuil: z.string().regex(/^\d+$/, 'Indiquez un nombre entier (0 ou plus).'),
-  fabricantId: z.string().min(1, 'Choisissez le pâtissier qui fabrique ce produit.'),
-  // Les lignes entièrement vides sont ignorées (la dernière l'est toujours).
-  lignes: z
-    .array(
-      z
-        .object({ ingredient: z.string(), quantite: z.string(), unite: z.enum(UNITES) })
-        .superRefine((ligne, ctx) => {
-          if (estVide(ligne)) return;
-          if (ligne.ingredient.trim() === '') {
-            ctx.addIssue({ code: 'custom', path: ['ingredient'], message: 'Indiquez l’ingrédient.' });
-          }
-          const nombre = Number(ligne.quantite.trim().replace(',', '.'));
-          if (!Number.isFinite(nombre) || nombre <= 0) {
-            ctx.addIssue({ code: 'custom', path: ['quantite'], message: 'Indiquez une quantité supérieure à 0.' });
-          }
-        }),
-    )
-    .refine((lignes) => lignes.some((ligne) => !estVide(ligne)), 'Ajoutez au moins un ingrédient.'),
+  duree: z
+    .string()
+    .refine((valeur) => valeur.trim() === '' || /^[1-9]\d*$/.test(valeur.trim()), {
+      message: 'Indiquez une durée en jours (au moins 1), ou laissez vide.',
+    }),
+  seuil: z
+    .string()
+    .refine((valeur) => valeur.trim() === '' || /^\d+$/.test(valeur.trim()), {
+      message: 'Indiquez un nombre entier (0 ou plus), ou laissez vide.',
+    }),
+  fabricantId: z.string(),
+  // Les lignes entièrement vides sont ignorées ; la recette est facultative.
+  lignes: z.array(
+    z
+      .object({ ingredient: z.string(), quantite: z.string(), unite: z.enum(UNITES) })
+      .superRefine((ligne, ctx) => {
+        if (estVide(ligne)) return;
+        if (ligne.ingredient.trim() === '') {
+          ctx.addIssue({ code: 'custom', path: ['ingredient'], message: 'Indiquez l’ingrédient.' });
+        }
+        const nombre = Number(ligne.quantite.trim().replace(',', '.'));
+        if (!Number.isFinite(nombre) || nombre <= 0) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['quantite'],
+            message: 'Indiquez une quantité supérieure à 0.',
+          });
+        }
+      }),
+  ),
 });
 
 type Formulaire = z.infer<typeof schema>;
@@ -65,9 +78,9 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
       nom: '',
       prix: '',
       conservation: 'frais',
-      duree: '2',
-      seuil: '0',
-      fabricantId: '',
+      duree: '',
+      seuil: '',
+      fabricantId: AUCUN_PATISSIER,
       lignes: [],
     },
   });
@@ -80,7 +93,7 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
 
   function choisirBoutique(id: string) {
     setBoutiqueId(id);
-    setValue('fabricantId', '');
+    setValue('fabricantId', AUCUN_PATISSIER);
     setAussi((actuel) => {
       const copie = { ...actuel };
       delete copie[id];
@@ -94,21 +107,27 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
     const boutique = boutiques.data?.find((item) => item.id === boutiqueId);
     if (!boutique) return;
 
+    const fabricantPrincipal =
+      valeurs.fabricantId.trim() === '' ? null : valeurs.fabricantId;
+
     const cibles = [
-      { boutiqueId, fabricantId: valeurs.fabricantId, nomBoutique: boutique.nom },
+      {
+        boutiqueId,
+        fabricantId: fabricantPrincipal,
+        nomBoutique: boutique.nom,
+      },
     ];
     for (const [id, fabricant] of Object.entries(aussi)) {
-      if (!fabricant) {
-        setErreur('Choisissez le pâtissier de chaque boutique ajoutée.');
-        return;
-      }
       const autre = boutiques.data?.find((item) => item.id === id);
       cibles.push({
         boutiqueId: id,
-        fabricantId: fabricant,
+        fabricantId: fabricant.trim() === '' ? null : fabricant,
         nomBoutique: autre?.nom ?? 'Boutique',
       });
     }
+
+    const dureeTrim = valeurs.duree.trim();
+    const seuilTrim = valeurs.seuil.trim();
 
     setErreur(null);
     try {
@@ -117,13 +136,15 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
           nom: valeurs.nom,
           prixCentimes,
           conservation: valeurs.conservation,
-          dureeJours: Number(valeurs.duree),
-          seuilMin: Number(valeurs.seuil),
-          lignes: valeurs.lignes.filter((ligne) => !estVide(ligne)).map((ligne) => ({
-            ingredient: ligne.ingredient.trim(),
-            quantite: Number(ligne.quantite.replace(',', '.')),
-            unite: ligne.unite,
-          })),
+          dureeJours: dureeTrim === '' ? 2 : Number(dureeTrim),
+          seuilMin: seuilTrim === '' ? 0 : Number(seuilTrim),
+          lignes: valeurs.lignes
+            .filter((ligne) => !estVide(ligne))
+            .map((ligne) => ({
+              ingredient: ligne.ingredient.trim(),
+              quantite: Number(ligne.quantite.replace(',', '.')),
+              unite: ligne.unite,
+            })),
         },
         cibles,
       });
@@ -162,27 +183,25 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
         />
       ))}
 
+      <Text style={styles.libelle}>Pâtissier fabricant (facultatif)</Text>
       {fabricants.length === 0 ? (
-        <Text style={styles.avertissement}>
-          Cette boutique n’a aucun pâtissier actif. Un pâtissier doit d’abord la rejoindre avec le
-          code d’invitation.
+        <Text style={styles.info}>
+          Aucun pâtissier actif : le premier qui rejoint pourra prendre ce produit.
         </Text>
-      ) : (
-        <>
-          <Text style={styles.libelle}>Pâtissier fabricant</Text>
-          {fabricants.map((personne) => (
-            <Bouton
-              key={personne.id}
-              titre={`${personne.prenom} ${personne.nom}`}
-              variante={fabricantId === personne.id ? 'principal' : 'secondaire'}
-              onPress={() => setValue('fabricantId', personne.id, { shouldValidate: true })}
-            />
-          ))}
-          {formState.errors.fabricantId ? (
-            <Text style={styles.erreur}>{formState.errors.fabricantId.message}</Text>
-          ) : null}
-        </>
-      )}
+      ) : null}
+      <Bouton
+        titre="Aucun : le premier pâtissier qui le prend"
+        variante={fabricantId === AUCUN_PATISSIER ? 'principal' : 'secondaire'}
+        onPress={() => setValue('fabricantId', AUCUN_PATISSIER, { shouldValidate: true })}
+      />
+      {fabricants.map((personne) => (
+        <Bouton
+          key={personne.id}
+          titre={`${personne.prenom} ${personne.nom}`}
+          variante={fabricantId === personne.id ? 'principal' : 'secondaire'}
+          onPress={() => setValue('fabricantId', personne.id, { shouldValidate: true })}
+        />
+      ))}
 
       <Controller
         control={control}
@@ -212,7 +231,7 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
           />
         )}
       />
-      <Text style={styles.libelle}>Conservation</Text>
+      <Text style={styles.libelle}>Conservation (facultatif, défaut : frais)</Text>
       <Bouton
         titre="Frais"
         variante={conservation === 'frais' ? 'principal' : 'secondaire'}
@@ -228,8 +247,9 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
         name="duree"
         render={({ field, fieldState }) => (
           <Champ
-            libelle="Durée de conservation (jours)"
+            libelle="Durée de conservation en jours (facultatif)"
             keyboardType="number-pad"
+            placeholder="2"
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}
@@ -242,8 +262,9 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
         name="seuil"
         render={({ field, fieldState }) => (
           <Champ
-            libelle="Seuil minimum de stock"
+            libelle="Seuil minimum de stock (facultatif)"
             keyboardType="number-pad"
+            placeholder="0"
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}
@@ -252,7 +273,7 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
         )}
       />
 
-      <Text style={styles.titre}>Recette</Text>
+      <Text style={styles.titre}>Recette (facultatif)</Text>
       <Controller
         control={control}
         name="lignes"
@@ -267,54 +288,54 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
           />
         )}
       />
-      {formState.errors.lignes?.message || formState.errors.lignes?.root?.message ? (
-        <Text style={styles.erreur}>
-          {formState.errors.lignes?.message ?? formState.errors.lignes?.root?.message}
-        </Text>
-      ) : null}
 
       <Text style={styles.titre}>Imposer aussi dans d’autres boutiques</Text>
       {autres.length === 0 ? (
-        <Text style={styles.avertissement}>Il n’y a pas d’autre boutique.</Text>
+        <Text style={styles.info}>Il n’y a pas d’autre boutique.</Text>
       ) : (
         autres.map((item) => {
           const equipe = patissiersDe(item.id);
           const choisi = item.id in aussi;
           return (
             <View key={item.id} style={styles.autre}>
-              {equipe.length === 0 ? (
-                <Text style={styles.avertissement}>
-                  {item.nom} : aucun pâtissier actif. Impossible d’y imposer un produit pour
-                  l’instant.
-                </Text>
-              ) : (
+              <Bouton
+                titre={choisi ? `Retirer ${item.nom}` : `Imposer aussi dans ${item.nom}`}
+                variante={choisi ? 'principal' : 'secondaire'}
+                onPress={() =>
+                  setAussi((actuel) => {
+                    const copie = { ...actuel };
+                    if (item.id in copie) delete copie[item.id];
+                    else copie[item.id] = AUCUN_PATISSIER;
+                    return copie;
+                  })
+                }
+              />
+              {choisi ? (
                 <>
+                  {equipe.length === 0 ? (
+                    <Text style={styles.info}>
+                      Aucun pâtissier actif : le premier pourra le prendre.
+                    </Text>
+                  ) : null}
                   <Bouton
-                    titre={choisi ? `Retirer ${item.nom}` : `Imposer aussi dans ${item.nom}`}
-                    variante={choisi ? 'principal' : 'secondaire'}
+                    titre="Aucun : le premier pâtissier qui le prend"
+                    variante={aussi[item.id] === AUCUN_PATISSIER ? 'principal' : 'secondaire'}
                     onPress={() =>
-                      setAussi((actuel) => {
-                        const copie = { ...actuel };
-                        if (item.id in copie) delete copie[item.id];
-                        else copie[item.id] = '';
-                        return copie;
-                      })
+                      setAussi((actuel) => ({ ...actuel, [item.id]: AUCUN_PATISSIER }))
                     }
                   />
-                  {choisi
-                    ? equipe.map((personne) => (
-                        <Bouton
-                          key={personne.id}
-                          titre={`${personne.prenom} ${personne.nom}`}
-                          variante={aussi[item.id] === personne.id ? 'principal' : 'secondaire'}
-                          onPress={() =>
-                            setAussi((actuel) => ({ ...actuel, [item.id]: personne.id }))
-                          }
-                        />
-                      ))
-                    : null}
+                  {equipe.map((personne) => (
+                    <Bouton
+                      key={personne.id}
+                      titre={`${personne.prenom} ${personne.nom}`}
+                      variante={aussi[item.id] === personne.id ? 'principal' : 'secondaire'}
+                      onPress={() =>
+                        setAussi((actuel) => ({ ...actuel, [item.id]: personne.id }))
+                      }
+                    />
+                  ))}
                 </>
-              )}
+              ) : null}
             </View>
           );
         })
@@ -324,7 +345,6 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
       <Bouton
         titre="Imposer le produit"
         chargement={formState.isSubmitting}
-        desactive={fabricants.length === 0}
         onPress={handleSubmit(enregistrer)}
       />
       <Bouton titre="Annuler" variante="secondaire" onPress={onAnnuler} />
@@ -342,9 +362,9 @@ const styles = StyleSheet.create({
   libelle: {
     ...styleTitreSection,
   },
-  avertissement: {
+  info: {
     fontSize: tailles.normal,
-    color: couleurs.erreur,
+    color: couleurs.texteSecondaire,
   },
   erreur: {
     fontSize: tailles.normal,

@@ -33,7 +33,7 @@ Ces points étaient ambigus ou contradictoires. Décisions prises pour coder :
 | --- | --- | --- |
 | D1 | **Base de la prévision** (4.3 parle de « ventes » mais le stock ne baisse que par les **sorties**) | La prévision utilise les **sorties de stock** par jour de la semaine. C'est cohérent avec 4.1 et avec 4.3 point 3. |
 | D2 | **Quantité à fabriquer** (3.2.5 dit « jours et quantités », mais aucune règle de quantité) | Quantité suggérée = consommation prévue sur `min(7 jours, durée de conservation)` après le jour de fabrication + seuil minimum − stock prévu ce jour-là. |
-| D3 | **Gamme obligatoire imposée à plusieurs pâtissiers** vs « un seul fabricant par produit » (4.2) | Un produit = un fabricant par boutique. Le patron impose un produit **à un pâtissier précis** ; pour plusieurs boutiques, l'app crée une copie par boutique. Le patron peut le faire après l'inscription du pâtissier. |
+| D3 | **Gamme obligatoire imposée à plusieurs pâtissiers** vs « un seul fabricant par produit » (4.2) | Un produit = au plus un fabricant par boutique. Le patron impose un produit (nom, prix, boutique obligatoires) ; le pâtissier est **facultatif** : s'il est omis, le premier pâtissier de la boutique peut le « prendre ». Pour plusieurs boutiques, l'app crée une copie par boutique. |
 | D4 | **Inscription libre** : n'importe qui pourrait rejoindre une boutique | Chaque boutique a un **code d'invitation** (8 caractères) que le patron transmet. Sans code, pas d'inscription. |
 | D5 | **Face ID sur tablette partagée** : impossible, un iPad n'enregistre qu'un visage | Téléphone perso : Face ID (repli sur le code). Tablette partagée : choix du profil puis **code PIN à 4 chiffres** (phase 10). Sur le web (PWA) : code PIN uniquement. |
 | D6 | **Connexion « code + Face ID »** : Supabase a besoin d'un identifiant | 1ʳᵉ connexion avec **email + mot de passe**, puis création d'un code PIN. Ensuite, l'appli se déverrouille par Face ID ou PIN. Le PIN reste sur l'appareil (haché dans le stockage sécurisé). |
@@ -107,7 +107,7 @@ SQL complet : [supabase/migrations/0001_schema_initial.sql](../supabase/migratio
 | `entreprises` | L'entreprise du patron |
 | `boutiques` | Boutiques + `code_invitation` |
 | `profils` | Employés et patron (`role` : admin, patissier, vendeuse), `equipe` jour/nuit, `archive_le` |
-| `produits` | Fiche produit, `fabricant_id` (un seul), `seuil_min`, `impose_par_admin` |
+| `produits` | Fiche produit, `fabricant_id` (un seul, nullable si imposé sans pâtissier), `seuil_min`, `impose_par_admin` |
 | `ingredients_recette` | Lignes de recette d'un produit |
 | `mouvements_stock` | `production` (+), `sortie` (−), `ajustement` (±, patron) |
 | `saisies_vente` | Vendu / jeté / reste par produit et par jour, prix et fabricant copiés |

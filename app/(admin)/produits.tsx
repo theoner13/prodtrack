@@ -153,6 +153,7 @@ export default function EcranProduits() {
             >
               {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
               {produit.impose_par_admin ? <Text style={styles.badge}>Imposé</Text> : null}
+              {!produit.fabricant_id ? <Text style={styles.badge}>Sans pâtissier</Text> : null}
             </CarteProduit>
             {!produit.intermediaire && prixOuvert === produit.id ? (
               <>

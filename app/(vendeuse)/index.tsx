@@ -82,7 +82,10 @@ export default function EcranFinDeJournee() {
   }, [saisies.data]);
 
   const listeVendables = useMemo(
-    () => (produits.data ?? []).filter((produit) => !produit.intermediaire),
+    () =>
+      (produits.data ?? []).filter(
+        (produit) => !produit.intermediaire && produit.fabricant_id != null,
+      ),
     [produits.data],
   );
 

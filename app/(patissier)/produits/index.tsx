@@ -1,29 +1,56 @@
 import { router, type Href } from 'expo-router';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useUrlsSignees } from '@/api/photos';
-import { useMesProduits } from '@/api/produits';
+import {
+  useMesProduits,
+  usePrendreProduit,
+  useProduitsAPrendre,
+} from '@/api/produits';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
+import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
 import { CarteProduit } from '@/components/carte-produit';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 
 export default function EcranMesProduits() {
   const { profil } = useAuth();
   const mes = useMesProduits(profil?.id ?? null);
-  const chemins = (mes.data?.produits ?? [])
-    .map((produit) => produit.photo_url)
-    .filter((chemin): chemin is string => Boolean(chemin));
+  const aPrendre = useProduitsAPrendre(profil?.boutique_id ?? null);
+  const prendre = usePrendreProduit();
+  const [banniere, setBanniere] = useState<string | null>(null);
+  const [erreurPrise, setErreurPrise] = useState<string | null>(null);
+
+  const chemins = [
+    ...(mes.data?.produits ?? []).map((produit) => produit.photo_url),
+    ...(aPrendre.data ?? []).map((produit) => produit.photo_url),
+  ].filter((chemin): chemin is string => Boolean(chemin));
   const photos = useUrlsSignees(chemins);
 
   function ouvrir(id: string) {
     router.push(`/produits/${id}` as Href);
   }
 
-  if (mes.isLoading) {
+  async function fabriquer(produitId: string, nom: string) {
+    setErreurPrise(null);
+    setBanniere(null);
+    try {
+      await prendre.mutateAsync(produitId);
+      setBanniere(
+        `${nom} ajouté à vos produits. Pensez à vérifier le seuil et la durée de conservation.`,
+      );
+      void mes.refetch();
+      void aPrendre.refetch();
+    } catch (probleme: unknown) {
+      setErreurPrise(messageErreur(probleme));
+    }
+  }
+
+  if (mes.isLoading || aPrendre.isLoading) {
     return (
       <Ecran>
         <EtatChargement />
@@ -31,19 +58,53 @@ export default function EcranMesProduits() {
     );
   }
 
-  if (mes.isError) {
+  if (mes.isError || aPrendre.isError) {
     return (
       <Ecran>
-        <EtatErreur message={messageErreur(mes.error)} onReessayer={() => void mes.refetch()} />
+        <EtatErreur
+          message={messageErreur(mes.error ?? aPrendre.error)}
+          onReessayer={() => {
+            void mes.refetch();
+            void aPrendre.refetch();
+          }}
+        />
       </Ecran>
     );
   }
 
   const produits = mes.data?.produits ?? [];
-  const premiereFois = produits.length === 0 && !mes.data?.dejaEuUnProduit;
+  const aPrendreListe = aPrendre.data ?? [];
+  const premiereFois =
+    produits.length === 0 && aPrendreListe.length === 0 && !mes.data?.dejaEuUnProduit;
 
   return (
     <Ecran titre="Mes produits" defilement>
+      <Banniere message={banniere} type="succes" onFermer={() => setBanniere(null)} duree={6000} />
+      {erreurPrise ? <Text style={styles.erreur}>{erreurPrise}</Text> : null}
+
+      {aPrendreListe.length > 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.titreSection}>À prendre</Text>
+          {aPrendreListe.map((produit) => (
+            <View key={produit.id} style={styles.blocPrendre}>
+              <CarteProduit
+                nom={produit.nom}
+                prixCentimes={produit.intermediaire ? undefined : produit.prix_centimes}
+                photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
+              >
+                <Text style={styles.badge}>Imposé par l'admin</Text>
+                {!produit.fabricant_id ? <Text style={styles.badge}>Sans pâtissier</Text> : null}
+              </CarteProduit>
+              <Bouton
+                titre="Je le fabrique"
+                chargement={prendre.isPending}
+                onPress={() => void fabriquer(produit.id, produit.nom)}
+              />
+            </View>
+          ))}
+        </View>
+      ) : null}
+
       {premiereFois ? (
         <EtatVide message="Ajoutez les produits que vous fabriquez." />
       ) : (
@@ -75,6 +136,15 @@ export default function EcranMesProduits() {
 }
 
 const styles = StyleSheet.create({
+  section: {
+    gap: espacements.s,
+  },
+  titreSection: {
+    ...styleTitreSection,
+  },
+  blocPrendre: {
+    gap: espacements.s,
+  },
   badge: {
     overflow: 'hidden',
     backgroundColor: couleurs.principalClair,
@@ -84,5 +154,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: espacements.s,
     paddingVertical: 2,
     borderRadius: 8,
+  },
+  erreur: {
+    fontSize: tailles.normal,
+    color: couleurs.erreur,
   },
 });

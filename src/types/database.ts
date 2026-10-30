@@ -313,7 +313,7 @@ export type Database = {
           conservation: Database["public"]["Enums"]["type_conservation"]
           created_at: string
           duree_conservation_jours: number | null
-          fabricant_id: string
+          fabricant_id: string | null
           id: string
           impose_par_admin: boolean
           intermediaire: boolean
@@ -328,7 +328,7 @@ export type Database = {
           conservation?: Database["public"]["Enums"]["type_conservation"]
           created_at?: string
           duree_conservation_jours?: number | null
-          fabricant_id: string
+          fabricant_id?: string | null
           id?: string
           impose_par_admin?: boolean
           intermediaire?: boolean
@@ -343,7 +343,7 @@ export type Database = {
           conservation?: Database["public"]["Enums"]["type_conservation"]
           created_at?: string
           duree_conservation_jours?: number | null
-          fabricant_id?: string
+          fabricant_id?: string | null
           id?: string
           impose_par_admin?: boolean
           intermediaire?: boolean
@@ -673,6 +673,7 @@ export type Database = {
       peut_modifier_produit: { Args: { p_produit: string }; Returns: boolean }
       peut_voir_boutique: { Args: { p_boutique: string }; Returns: boolean }
       peut_voir_produit: { Args: { p_produit: string }; Returns: boolean }
+      prendre_produit: { Args: { p_produit: string }; Returns: undefined }
       produit_boutique: { Args: { p_produit: string }; Returns: string }
       rejoindre_boutique: {
         Args: {
@@ -823,6 +824,7 @@ export const Constants = {
     },
   },
 } as const
+
 
 // ---------- Alias pratiques ----------
 export type Produit = Tables<'produits'>;
