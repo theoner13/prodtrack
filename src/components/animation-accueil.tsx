@@ -2,15 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Animated,
-  Image,
   Platform,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
+import { Logo } from '@/components/logo';
+
 const TAILLE_LOGO = 140;
-const RAYON_LOGO = Math.round(TAILLE_LOGO * 0.28);
 const NATIVE_DRIVER = Platform.OS !== 'web';
 
 /**
@@ -158,11 +158,7 @@ export function AnimationAccueil() {
             transform: [{ scale: echelleLogo }],
           }}
         >
-          <Image
-            source={require('../../assets/images/icon.png')}
-            style={styles.logo}
-            accessibilityIgnoresInvertColors
-          />
+          <Logo taille={TAILLE_LOGO} />
         </Animated.View>
         <Animated.View
           style={{
@@ -191,12 +187,6 @@ const styles = StyleSheet.create({
   centre: {
     alignItems: 'center',
     gap: 16,
-  },
-  logo: {
-    width: TAILLE_LOGO,
-    height: TAILLE_LOGO,
-    borderRadius: RAYON_LOGO,
-    overflow: 'hidden',
   },
   nom: {
     fontSize: 26,

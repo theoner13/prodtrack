@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements } from '@/theme';
 
 type Props = {
   valeur: string;
@@ -17,30 +17,46 @@ const LIGNES: Touche[][] = [
   ['', '0', 'effacer'],
 ];
 
-const DIAMETRE = 56;
+function diametreTouche(largeurEcran: number): number {
+  return Math.min(84, Math.max(64, Math.round(largeurEcran * 0.21)));
+}
 
 export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
+  const { width } = useWindowDimensions();
+  const diametre = diametreTouche(width);
+  const ecart = Math.round(diametre / 4);
+  const taillePoint = diametre >= 76 ? 14 : 12;
+
   function ajouter(chiffre: string) {
     if (valeur.length >= longueur) return;
     onChange(valeur + chiffre);
   }
 
   return (
-    <View style={styles.bloc}>
-      <View style={styles.points}>
+    <View style={[styles.bloc, { gap: ecart + espacements.s }]}>
+      <View style={[styles.points, { gap: espacements.m }]}>
         {Array.from({ length: longueur }, (_, index) => (
           <View
             key={index}
-            style={[styles.point, index < valeur.length ? styles.pointRempli : null]}
+            style={[
+              {
+                width: taillePoint,
+                height: taillePoint,
+                borderRadius: taillePoint / 2,
+                borderWidth: StyleSheet.hairlineWidth,
+                borderColor: couleurs.principal,
+              },
+              index < valeur.length ? styles.pointRempli : null,
+            ]}
           />
         ))}
       </View>
-      <View style={styles.grille}>
+      <View style={[styles.grille, { gap: ecart }]}>
         {LIGNES.map((ligne, indexLigne) => (
-          <View key={indexLigne} style={styles.ligne}>
+          <View key={indexLigne} style={[styles.ligne, { gap: ecart }]}>
             {ligne.map((touche) => {
               if (touche === '') {
-                return <View key={`vide-${indexLigne}`} style={styles.toucheVide} />;
+                return <View key={`vide-${indexLigne}`} style={{ width: diametre }} />;
               }
               const effacer = touche === 'effacer';
               return (
@@ -49,7 +65,17 @@ export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
                   accessibilityRole="button"
                   accessibilityLabel={effacer ? 'Effacer' : touche}
                   onPress={() => (effacer ? onChange(valeur.slice(0, -1)) : ajouter(touche))}
-                  style={({ pressed }) => [styles.touche, pressed && styles.appuye]}
+                  style={({ pressed }) => [
+                    {
+                      width: diametre,
+                      height: diametre,
+                      borderRadius: diametre / 2,
+                      backgroundColor: couleurs.fondPuce,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    },
+                    pressed && styles.appuye,
+                  ]}
                 >
                   <Text style={styles.texteTouche}>{effacer ? '⌫' : touche}</Text>
                 </Pressable>
@@ -63,49 +89,25 @@ export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
 }
 
 const styles = StyleSheet.create({
-  bloc: {
-    gap: espacements.l,
-  },
+  bloc: {},
   points: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: espacements.m,
-  },
-  point: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: couleurs.principal,
   },
   pointRempli: {
     backgroundColor: couleurs.principal,
   },
-  grille: {
-    gap: espacements.s,
-  },
+  grille: {},
   ligne: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: espacements.s,
-  },
-  touche: {
-    width: DIAMETRE,
-    height: DIAMETRE,
-    borderRadius: DIAMETRE / 2,
-    backgroundColor: couleurs.fondPuce,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  toucheVide: {
-    width: DIAMETRE,
   },
   appuye: {
     backgroundColor: couleurs.desactive,
   },
   texteTouche: {
-    fontSize: tailles.grand,
-    fontWeight: '400',
+    fontSize: 28,
+    fontWeight: '300',
     color: couleurs.texte,
   },
 });

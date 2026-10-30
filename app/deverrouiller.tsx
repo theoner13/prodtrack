@@ -1,13 +1,14 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, Text } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
 import { Bouton } from '@/components/bouton';
 import { Ecran } from '@/components/ecran';
+import { Logo } from '@/components/logo';
 import { PaveNumerique } from '@/components/pave-numerique';
 import { biometrieActive, verifierPin } from '@/lib/pin';
-import { couleurs, tailles } from '@/theme';
+import { couleurs, espacements, tailles } from '@/theme';
 
 export default function EcranDeverrouiller() {
   const {
@@ -74,10 +75,14 @@ export default function EcranDeverrouiller() {
   }
 
   return (
-    <Ecran titre="Déverrouiller" defilement>
-      <Text style={styles.consigne}>Saisissez votre code à 4 chiffres.</Text>
-      <PaveNumerique valeur={saisie} onChange={(valeur) => void onSaisie(valeur)} />
-      {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
+    <Ecran>
+      <View style={styles.centre}>
+        <Logo />
+        <Text style={styles.titre}>Déverrouiller</Text>
+        <Text style={styles.consigne}>Saisissez votre code à 4 chiffres.</Text>
+        <PaveNumerique valeur={saisie} onChange={(valeur) => void onSaisie(valeur)} />
+        {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
+      </View>
       {avecBiometrie ? (
         <Bouton
           titre="Utiliser Face ID ou l'empreinte"
@@ -95,6 +100,18 @@ export default function EcranDeverrouiller() {
 }
 
 const styles = StyleSheet.create({
+  centre: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: espacements.m,
+  },
+  titre: {
+    fontSize: tailles.titre,
+    fontWeight: '600',
+    color: couleurs.texte,
+    textAlign: 'center',
+  },
   consigne: {
     fontSize: tailles.normal,
     color: couleurs.texte,

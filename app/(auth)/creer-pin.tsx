@@ -1,15 +1,16 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, Text } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { Ecran } from '@/components/ecran';
+import { Logo } from '@/components/logo';
 import { PaveNumerique } from '@/components/pave-numerique';
 import { creerPin } from '@/lib/pin';
-import { couleurs, tailles } from '@/theme';
+import { couleurs, espacements, tailles } from '@/theme';
 
 export default function EcranCreerPin() {
   const { session, rechargerPin, deverrouiller, tablettePartagee } = useAuth();
@@ -75,6 +76,7 @@ export default function EcranCreerPin() {
     void enregistrer(valeur, false);
   }
 
+  const titreEcran = changer === '1' ? 'Changer mon code PIN' : 'Créer un code PIN';
   const titre =
     etape === 'choix'
       ? 'Choisissez un code à 4 chiffres'
@@ -83,38 +85,55 @@ export default function EcranCreerPin() {
         : 'Déverrouillage de l’appareil';
 
   return (
-    <Ecran titre={changer === '1' ? 'Changer mon code PIN' : 'Créer un code PIN'} defilement>
-      <Text style={styles.consigne}>{titre}</Text>
-      {etape === 'biometrie' ? (
-        <>
-          <Text style={styles.consigne}>
-            Cet appareil peut utiliser Face ID ou l’empreinte. Voulez-vous l’activer pour ouvrir
-            ProdTrack ?
-          </Text>
-          <Bouton
-            titre="Activer"
-            chargement={chargement}
-            onPress={() => void enregistrer(premier, true)}
-          />
-          <Bouton
-            titre="Pas maintenant"
-            variante="secondaire"
-            desactive={chargement}
-            onPress={() => void enregistrer(premier, false)}
-          />
-        </>
-      ) : (
-        <PaveNumerique valeur={saisie} onChange={onSaisie} />
-      )}
-      {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
+    <Ecran>
+      <View style={styles.centre}>
+        <Logo />
+        <Text style={styles.titre}>{titreEcran}</Text>
+        <Text style={styles.consigne}>{titre}</Text>
+        {etape === 'biometrie' ? (
+          <>
+            <Text style={styles.consigne}>
+              Cet appareil peut utiliser Face ID ou l’empreinte. Voulez-vous l’activer pour ouvrir
+              ProdTrack ?
+            </Text>
+            <Bouton
+              titre="Activer"
+              chargement={chargement}
+              onPress={() => void enregistrer(premier, true)}
+            />
+            <Bouton
+              titre="Pas maintenant"
+              variante="secondaire"
+              desactive={chargement}
+              onPress={() => void enregistrer(premier, false)}
+            />
+          </>
+        ) : (
+          <PaveNumerique valeur={saisie} onChange={onSaisie} />
+        )}
+        {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
+      </View>
     </Ecran>
   );
 }
 
 const styles = StyleSheet.create({
+  centre: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: espacements.m,
+  },
+  titre: {
+    fontSize: tailles.titre,
+    fontWeight: '600',
+    color: couleurs.texte,
+    textAlign: 'center',
+  },
   consigne: {
     fontSize: tailles.normal,
     color: couleurs.texte,
+    textAlign: 'center',
   },
   erreur: {
     fontSize: tailles.normal,

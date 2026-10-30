@@ -36,6 +36,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-30 : écran du code : logo, pavé plus grand et centré (Cursor)
 - 2026-10-30 : pavé du code : disposition 3 × 3 + 0 rétablie (Cursor)
 - 2026-10-29 : animation d'accueil avec le logo à l'ouverture (Cursor)
 - 2026-10-29 : style épuré blanc minimaliste : listes sans cartes, compteurs ronds discrets, titres et espacements réduits, boutons 40 px (Cursor)
