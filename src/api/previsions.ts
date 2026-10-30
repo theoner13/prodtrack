@@ -55,8 +55,9 @@ export function useMesPrevisions(userId: string | null) {
     queryFn: async (): Promise<PrevisionProduit[]> => {
       const { data: produits, error } = await db()
         .from('produits')
-        .select('id, nom, photo_url, seuil_min, duree_conservation_jours, intermediaire')
+        .select('id, nom, photo_url, seuil_min, duree_conservation_jours, intermediaire, conservation')
         .eq('fabricant_id', userId ?? '')
+        .eq('conservation', 'surgele')
         .is('archive_le', null)
         .order('nom');
       if (error) throw error;

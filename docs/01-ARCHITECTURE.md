@@ -45,6 +45,7 @@ Ces points étaient ambigus ou contradictoires. Décisions prises pour coder :
 | D12 | **Suppression d'un employé** | Toujours un **archivage** (`archive_le`) : l'employé ne voit plus rien, son historique reste. Ses produits restent et le patron les réattribue. |
 | D13 | **« Reste » de la vendeuse** | Information uniquement (statistique). Le MVP ne gère pas de stock vitrine. |
 | D14 | « IA » de prévision | Calcul statistique (moyennes par jour de la semaine). Améliorable plus tard. |
+| D15 | **Prévision, seuil, planning et alertes** | Réservés aux produits **surgelés** (décision du propriétaire, 30/10/2026) ; les produits frais sont fabriqués chaque jour sans planning. |
 
 ---
 

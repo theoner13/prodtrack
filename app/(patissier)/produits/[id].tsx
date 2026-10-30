@@ -175,7 +175,7 @@ export default function EcranFicheProduit() {
         photoUrl,
         conservation: valeurs.conservation,
         dureeJours: Number(valeurs.duree),
-        seuilMin: Number(valeurs.seuil),
+        seuilMin: valeurs.conservation === 'surgele' ? Number(valeurs.seuil) : 0,
         intermediaire: estIntermediaire,
         impose,
         lignes: valeurs.lignes
@@ -390,7 +390,10 @@ export default function EcranFicheProduit() {
         titre="Frais"
         variante={conservation === 'frais' ? 'principal' : 'secondaire'}
         desactive={impose}
-        onPress={() => setValue('conservation', 'frais')}
+        onPress={() => {
+          setValue('conservation', 'frais');
+          setValue('seuil', '0');
+        }}
       />
       <Bouton
         titre="Surgelé"
@@ -413,21 +416,25 @@ export default function EcranFicheProduit() {
           />
         )}
       />
-      <Controller
-        control={control}
-        name="seuil"
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Seuil minimum de stock"
-            keyboardType="number-pad"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            erreur={fieldState.error?.message}
+      {conservation === 'surgele' ? (
+        <>
+          <Controller
+            control={control}
+            name="seuil"
+            render={({ field, fieldState }) => (
+              <Champ
+                libelle="Seuil minimum de stock"
+                keyboardType="number-pad"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                erreur={fieldState.error?.message}
+              />
+            )}
           />
-        )}
-      />
-      <Text style={styles.aide}>Nombre d’unités qui doit toujours rester en stock.</Text>
+          <Text style={styles.aide}>Nombre d’unités qui doit toujours rester en stock.</Text>
+        </>
+      ) : null}
 
       <Text style={styles.titre}>Recette</Text>
       {impose ? (

@@ -101,7 +101,9 @@ export default function EcranStock() {
         const info = stockParProduit.get(produit.id);
         const valeur = info?.stock ?? 0;
         const seuil = info?.seuil ?? produit.seuil_min;
-        const sousSeuil = valeur < seuil;
+        // Alerte « sous le seuil » réservée aux surgelés (les frais n’ont pas de seuil métier).
+        const sousSeuil =
+          produit.conservation === 'surgele' && valeur < seuil;
         const sousTitre = sousSeuil
           ? `${produit.fabricantNom} · Sous le seuil (min. ${seuil})`
           : produit.fabricantNom;

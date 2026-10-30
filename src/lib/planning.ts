@@ -1,4 +1,4 @@
-// Regroupement du planning pâtissier : une ligne par produit, par jour, sans doublon.
+// Planning pâtissier en agenda : 7 jours, produits surgelés uniquement, sans doublon.
 
 export type EntreePlanning = {
   produitId: string;
@@ -36,26 +36,28 @@ function ajouterJours(jour: string, nombre: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-/** Libellé de groupe : « Aujourd'hui », « Demain », ou « Samedi 31/10 ». */
-export function libelleJourPlanning(jour: string, aujourdhui: string): string {
-  if (jour === aujourdhui) return "Aujourd'hui";
-  if (jour === ajouterJours(aujourdhui, 1)) return 'Demain';
+/** Date courte « vendredi 30/10 » (UTC, jour calendaire Paris déjà fourni en YYYY-MM-DD). */
+function dateCourte(jour: string): string {
   const date = new Date(`${jour}T12:00:00Z`);
   const nom = date.toLocaleDateString('fr-FR', { weekday: 'long', timeZone: 'UTC' });
   const jj = String(date.getUTCDate()).padStart(2, '0');
   const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
-  return `${nom.charAt(0).toUpperCase()}${nom.slice(1)} ${jj}/${mm}`;
+  return `${nom} ${jj}/${mm}`;
+}
+
+/** Libellé d’en-tête : « Aujourd'hui · vendredi 30/10 », « Demain · … », ou « Lundi 02/11 ». */
+export function libelleJourPlanning(jour: string, aujourdhui: string): string {
+  const court = dateCourte(jour);
+  if (jour === aujourdhui) return `Aujourd'hui · ${court}`;
+  if (jour === ajouterJours(aujourdhui, 1)) return `Demain · ${court}`;
+  return court.charAt(0).toUpperCase() + court.slice(1);
 }
 
 /** Libellé court pour l’accessibilité (ex. « samedi 31/10 »). */
 export function libelleJourCourt(jour: string, aujourdhui: string): string {
   if (jour === aujourdhui) return "aujourd'hui";
   if (jour === ajouterJours(aujourdhui, 1)) return 'demain';
-  const date = new Date(`${jour}T12:00:00Z`);
-  const nom = date.toLocaleDateString('fr-FR', { weekday: 'long', timeZone: 'UTC' });
-  const jj = String(date.getUTCDate()).padStart(2, '0');
-  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
-  return `${nom} ${jj}/${mm}`;
+  return dateCourte(jour);
 }
 
 export function libelleAccessibiliteLigne(ligne: LignePlanning, aujourdhui: string): string {
@@ -77,7 +79,8 @@ function comparerLignes(a: LignePlanning, b: LignePlanning): number {
 }
 
 /**
- * Construit le planning : prévisions des 7 prochains jours + produits sous le seuil.
+ * Construit l’agenda : toujours 7 cases (aujourd’hui → J+6).
+ * Entrées = produits surgelés uniquement (le filtre frais est fait par l’appelant).
  * Un produit n’apparaît qu’une fois ; sous le seuil → Aujourd’hui.
  */
 export function construirePlanning(entrees: EntreePlanning[], aujourdhui: string): GroupePlanning[] {
@@ -117,11 +120,15 @@ export function construirePlanning(entrees: EntreePlanning[], aujourdhui: string
     parJour.set(ligne.jour, liste);
   }
 
-  return [...parJour.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([jour, lignes]) => ({
+  const groupes: GroupePlanning[] = [];
+  for (let i = 0; i < 7; i += 1) {
+    const jour = ajouterJours(aujourdhui, i);
+    const lignes = [...(parJour.get(jour) ?? [])].sort(comparerLignes);
+    groupes.push({
       jour,
       libelle: libelleJourPlanning(jour, aujourdhui),
-      lignes: [...lignes].sort(comparerLignes),
-    }));
+      lignes,
+    });
+  }
+  return groupes;
 }

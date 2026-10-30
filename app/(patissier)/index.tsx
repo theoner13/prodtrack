@@ -16,7 +16,7 @@ import {
   libelleAccessibiliteLigne,
   type LignePlanning,
 } from '@/lib/planning';
-import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
+import { couleurs, espacements, rayon, tailles } from '@/theme';
 
 function nomJour(jour: string, capitale: boolean): string {
   const date = new Date(`${jour}T12:00:00Z`);
@@ -89,9 +89,6 @@ function LigneProduitPlanning({
   onBasculer: () => void;
 }) {
   const aDetail = Boolean(prevision?.detail.length);
-  const stockTexte = ligne.sousSeuil
-    ? `Stock ${ligne.stock} / seuil ${ligne.seuil}`
-    : `Stock ${ligne.stock}`;
 
   return (
     <Pressable
@@ -118,7 +115,6 @@ function LigneProduitPlanning({
               {ligne.nom}
             </Text>
           </Pressable>
-          <Text style={styles.stock}>{stockTexte}</Text>
           {ligne.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
         </View>
         <View style={styles.droite}>
@@ -183,6 +179,23 @@ export default function EcranPlanning() {
     );
   }
 
+  const surgeles = produits.filter((produit) => produit.conservation === 'surgele');
+  if (surgeles.length === 0) {
+    return (
+      <Ecran
+        titre="Planning"
+        defilement
+        enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
+        onRafraichir={() => void rafraichir()}
+      >
+        <Text style={styles.intro}>
+          Planning des produits surgelés. Les produits frais se fabriquent chaque jour.
+        </Text>
+        <EtatVide message="Aucun produit surgelé à planifier." />
+      </Ecran>
+    );
+  }
+
   const stockParProduit = new Map(
     (stock.data ?? [])
       .filter((ligne) => ligne.produit_id)
@@ -196,7 +209,7 @@ export default function EcranPlanning() {
   const previsionParId = new Map(lignesPrevision.map((ligne) => [ligne.produitId, ligne]));
   const aujourdhui = aujourdhuiParis();
 
-  const entrees = produits.map((produit) => {
+  const entrees = surgeles.map((produit) => {
     const prevision = previsionParId.get(produit.id);
     const info = stockParProduit.get(produit.id);
     const stockValeur = info?.stock ?? prevision?.stockActuel ?? 0;
@@ -232,26 +245,22 @@ export default function EcranPlanning() {
       enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
       onRafraichir={() => void rafraichir()}
     >
+      <Text style={styles.intro}>
+        Planning des produits surgelés. Les produits frais se fabriquent chaque jour.
+      </Text>
       {aIndicative ? (
         <Text style={styles.indicative}>
           Prévisions indicatives : moins de 8 semaines de données.
         </Text>
       ) : null}
 
-      {groupes.length === 0 ? (
-        calculees.length === 0 ? (
-          <EtatVide message="Les prévisions sont calculées chaque nuit. Revenez demain." />
-        ) : (
-          <EtatVide message="Rien à fabriquer dans les 7 prochains jours." />
-        )
-      ) : (
-        groupes.map((groupe) => (
-          <View key={groupe.jour} style={styles.groupe}>
-            <Text style={styles.section}>
-              {groupe.libelle} · {groupe.lignes.length}{' '}
-              {groupe.lignes.length > 1 ? 'produits' : 'produit'}
-            </Text>
-            {groupe.lignes.map((ligne) => (
+      {groupes.map((groupe) => (
+        <View key={groupe.jour} style={styles.caseJour}>
+          <Text style={styles.enteteJour}>{groupe.libelle}</Text>
+          {groupe.lignes.length === 0 ? (
+            <Text style={styles.jourVide}>Rien à fabriquer</Text>
+          ) : (
+            groupe.lignes.map((ligne) => (
               <LigneProduitPlanning
                 key={ligne.produitId}
                 ligne={ligne}
@@ -262,10 +271,10 @@ export default function EcranPlanning() {
                   setOuvert((actuel) => (actuel === ligne.produitId ? null : ligne.produitId))
                 }
               />
-            ))}
-          </View>
-        ))
-      )}
+            ))
+          )}
+        </View>
+      ))}
 
       {aSousSeuil ? <Text style={styles.legende}>● sous le seuil de stock</Text> : null}
       {dernier ? <Text style={styles.calcul}>Dernier calcul : {formatMoment(dernier)}</Text> : null}
@@ -274,23 +283,39 @@ export default function EcranPlanning() {
 }
 
 const styles = StyleSheet.create({
+  intro: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    marginBottom: espacements.s,
+  },
   indicative: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     marginBottom: espacements.s,
   },
-  groupe: {
+  caseJour: {
+    borderWidth: 1,
+    borderColor: couleurs.bordure,
+    borderRadius: rayon,
+    padding: espacements.s,
     marginBottom: espacements.s,
+    backgroundColor: couleurs.fond,
   },
-  section: {
-    ...styleTitreSection,
-    marginTop: espacements.m,
+  enteteJour: {
+    fontSize: tailles.normal,
+    fontWeight: '700',
+    color: couleurs.texte,
     marginBottom: espacements.xs,
+  },
+  jourVide: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    paddingVertical: 4,
   },
   ligneProduit: {
     paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: couleurs.bordure,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: couleurs.bordure,
     backgroundColor: couleurs.fond,
     gap: espacements.s,
   },
@@ -320,10 +345,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: couleurs.principal,
     textDecorationLine: 'underline',
-  },
-  stock: {
-    fontSize: tailles.petit,
-    color: couleurs.texteSecondaire,
   },
   badge: {
     alignSelf: 'flex-start',

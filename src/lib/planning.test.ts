@@ -24,6 +24,14 @@ function entree(partiel: Partial<EntreePlanning> & Pick<EntreePlanning, 'produit
 }
 
 describe('construirePlanning', () => {
+  it('renvoie toujours 7 jours, même sans produit', () => {
+    const groupes = construirePlanning([], AUJOURDHUI);
+    assert.equal(groupes.length, 7);
+    assert.equal(groupes[0]!.jour, AUJOURDHUI);
+    assert.equal(groupes[6]!.jour, '2026-11-05');
+    assert.deepEqual(groupes.map((g) => g.lignes.length), [0, 0, 0, 0, 0, 0, 0]);
+  });
+
   it('déduplique : sous le seuil + prévision plus tard → une seule ligne Aujourd’hui', () => {
     const groupes = construirePlanning(
       [
@@ -38,11 +46,11 @@ describe('construirePlanning', () => {
       ],
       AUJOURDHUI,
     );
-    assert.equal(groupes.length, 1);
-    assert.equal(groupes[0]!.jour, AUJOURDHUI);
+    assert.equal(groupes.length, 7);
     assert.equal(groupes[0]!.lignes.length, 1);
     assert.equal(groupes[0]!.lignes[0]!.quantite, 56);
     assert.equal(groupes[0]!.lignes[0]!.sousSeuil, true);
+    assert.equal(groupes[3]!.lignes.length, 0);
   });
 
   it('sous le seuil sans prévision → Aujourd’hui, quantité null', () => {
@@ -64,7 +72,7 @@ describe('construirePlanning', () => {
     assert.equal(groupes[0]!.lignes[0]!.sousSeuil, true);
   });
 
-  it('ignore un produit hors semaine et au-dessus du seuil', () => {
+  it('ignore un produit hors semaine et au-dessus du seuil (jours vides)', () => {
     const groupes = construirePlanning(
       [
         entree({
@@ -78,7 +86,8 @@ describe('construirePlanning', () => {
       ],
       AUJOURDHUI,
     );
-    assert.deepEqual(groupes, []);
+    assert.equal(groupes.length, 7);
+    assert.ok(groupes.every((g) => g.lignes.length === 0));
   });
 
   it('groupe par jour et trie : sous seuil d’abord, puis quantité décroissante', () => {
@@ -120,19 +129,21 @@ describe('construirePlanning', () => {
       AUJOURDHUI,
     );
 
-    assert.equal(groupes.length, 2);
-    assert.equal(groupes[0]!.libelle, "Aujourd'hui");
+    assert.equal(groupes.length, 7);
+    assert.equal(groupes[0]!.libelle, "Aujourd'hui · vendredi 30/10");
     assert.deepEqual(
       groupes[0]!.lignes.map((l) => l.nom),
       ['Brownie', 'Éclair', 'Opéra'],
     );
-    assert.equal(groupes[1]!.libelle, 'Demain');
+    assert.equal(groupes[1]!.libelle, 'Demain · samedi 31/10');
     assert.equal(groupes[1]!.lignes[0]!.nom, 'Biscuit opéra');
+    assert.equal(groupes[2]!.libelle, 'Dimanche 01/11');
+    assert.equal(groupes[2]!.lignes.length, 0);
   });
 
-  it('libellés de jour : Aujourd’hui, Demain, puis jour daté', () => {
-    assert.equal(libelleJourPlanning(AUJOURDHUI, AUJOURDHUI), "Aujourd'hui");
-    assert.equal(libelleJourPlanning('2026-10-31', AUJOURDHUI), 'Demain');
+  it('libellés de jour : Aujourd’hui · date, Demain · date, puis jour daté', () => {
+    assert.equal(libelleJourPlanning(AUJOURDHUI, AUJOURDHUI), "Aujourd'hui · vendredi 30/10");
+    assert.equal(libelleJourPlanning('2026-10-31', AUJOURDHUI), 'Demain · samedi 31/10');
     assert.equal(libelleJourPlanning('2026-11-01', AUJOURDHUI), 'Dimanche 01/11');
   });
 

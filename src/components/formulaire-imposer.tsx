@@ -128,6 +128,12 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
 
     const dureeTrim = valeurs.duree.trim();
     const seuilTrim = valeurs.seuil.trim();
+    const seuilMin =
+      valeurs.conservation === 'surgele'
+        ? seuilTrim === ''
+          ? 0
+          : Number(seuilTrim)
+        : 0;
 
     setErreur(null);
     try {
@@ -137,7 +143,7 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
           prixCentimes,
           conservation: valeurs.conservation,
           dureeJours: dureeTrim === '' ? 2 : Number(dureeTrim),
-          seuilMin: seuilTrim === '' ? 0 : Number(seuilTrim),
+          seuilMin,
           lignes: valeurs.lignes
             .filter((ligne) => !estVide(ligne))
             .map((ligne) => ({
@@ -235,7 +241,10 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
       <Bouton
         titre="Frais"
         variante={conservation === 'frais' ? 'principal' : 'secondaire'}
-        onPress={() => setValue('conservation', 'frais')}
+        onPress={() => {
+          setValue('conservation', 'frais');
+          setValue('seuil', '');
+        }}
       />
       <Bouton
         titre="Surgelé"
@@ -257,21 +266,23 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
           />
         )}
       />
-      <Controller
-        control={control}
-        name="seuil"
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Seuil minimum de stock (facultatif)"
-            keyboardType="number-pad"
-            placeholder="0"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            erreur={fieldState.error?.message}
-          />
-        )}
-      />
+      {conservation === 'surgele' ? (
+        <Controller
+          control={control}
+          name="seuil"
+          render={({ field, fieldState }) => (
+            <Champ
+              libelle="Seuil minimum de stock (facultatif)"
+              keyboardType="number-pad"
+              placeholder="0"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              erreur={fieldState.error?.message}
+            />
+          )}
+        />
+      ) : null}
 
       <Text style={styles.titre}>Recette (facultatif)</Text>
       <Controller
