@@ -1,20 +1,20 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useBoutiques } from '@/api/boutiques';
 import { useCaJournalier, usePatissiersPourCa, usePertesPeriode } from '@/api/ca';
 import { Champ } from '@/components/champ';
+import { DetailCaEmploye } from '@/components/detail-ca-employe';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import {
   datesPeriode,
+  detailFabricant,
   formatDateFr,
   parseDateFr,
+  parBoutique,
   parEmploye,
-  parJour,
-  parMois,
   parProduit,
-  parSemaine,
   totaux,
   type TypePeriode,
 } from '@/lib/ca';
@@ -137,6 +137,26 @@ export default function EcranTableauDeBord() {
 
   const maxCa = classement[0]?.caCentimes ?? 0;
 
+  const classementBoutiques = useMemo(() => {
+    if (boutiqueId !== null) return [];
+    const noms = new Map((boutiques.data ?? []).map((b) => [b.id, b.nom]));
+    const groupes = parBoutique(lignes);
+    const vus = new Set(groupes.map((g) => g.cle));
+    const liste = groupes.map((g) => ({
+      id: g.cle,
+      nom: noms.get(g.cle) ?? 'Boutique',
+      caCentimes: g.caCentimes,
+      vendu: g.vendu,
+    }));
+    for (const b of boutiques.data ?? []) {
+      if (vus.has(b.id)) continue;
+      liste.push({ id: b.id, nom: b.nom, caCentimes: 0, vendu: 0 });
+    }
+    return liste.sort((a, b) => b.caCentimes - a.caCentimes || a.nom.localeCompare(b.nom, 'fr'));
+  }, [lignes, boutiques.data, boutiqueId]);
+
+  const maxCaBoutique = classementBoutiques[0]?.caCentimes ?? 0;
+
   const produitsClasses = useMemo(() => {
     const groupes = parProduit(lignes);
     const noms = new Map(
@@ -150,22 +170,6 @@ export default function EcranTableauDeBord() {
 
   const meilleurs = produitsClasses.slice(0, 5);
   const moinsBons = [...produitsClasses].reverse().slice(0, 5);
-
-  const detailEmploye = useCallback(
-    (fabricantId: string) => {
-      const duFabricant = lignes.filter((l) => l.fabricant_id === fabricantId);
-      const produits = parProduit(duFabricant).map((g) => ({
-        ...g,
-        nom:
-          duFabricant.find((l) => l.produit_id === g.cle)?.produit_nom ?? g.cle,
-      }));
-      const jours = parJour(duFabricant);
-      const semaines = parSemaine(duFabricant);
-      const mois = parMois(duFabricant);
-      return { produits, jours, semaines, mois };
-    },
-    [lignes],
-  );
 
   const enChargement =
     boutiques.isLoading ||
@@ -278,12 +282,36 @@ export default function EcranTableauDeBord() {
             <ChiffreCle libelle="Pertes en production" valeur={String(totalPertes)} />
           </View>
 
+          {classementBoutiques.length > 0 ? (
+            <>
+              <Text style={styles.section}>Chiffre d'affaires par boutique</Text>
+              {classementBoutiques.map((b) => {
+                const largeur =
+                  maxCaBoutique > 0
+                    ? Math.max(4, Math.round((b.caCentimes / maxCaBoutique) * 100))
+                    : 0;
+                return (
+                  <View key={b.id} style={styles.carteEmploye}>
+                    <View style={styles.ligneEmploye}>
+                      <Text style={styles.nomEmploye}>{b.nom}</Text>
+                      <Text style={styles.montantEmploye}>{formatEuros(b.caCentimes)}</Text>
+                    </View>
+                    <View style={styles.barreFond}>
+                      <View style={[styles.barreRemplie, { width: `${largeur}%` }]} />
+                    </View>
+                    <Text style={styles.detailLigne}>Vendus : {b.vendu}</Text>
+                  </View>
+                );
+              })}
+            </>
+          ) : null}
+
           <Text style={styles.section}>Chiffre d'affaires par employé</Text>
           {classement.map((emp) => {
             const ouvert = employeOuvert === emp.id;
             const largeur =
               maxCa > 0 ? Math.max(4, Math.round((emp.caCentimes / maxCa) * 100)) : 0;
-            const detail = ouvert ? detailEmploye(emp.id) : null;
+            const detail = ouvert ? detailFabricant(lignes, emp.id) : null;
             return (
               <Pressable
                 key={emp.id}
@@ -297,55 +325,7 @@ export default function EcranTableauDeBord() {
                 <View style={styles.barreFond}>
                   <View style={[styles.barreRemplie, { width: `${largeur}%` }]} />
                 </View>
-                {detail ? (
-                  <View style={styles.detail}>
-                    <Text style={styles.detailTitre}>Par produit</Text>
-                    {detail.produits.length === 0 ? (
-                      <Text style={styles.detailLigne}>Aucune vente</Text>
-                    ) : (
-                      detail.produits.map((p) => (
-                        <Text key={p.cle} style={styles.detailLigne}>
-                          {p.nom} — {formatEuros(p.caCentimes)}
-                        </Text>
-                      ))
-                    )}
-                    <Text style={styles.detailTitre}>Par jour</Text>
-                    {detail.jours.length === 0 ? (
-                      <Text style={styles.detailLigne}>Aucune vente</Text>
-                    ) : (
-                      detail.jours.map((j) => (
-                        <Text key={j.cle} style={styles.detailLigne}>
-                          {formatDateFr(j.cle)} — {formatEuros(j.caCentimes)}
-                        </Text>
-                      ))
-                    )}
-                    <Text style={styles.detailTitre}>Par semaine</Text>
-                    {detail.semaines.length === 0 ? (
-                      <Text style={styles.detailLigne}>Aucune vente</Text>
-                    ) : (
-                      detail.semaines.map((s) => (
-                        <Text key={s.cle} style={styles.detailLigne}>
-                          {formatDateFr(s.cle)} — {formatEuros(s.caCentimes)}
-                        </Text>
-                      ))
-                    )}
-                    <Text style={styles.detailTitre}>Par mois</Text>
-                    {detail.mois.length === 0 ? (
-                      <Text style={styles.detailLigne}>Aucune vente</Text>
-                    ) : (
-                      detail.mois.map((m) => {
-                        const [annee, moisNum] = m.cle.split('-');
-                        const libelle =
-                          annee && moisNum ? `${moisNum}/${annee}` : m.cle;
-                        return (
-                          <Text key={m.cle} style={styles.detailLigne}>
-                            {libelle} — {formatEuros(m.caCentimes)}
-                          </Text>
-                        );
-                      })
-                    )}
-                  </View>
-                ) : null}
+                {detail ? <DetailCaEmploye detail={detail} /> : null}
               </Pressable>
             );
           })}
@@ -509,20 +489,6 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: couleurs.principal,
     borderRadius: 4,
-  },
-  detail: {
-    gap: espacements.xs,
-    paddingTop: espacements.s,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: couleurs.bordure,
-  },
-  detailTitre: {
-    fontSize: tailles.section,
-    fontWeight: '600',
-    color: couleurs.texteSecondaire,
-    marginTop: espacements.s,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
   },
   detailLigne: {
     fontSize: tailles.petit,

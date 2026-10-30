@@ -20,6 +20,22 @@ export function useEmployes(avecArchives: boolean) {
   });
 }
 
+export function useEmploye(id: string | undefined) {
+  return useQuery({
+    queryKey: ['employe', id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const { data, error } = await db()
+        .from('profils')
+        .select('*')
+        .eq('id', id as string)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function usePatissiers(boutiqueId: string | null) {
   return useQuery({
     queryKey: ['patissiers', boutiqueId],

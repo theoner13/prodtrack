@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 
 import {
   datesPeriode,
+  parBoutique,
   parEmploye,
   parJour,
   parMois,
@@ -168,6 +169,47 @@ describe('ca — semaine, mois, taux de perte', () => {
     const jours = parJour(lignes);
     assert.equal(jours[0]!.cle, '2026-10-27');
     assert.equal(jours[1]!.cle, '2026-10-28');
+  });
+});
+
+describe('ca — par boutique', () => {
+  it('somme le CA de tous les pâtissiers d’une boutique', () => {
+    const lignes: LigneCa[] = [
+      {
+        jour: '2026-10-28',
+        boutique_id: 'b1',
+        fabricant_id: 'A',
+        produit_id: 'p1',
+        vendu: 5,
+        jete: 0,
+        ca_centimes: 1500,
+      },
+      {
+        jour: '2026-10-28',
+        boutique_id: 'b1',
+        fabricant_id: 'B',
+        produit_id: 'p2',
+        vendu: 2,
+        jete: 1,
+        ca_centimes: 700,
+      },
+      {
+        jour: '2026-10-28',
+        boutique_id: 'b2',
+        fabricant_id: 'C',
+        produit_id: 'p3',
+        vendu: 1,
+        jete: 0,
+        ca_centimes: 300,
+      },
+    ];
+    const groupes = parBoutique(lignes);
+    assert.equal(groupes.length, 2);
+    assert.equal(groupes[0]!.cle, 'b1');
+    assert.equal(groupes[0]!.caCentimes, 2200);
+    assert.equal(groupes[0]!.vendu, 7);
+    assert.equal(groupes[1]!.cle, 'b2');
+    assert.equal(groupes[1]!.caCentimes, 300);
   });
 });
 

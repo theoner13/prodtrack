@@ -1,5 +1,6 @@
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useBoutiques } from '@/api/boutiques';
 import { useChangerArchivage, useEmployes } from '@/api/employes';
@@ -84,15 +85,23 @@ export default function EcranEmployes() {
             ) : (
               liste.map((employe) => (
                 <View key={employe.id} style={styles.bloc}>
-                  <CarteProduit
-                    nom={`${employe.prenom} ${employe.nom}`}
-                    photoUrl={
-                      employe.photo_url
-                        ? (photos.data?.[employe.photo_url] ?? undefined)
-                        : undefined
+                  <Pressable
+                    onPress={() =>
+                      router.push({ pathname: '/employes/[id]', params: { id: employe.id } })
                     }
-                    sousTitre={description(employe)}
-                  />
+                    accessibilityRole="button"
+                    accessibilityLabel={`Ouvrir la fiche de ${employe.prenom} ${employe.nom}`}
+                  >
+                    <CarteProduit
+                      nom={`${employe.prenom} ${employe.nom}`}
+                      photoUrl={
+                        employe.photo_url
+                          ? (photos.data?.[employe.photo_url] ?? undefined)
+                          : undefined
+                      }
+                      sousTitre={description(employe)}
+                    />
+                  </Pressable>
                   {employe.id === profil?.id ? null : confirmation?.id === employe.id ? (
                     <View style={styles.confirmation}>
                       <Text style={styles.texte}>

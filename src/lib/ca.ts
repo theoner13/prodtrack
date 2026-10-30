@@ -105,6 +105,38 @@ export function parEmploye(lignes: LigneCa[]): GroupeCa[] {
   return trierParCaDecroissant([...map.values()]);
 }
 
+/** Regroupe par boutique (clé = boutique_id). */
+export function parBoutique(lignes: LigneCa[]): GroupeCa[] {
+  const map = new Map<string, GroupeCa>();
+  for (const ligne of lignes) {
+    if (!ligne.boutique_id) continue;
+    accumuler(map, ligne.boutique_id, ligne);
+  }
+  return trierParCaDecroissant([...map.values()]);
+}
+
+export type DetailCaFabricant = {
+  produits: (GroupeCa & { nom: string })[];
+  jours: GroupeCa[];
+  semaines: GroupeCa[];
+  mois: GroupeCa[];
+};
+
+/** Détail CA d'un fabricant : par produit, jour, semaine, mois. */
+export function detailFabricant(lignes: LigneCa[], fabricantId: string): DetailCaFabricant {
+  const duFabricant = lignes.filter((l) => l.fabricant_id === fabricantId);
+  const produits = parProduit(duFabricant).map((g) => ({
+    ...g,
+    nom: duFabricant.find((l) => l.produit_id === g.cle)?.produit_nom ?? g.cle,
+  }));
+  return {
+    produits,
+    jours: parJour(duFabricant),
+    semaines: parSemaine(duFabricant),
+    mois: parMois(duFabricant),
+  };
+}
+
 export function parProduit(lignes: LigneCa[]): GroupeCa[] {
   const map = new Map<string, GroupeCa>();
   for (const ligne of lignes) {

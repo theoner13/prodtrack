@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-30 : admin : fiche employé avec son CA, CA par boutique dans le tableau de bord (Cursor)
 - 2026-10-30 : imposer un produit : recette, photo, seuil, durée et pâtissier facultatifs ; produit sans pâtissier « à prendre » par le premier pâtissier ; intermédiaires importables entre boutiques (Cursor)
 - 2026-10-30 : écrans de connexion et d'inscription centrés avec le logo (Cursor)
 - 2026-10-30 : fiche produit : ajout de stock direct ; écran Stock : produit cliquable vers sa fiche (Cursor)
