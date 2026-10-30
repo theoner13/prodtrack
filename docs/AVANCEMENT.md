@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-30 : tableau de bord : classement des produits par boutique (CA, quantités, pertes) et classement des pertes (Cursor)
 - 2026-10-30 : détail CA employé en tableau : vendus, jetés, CA par produit et par période (Cursor)
 - 2026-10-30 : admin : fiche employé avec son CA, CA par boutique dans le tableau de bord (Cursor)
 - 2026-10-30 : imposer un produit : recette, photo, seuil, durée et pâtissier facultatifs ; produit sans pâtissier « à prendre » par le premier pâtissier ; intermédiaires importables entre boutiques (Cursor)

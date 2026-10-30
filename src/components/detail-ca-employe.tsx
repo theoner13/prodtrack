@@ -16,6 +16,14 @@ type LigneTableau = {
   caCentimes: number;
 };
 
+export type LigneProduitCa = {
+  cle: string;
+  nom: string;
+  vendu: number;
+  jete: number;
+  caCentimes: number;
+};
+
 function libelleSemaine(lundi: string): string {
   const [, mois, jour] = lundi.split('-');
   if (!mois || !jour) return lundi;
@@ -133,11 +141,29 @@ function periodesRecentes(groupes: GroupeCa[]): GroupeCa[] {
   return [...groupes].reverse();
 }
 
+/** Tableau Produit | Vendus | Jetés | CA (jetés en orange si > 0, ligne Total). Rang optionnel devant le nom. */
+export function TableauCaProduits({
+  produits,
+  avecRang,
+}: {
+  produits: LigneProduitCa[];
+  avecRang?: boolean;
+}) {
+  const lignes: LigneTableau[] = produits.map((p, i) => ({
+    cle: p.cle,
+    libelle: avecRang ? `${i + 1}. ${p.nom}` : p.nom,
+    vendu: p.vendu,
+    jete: p.jete,
+    caCentimes: p.caCentimes,
+  }));
+  return <TableauCa premiereColonne="Produit" lignes={lignes} avecTotal />;
+}
+
 /** Détail CA d'un employé : Par produit / Par jour / Par semaine / Par mois. */
 export function DetailCaEmploye({ detail }: Props) {
-  const produits: LigneTableau[] = detail.produits.map((p) => ({
+  const produits: LigneProduitCa[] = detail.produits.map((p) => ({
     cle: p.cle,
-    libelle: p.nom,
+    nom: p.nom,
     vendu: p.vendu,
     jete: p.jete,
     caCentimes: p.caCentimes,
@@ -170,7 +196,7 @@ export function DetailCaEmploye({ detail }: Props) {
   return (
     <View style={styles.detail}>
       <Text style={styles.detailTitre}>Par produit</Text>
-      <TableauCa premiereColonne="Produit" lignes={produits} avecTotal />
+      <TableauCaProduits produits={produits} />
 
       <Text style={styles.detailTitre}>Par jour</Text>
       {/* Pas de Total : redondant avec le CA déjà affiché au-dessus. */}

@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+  classementPertes,
+  classementProduits,
   datesPeriode,
+  formatTauxPerte,
+  libelleProduitBoutique,
+  nomBoutiqueCourt,
   parBoutique,
   parEmploye,
   parJour,
@@ -210,6 +215,139 @@ describe('ca — par boutique', () => {
     assert.equal(groupes[0]!.vendu, 7);
     assert.equal(groupes[1]!.cle, 'b2');
     assert.equal(groupes[1]!.caCentimes, 300);
+  });
+});
+
+describe('ca — classement produits et pertes', () => {
+  const lignes: LigneCa[] = [
+    {
+      jour: '2026-10-28',
+      boutique_id: 'b1',
+      fabricant_id: 'A',
+      produit_id: 'cookie',
+      produit_nom: 'Cookie',
+      vendu: 10,
+      jete: 2,
+      ca_centimes: 3000,
+    },
+    {
+      jour: '2026-10-28',
+      boutique_id: 'b1',
+      fabricant_id: 'B',
+      produit_id: 'cookie',
+      produit_nom: 'Cookie',
+      vendu: 5,
+      jete: 0,
+      ca_centimes: 1500,
+    },
+    {
+      jour: '2026-10-28',
+      boutique_id: 'b1',
+      fabricant_id: 'A',
+      produit_id: 'muffin',
+      produit_nom: 'Muffin',
+      vendu: 20,
+      jete: 1,
+      ca_centimes: 2000,
+    },
+    {
+      jour: '2026-10-28',
+      boutique_id: 'b2',
+      fabricant_id: 'C',
+      produit_id: 'tarte',
+      produit_nom: 'Tarte',
+      vendu: 3,
+      jete: 3,
+      ca_centimes: 900,
+    },
+  ];
+
+  it('regroupe tous les pâtissiers d’une boutique et trie par CA', () => {
+    const classe = classementProduits(lignes, 'b1', 'ca');
+    assert.equal(classe.length, 2);
+    assert.equal(classe[0]!.cle, 'cookie');
+    assert.equal(classe[0]!.caCentimes, 4500);
+    assert.equal(classe[0]!.vendu, 15);
+    assert.equal(classe[0]!.jete, 2);
+    assert.equal(classe[1]!.cle, 'muffin');
+  });
+
+  it('trie par vendus décroissant', () => {
+    const classe = classementProduits(lignes, 'b1', 'vendu');
+    assert.equal(classe[0]!.cle, 'muffin');
+    assert.equal(classe[0]!.vendu, 20);
+    assert.equal(classe[1]!.cle, 'cookie');
+  });
+
+  it('trie par jetés puis taux de perte', () => {
+    const classe = classementProduits(lignes, 'b1', 'jete');
+    assert.equal(classe[0]!.cle, 'cookie');
+    assert.equal(classe[0]!.jete, 2);
+    assert.equal(classe[0]!.tauxPerte, 11.8); // 2 / 17
+    assert.equal(classe[1]!.cle, 'muffin');
+  });
+
+  it('classement des pertes : seulement jetés ≥ 1, toutes boutiques', () => {
+    const pertes = classementPertes(lignes, null);
+    assert.equal(pertes.length, 3);
+    assert.equal(pertes[0]!.cle, 'tarte');
+    assert.equal(pertes[0]!.jete, 3);
+    assert.equal(pertes[0]!.tauxPerte, 50);
+    assert.equal(pertes[1]!.cle, 'cookie');
+    assert.equal(pertes[2]!.cle, 'muffin');
+  });
+
+  it('classement des pertes filtré par boutique', () => {
+    const pertes = classementPertes(lignes, 'b2');
+    assert.equal(pertes.length, 1);
+    assert.equal(pertes[0]!.cle, 'tarte');
+  });
+
+  it('conserve boutiqueId (une ligne par produit / boutique, sans fusion)', () => {
+    const flans: LigneCa[] = [
+      {
+        jour: '2026-10-28',
+        boutique_id: 'b1',
+        fabricant_id: 'A',
+        produit_id: 'flan-centre',
+        produit_nom: 'Flan',
+        vendu: 10,
+        jete: 2,
+        ca_centimes: 1000,
+      },
+      {
+        jour: '2026-10-28',
+        boutique_id: 'b2',
+        fabricant_id: 'C',
+        produit_id: 'flan-nord',
+        produit_nom: 'Flan',
+        vendu: 8,
+        jete: 1,
+        ca_centimes: 800,
+      },
+    ];
+    const pertes = classementPertes(flans, null);
+    assert.equal(pertes.length, 2);
+    assert.equal(pertes[0]!.nom, 'Flan');
+    assert.equal(pertes[0]!.boutiqueId, 'b1');
+    assert.equal(pertes[1]!.nom, 'Flan');
+    assert.equal(pertes[1]!.boutiqueId, 'b2');
+  });
+
+  it('libelle produit · boutique courte quand filtre Toutes', () => {
+    assert.equal(nomBoutiqueCourt('Boutique Centre'), 'Centre');
+    assert.equal(nomBoutiqueCourt('Centre'), 'Centre');
+    assert.equal(
+      libelleProduitBoutique('Flan', 'Boutique Centre', true),
+      'Flan · Centre',
+    );
+    assert.equal(libelleProduitBoutique('Flan', 'Boutique Centre', false), 'Flan');
+  });
+
+  it('formatTauxPerte toujours 1 décimale', () => {
+    assert.equal(formatTauxPerte(8), '8,0 %');
+    assert.equal(formatTauxPerte(16.7), '16,7 %');
+    assert.equal(formatTauxPerte(0), '0,0 %');
   });
 });
 

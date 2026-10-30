@@ -4,18 +4,26 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useBoutiques } from '@/api/boutiques';
 import { useCaJournalier, usePatissiersPourCa, usePertesPeriode } from '@/api/ca';
 import { Champ } from '@/components/champ';
+import { ClassementPertes } from '@/components/classement-pertes';
+import { ClassementProduits } from '@/components/classement-produits';
 import { DetailCaEmploye } from '@/components/detail-ca-employe';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import {
+  classementPertes,
+  classementProduits,
   datesPeriode,
   detailFabricant,
   formatDateFr,
+  formatTauxPerte,
+  libelleProduitBoutique,
   parseDateFr,
   parBoutique,
   parEmploye,
   parProduit,
   totaux,
+  type ProduitClasse,
+  type TriClassementProduit,
   type TypePeriode,
 } from '@/lib/ca';
 import { aujourdhuiParis, formatEuros } from '@/lib/format';
@@ -48,6 +56,10 @@ export default function EcranTableauDeBord() {
   const [duTexte, setDuTexte] = useState(formatDateFr(aujourdhui));
   const [auTexte, setAuTexte] = useState(formatDateFr(aujourdhui));
   const [employeOuvert, setEmployeOuvert] = useState<string | null>(null);
+  const [boutiqueOuverte, setBoutiqueOuverte] = useState<string | null>(null);
+  const [triBoutique, setTriBoutique] = useState<TriClassementProduit>('ca');
+  const [triFiltre, setTriFiltre] = useState<TriClassementProduit>('ca');
+  const [pertesOuvertes, setPertesOuvertes] = useState(false);
 
   const dates = useMemo(() => {
     if (periode !== 'perso') {
@@ -157,6 +169,41 @@ export default function EcranTableauDeBord() {
 
   const maxCaBoutique = classementBoutiques[0]?.caCentimes ?? 0;
 
+  const nomsBoutiques = useMemo(
+    () => new Map((boutiques.data ?? []).map((b) => [b.id, b.nom])),
+    [boutiques.data],
+  );
+
+  function avecSuffixeBoutiqueSiToutes(produits: ProduitClasse[]): ProduitClasse[] {
+    if (boutiqueId !== null) return produits;
+    return produits.map((p) => ({
+      ...p,
+      nom: libelleProduitBoutique(
+        p.nom,
+        p.boutiqueId ? nomsBoutiques.get(p.boutiqueId) : undefined,
+        true,
+      ),
+    }));
+  }
+
+  const produitsClasseBoutiqueOuverte = useMemo(() => {
+    if (!boutiqueOuverte) return [];
+    return avecSuffixeBoutiqueSiToutes(
+      classementProduits(lignes, boutiqueOuverte, triBoutique),
+    );
+  }, [lignes, boutiqueOuverte, triBoutique, boutiqueId, nomsBoutiques]);
+
+  const produitsClasseFiltre = useMemo(() => {
+    if (boutiqueId === null) return [];
+    // Une seule boutique filtrée : pas de suffixe.
+    return classementProduits(lignes, null, triFiltre);
+  }, [lignes, boutiqueId, triFiltre]);
+
+  const produitsPertes = useMemo(
+    () => avecSuffixeBoutiqueSiToutes(classementPertes(lignes, null)),
+    [lignes, boutiqueId, nomsBoutiques],
+  );
+
   const produitsClasses = useMemo(() => {
     const groupes = parProduit(lignes);
     const noms = new Map(
@@ -182,6 +229,10 @@ export default function EcranTableauDeBord() {
     lignes.length === 0 &&
     totalPertes === 0;
 
+  function basculerPertes() {
+    setPertesOuvertes((o) => !o);
+  }
+
   async function rafraichir() {
     await Promise.all([
       boutiques.refetch(),
@@ -205,14 +256,20 @@ export default function EcranTableauDeBord() {
         <Puce
           libelle="Toutes"
           active={boutiqueId === null}
-          onPress={() => setBoutiqueId(null)}
+          onPress={() => {
+            setBoutiqueId(null);
+            setBoutiqueOuverte(null);
+          }}
         />
         {(boutiques.data ?? []).map((b) => (
           <Puce
             key={b.id}
             libelle={b.nom}
             active={boutiqueId === b.id}
-            onPress={() => setBoutiqueId(b.id)}
+            onPress={() => {
+              setBoutiqueId(b.id);
+              setBoutiqueOuverte(null);
+            }}
           />
         ))}
       </View>
@@ -274,35 +331,73 @@ export default function EcranTableauDeBord() {
           <View style={styles.chiffres}>
             <ChiffreCle libelle="CA total" valeur={formatEuros(chiffres.caCentimes)} />
             <ChiffreCle libelle="Vendus" valeur={String(chiffres.vendu)} />
-            <ChiffreCle libelle="Jetés" valeur={String(chiffres.jete)} />
+            <ChiffreCle
+              libelle="Jetés"
+              valeur={String(chiffres.jete)}
+              onPress={basculerPertes}
+              accessibiliteLibelle="Voir le classement des pertes"
+            />
             <ChiffreCle
               libelle="Taux de perte"
-              valeur={`${chiffres.tauxPerte.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`}
+              valeur={formatTauxPerte(chiffres.tauxPerte)}
+              onPress={basculerPertes}
+              accessibiliteLibelle="Voir le classement des pertes"
             />
             <ChiffreCle libelle="Pertes en production" valeur={String(totalPertes)} />
           </View>
+
+          {pertesOuvertes ? <ClassementPertes produits={produitsPertes} /> : null}
 
           {classementBoutiques.length > 0 ? (
             <>
               <Text style={styles.section}>Chiffre d'affaires par boutique</Text>
               {classementBoutiques.map((b) => {
+                const ouvert = boutiqueOuverte === b.id;
                 const largeur =
                   maxCaBoutique > 0
                     ? Math.max(4, Math.round((b.caCentimes / maxCaBoutique) * 100))
                     : 0;
                 return (
                   <View key={b.id} style={styles.carteEmploye}>
-                    <View style={styles.ligneEmploye}>
-                      <Text style={styles.nomEmploye}>{b.nom}</Text>
-                      <Text style={styles.montantEmploye}>{formatEuros(b.caCentimes)}</Text>
-                    </View>
-                    <View style={styles.barreFond}>
-                      <View style={[styles.barreRemplie, { width: `${largeur}%` }]} />
-                    </View>
-                    <Text style={styles.detailLigne}>Vendus : {b.vendu}</Text>
+                    <Pressable
+                      onPress={() => {
+                        setBoutiqueOuverte(ouvert ? null : b.id);
+                        if (!ouvert) setTriBoutique('ca');
+                      }}
+                      style={styles.enteteCarte}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Voir le classement de ${b.nom}`}
+                    >
+                      <View style={styles.ligneEmploye}>
+                        <Text style={styles.nomEmploye}>{b.nom}</Text>
+                        <Text style={styles.montantEmploye}>{formatEuros(b.caCentimes)}</Text>
+                      </View>
+                      <View style={styles.barreFond}>
+                        <View style={[styles.barreRemplie, { width: `${largeur}%` }]} />
+                      </View>
+                      <Text style={styles.detailLigne}>Vendus : {b.vendu}</Text>
+                    </Pressable>
+                    {ouvert ? (
+                      <ClassementProduits
+                        produits={produitsClasseBoutiqueOuverte}
+                        tri={triBoutique}
+                        onTriChange={setTriBoutique}
+                      />
+                    ) : null}
                   </View>
                 );
               })}
+            </>
+          ) : null}
+
+          {boutiqueId !== null ? (
+            <>
+              <Text style={styles.section}>Classement des produits</Text>
+              <ClassementProduits
+                produits={produitsClasseFiltre}
+                tri={triFiltre}
+                onTriChange={setTriFiltre}
+              />
             </>
           ) : null}
 
@@ -313,20 +408,23 @@ export default function EcranTableauDeBord() {
               maxCa > 0 ? Math.max(4, Math.round((emp.caCentimes / maxCa) * 100)) : 0;
             const detail = ouvert ? detailFabricant(lignes, emp.id) : null;
             return (
-              <Pressable
-                key={emp.id}
-                onPress={() => setEmployeOuvert(ouvert ? null : emp.id)}
-                style={styles.carteEmploye}
-              >
-                <View style={styles.ligneEmploye}>
-                  <Text style={styles.nomEmploye}>{emp.nom}</Text>
-                  <Text style={styles.montantEmploye}>{formatEuros(emp.caCentimes)}</Text>
-                </View>
-                <View style={styles.barreFond}>
-                  <View style={[styles.barreRemplie, { width: `${largeur}%` }]} />
-                </View>
+              <View key={emp.id} style={styles.carteEmploye}>
+                <Pressable
+                  onPress={() => setEmployeOuvert(ouvert ? null : emp.id)}
+                  style={styles.enteteCarte}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Voir le détail de ${emp.nom}`}
+                >
+                  <View style={styles.ligneEmploye}>
+                    <Text style={styles.nomEmploye}>{emp.nom}</Text>
+                    <Text style={styles.montantEmploye}>{formatEuros(emp.caCentimes)}</Text>
+                  </View>
+                  <View style={styles.barreFond}>
+                    <View style={[styles.barreRemplie, { width: `${largeur}%` }]} />
+                  </View>
+                </Pressable>
                 {detail ? <DetailCaEmploye detail={detail} /> : null}
-              </Pressable>
+              </View>
             );
           })}
 
@@ -386,13 +484,36 @@ function Puce({
   );
 }
 
-function ChiffreCle({ libelle, valeur }: { libelle: string; valeur: string }) {
-  return (
-    <View style={styles.chiffre}>
+function ChiffreCle({
+  libelle,
+  valeur,
+  onPress,
+  accessibiliteLibelle,
+}: {
+  libelle: string;
+  valeur: string;
+  onPress?: () => void;
+  accessibiliteLibelle?: string;
+}) {
+  const contenu = (
+    <>
       <Text style={styles.chiffreLibelle}>{libelle}</Text>
       <Text style={styles.chiffreValeur}>{valeur}</Text>
-    </View>
+    </>
   );
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        style={styles.chiffre}
+        accessibilityRole="button"
+        accessibilityLabel={accessibiliteLibelle ?? libelle}
+      >
+        {contenu}
+      </Pressable>
+    );
+  }
+  return <View style={styles.chiffre}>{contenu}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -462,6 +583,9 @@ const styles = StyleSheet.create({
     gap: espacements.s,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: couleurs.bordure,
+  },
+  enteteCarte: {
+    gap: espacements.s,
   },
   ligneEmploye: {
     flexDirection: 'row',

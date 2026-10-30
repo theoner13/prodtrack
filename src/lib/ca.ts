@@ -147,6 +147,113 @@ export function parProduit(lignes: LigneCa[]): GroupeCa[] {
   return trierParCaDecroissant([...map.values()]);
 }
 
+export type TriClassementProduit = 'ca' | 'vendu' | 'jete';
+
+export type ProduitClasse = GroupeCa & {
+  nom: string;
+  boutiqueId: string | null;
+  /** jetés / (vendus + jetés), en %, 1 décimale — même formule que totaux(). */
+  tauxPerte: number;
+};
+
+function tauxPerteDe(vendu: number, jete: number): number {
+  const base = vendu + jete;
+  return base === 0 ? 0 : Math.round((jete / base) * 1000) / 10;
+}
+
+function nomProduit(lignes: LigneCa[], cle: string): string {
+  return lignes.find((l) => (l.produit_id ?? l.produit_nom ?? '') === cle)?.produit_nom ?? cle;
+}
+
+function boutiqueDuProduit(lignes: LigneCa[], cle: string): string | null {
+  return (
+    lignes.find((l) => (l.produit_id ?? l.produit_nom ?? '') === cle)?.boutique_id ?? null
+  );
+}
+
+function lignesBoutique(lignes: LigneCa[], boutiqueId: string | null | undefined): LigneCa[] {
+  if (!boutiqueId) return lignes;
+  return lignes.filter((l) => l.boutique_id === boutiqueId);
+}
+
+function avecNomsEtTaux(lignes: LigneCa[]): ProduitClasse[] {
+  return parProduit(lignes).map((g) => ({
+    ...g,
+    nom: nomProduit(lignes, g.cle),
+    boutiqueId: boutiqueDuProduit(lignes, g.cle),
+    tauxPerte: tauxPerteDe(g.vendu, g.jete),
+  }));
+}
+
+/** « Boutique Centre » → « Centre ». */
+export function nomBoutiqueCourt(nom: string): string {
+  const court = nom.replace(/^Boutique\s+/i, '').trim();
+  return court.length > 0 ? court : nom;
+}
+
+/** Affiche « Flan · Centre » quand plusieurs boutiques sont visibles. */
+export function libelleProduitBoutique(
+  nomProduit: string,
+  nomBoutique: string | null | undefined,
+  avecBoutique: boolean,
+): string {
+  if (!avecBoutique || !nomBoutique) return nomProduit;
+  return `${nomProduit} · ${nomBoutiqueCourt(nomBoutique)}`;
+}
+
+/** Toujours 1 décimale : « 8,0 % ». */
+export function formatTauxPerte(taux: number): string {
+  return `${taux.toLocaleString('fr-FR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })} %`;
+}
+
+/**
+ * Classement des produits d'une boutique (tous pâtissiers), période déjà filtrée dans `lignes`.
+ * `boutiqueId` null = toutes les lignes fournies.
+ */
+export function classementProduits(
+  lignes: LigneCa[],
+  boutiqueId: string | null | undefined,
+  tri: TriClassementProduit = 'ca',
+): ProduitClasse[] {
+  const produits = avecNomsEtTaux(lignesBoutique(lignes, boutiqueId));
+  if (tri === 'vendu') {
+    return [...produits].sort(
+      (a, b) => b.vendu - a.vendu || a.nom.localeCompare(b.nom, 'fr'),
+    );
+  }
+  if (tri === 'jete') {
+    return [...produits].sort(
+      (a, b) =>
+        b.jete - a.jete ||
+        b.tauxPerte - a.tauxPerte ||
+        a.nom.localeCompare(b.nom, 'fr'),
+    );
+  }
+  // 'ca' : parProduit est déjà trié par CA décroissant
+  return produits;
+}
+
+/**
+ * Produits avec au moins 1 jeté, triés par jetés puis taux de perte.
+ * `boutiqueId` null = toutes les lignes fournies.
+ */
+export function classementPertes(
+  lignes: LigneCa[],
+  boutiqueId: string | null | undefined = null,
+): ProduitClasse[] {
+  return avecNomsEtTaux(lignesBoutique(lignes, boutiqueId))
+    .filter((p) => p.jete >= 1)
+    .sort(
+      (a, b) =>
+        b.jete - a.jete ||
+        b.tauxPerte - a.tauxPerte ||
+        a.nom.localeCompare(b.nom, 'fr'),
+    );
+}
+
 export function parJour(lignes: LigneCa[]): GroupeCa[] {
   const map = new Map<string, GroupeCa>();
   for (const ligne of lignes) {
