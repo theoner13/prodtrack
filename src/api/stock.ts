@@ -1,8 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { messageConfirmationProductionFrais } from '@/lib/disponible-frais';
 import { aujourdhuiParis } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
-import type { StockActuel } from '@/types/database';
+import type { DisponibleFrais, StockActuel } from '@/types/database';
+
+export {
+  messageConfirmationProductionFrais,
+  sousTitreDisponibleFrais,
+} from '@/lib/disponible-frais';
 
 function db() {
   if (!supabase) throw new Error('Supabase non configuré');
@@ -20,6 +26,7 @@ export type MouvementDuJour = {
   quantite: number;
   created_at: string;
   produitNom: string;
+  conservation: 'frais' | 'surgele';
 };
 
 function messageDisponible(stock: number): string {
@@ -55,6 +62,21 @@ export function useStock(boutiqueId: string | null) {
   });
 }
 
+export function useDisponibleFrais(boutiqueId: string | null) {
+  return useQuery({
+    queryKey: ['disponible', boutiqueId],
+    enabled: Boolean(boutiqueId),
+    queryFn: async (): Promise<DisponibleFrais[]> => {
+      const { data, error } = await db()
+        .from('disponible_frais')
+        .select('*')
+        .eq('boutique_id', boutiqueId ?? '');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useMesMouvementsDuJour(
   userId: string | null,
   type: 'production' | 'sortie',
@@ -66,7 +88,7 @@ export function useMesMouvementsDuJour(
     queryFn: async (): Promise<MouvementDuJour[]> => {
       const { data, error } = await db()
         .from('mouvements_stock')
-        .select('id, quantite, created_at, produits(nom)')
+        .select('id, quantite, created_at, produits(nom, conservation)')
         .eq('saisi_par', userId ?? '')
         .eq('type', type)
         .eq('jour', jour)
@@ -74,12 +96,16 @@ export function useMesMouvementsDuJour(
       if (error) throw error;
 
       return data.map((ligne) => {
-        const produit = ligne.produits as { nom: string } | null;
+        const produit = ligne.produits as {
+          nom: string;
+          conservation: 'frais' | 'surgele';
+        } | null;
         return {
           id: ligne.id,
           quantite: ligne.quantite,
           created_at: ligne.created_at,
           produitNom: produit?.nom ?? 'Produit',
+          conservation: produit?.conservation ?? 'surgele',
         };
       });
     },
@@ -92,6 +118,8 @@ export function useEnregistrerMouvements() {
     mutationFn: async (saisie: {
       type: 'production' | 'sortie';
       lignes: LigneMouvement[];
+      /** Pour une production de frais : confirmation avec « Disponible » au lieu de « Stock ». */
+      confirmation?: 'stock' | 'disponible';
     }): Promise<string> => {
       const lignes = saisie.lignes.filter((ligne) => ligne.quantite > 0);
       if (lignes.length === 0) {
@@ -99,6 +127,7 @@ export function useEnregistrerMouvements() {
       }
 
       const ids = lignes.map((ligne) => ligne.produitId);
+      const modeConfirmation = saisie.confirmation ?? 'stock';
 
       if (saisie.type === 'sortie') {
         const { data: stocks, error: erreurStock } = await db()
@@ -131,6 +160,31 @@ export function useEnregistrerMouvements() {
         );
       if (error) throw error;
 
+      if (modeConfirmation === 'disponible') {
+        const { data: disposApres, error: erreurApres } = await db()
+          .from('disponible_frais')
+          .select('produit_id, disponible')
+          .in('produit_id', ids);
+        if (erreurApres) throw erreurApres;
+
+        const parProduit = new Map(
+          (disposApres ?? []).map((ligne) => [
+            ligne.produit_id,
+            ligne.disponible ?? 0,
+          ]),
+        );
+
+        return lignes
+          .map((ligne) =>
+            messageConfirmationProductionFrais(
+              ligne.quantite,
+              ligne.nom,
+              parProduit.get(ligne.produitId) ?? 0,
+            ),
+          )
+          .join('\n');
+      }
+
       const { data: stocksApres, error: erreurApres } = await db()
         .from('stock_actuel')
         .select('produit_id, stock')
@@ -154,6 +208,7 @@ export function useEnregistrerMouvements() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['stock'] });
+      void queryClient.invalidateQueries({ queryKey: ['disponible'] });
       void queryClient.invalidateQueries({ queryKey: ['mouvements'] });
     },
   });
@@ -175,6 +230,7 @@ export function useAnnulerMouvement() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['stock'] });
+      void queryClient.invalidateQueries({ queryKey: ['disponible'] });
       void queryClient.invalidateQueries({ queryKey: ['mouvements'] });
     },
   });

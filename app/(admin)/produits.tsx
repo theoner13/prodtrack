@@ -211,39 +211,41 @@ export default function EcranProduits() {
                 }}
               />
             )}
-            {correctionOuverte === produit.id ? (
-              <>
-                <Text style={styles.libelle}>Stock actuel : {actuel}</Text>
-                <Text style={styles.libelle}>Stock réel compté</Text>
-                <Compteur
-                  valeur={stockReel}
-                  onChange={setStockReel}
-                  libelle={`Stock réel de ${produit.nom}`}
-                />
+            {produit.conservation === 'surgele' ? (
+              correctionOuverte === produit.id ? (
+                <>
+                  <Text style={styles.libelle}>Stock actuel : {actuel}</Text>
+                  <Text style={styles.libelle}>Stock réel compté</Text>
+                  <Compteur
+                    valeur={stockReel}
+                    onChange={setStockReel}
+                    libelle={`Stock réel de ${produit.nom}`}
+                  />
+                  <Bouton
+                    titre="Enregistrer la correction"
+                    chargement={ajuster.isPending}
+                    onPress={() => void enregistrerCorrection(produit.id, produit.nom, actuel)}
+                  />
+                  <Bouton
+                    titre="Annuler"
+                    variante="secondaire"
+                    onPress={() => setCorrectionOuverte(null)}
+                  />
+                </>
+              ) : (
                 <Bouton
-                  titre="Enregistrer la correction"
-                  chargement={ajuster.isPending}
-                  onPress={() => void enregistrerCorrection(produit.id, produit.nom, actuel)}
-                />
-                <Bouton
-                  titre="Annuler"
+                  titre="Corriger le stock"
                   variante="secondaire"
-                  onPress={() => setCorrectionOuverte(null)}
+                  onPress={() => {
+                    setCorrectionOuverte(produit.id);
+                    setPrixOuvert(null);
+                    setFabricantOuvert(null);
+                    setStockReel(actuel);
+                    setConfirmation(null);
+                  }}
                 />
-              </>
-            ) : (
-              <Bouton
-                titre="Corriger le stock"
-                variante="secondaire"
-                onPress={() => {
-                  setCorrectionOuverte(produit.id);
-                  setPrixOuvert(null);
-                  setFabricantOuvert(null);
-                  setStockReel(actuel);
-                  setConfirmation(null);
-                }}
-              />
-            )}
+              )
+            ) : null}
           </View>
         );
       })}

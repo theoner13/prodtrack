@@ -131,6 +131,7 @@ export function useDeclarerPerte() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['stock'] });
+      void queryClient.invalidateQueries({ queryKey: ['disponible'] });
       void queryClient.invalidateQueries({ queryKey: ['mouvements'] });
       void queryClient.invalidateQueries({ queryKey: ['pertes'] });
     },
@@ -153,6 +154,7 @@ export function useAnnulerPerte() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['stock'] });
+      void queryClient.invalidateQueries({ queryKey: ['disponible'] });
       void queryClient.invalidateQueries({ queryKey: ['mouvements'] });
       void queryClient.invalidateQueries({ queryKey: ['pertes'] });
     },

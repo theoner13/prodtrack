@@ -38,9 +38,14 @@ export default function EcranStock() {
     return map;
   }, [stock.data]);
 
-  // Uniquement les produits dont le pâtissier connecté est le fabricant.
+  // Uniquement les surgelés dont le pâtissier connecté est le fabricant (les frais
+  // se suivent dans Production › Frais du jour).
   const mesProduits = useMemo(
-    () => (produits.data ?? []).filter((produit) => produit.fabricant_id === userId),
+    () =>
+      (produits.data ?? []).filter(
+        (produit) =>
+          produit.fabricant_id === userId && produit.conservation === 'surgele',
+      ),
     [produits.data, userId],
   );
 
@@ -96,7 +101,7 @@ export default function EcranStock() {
       ) : null}
 
       {mesProduits.length === 0 ? (
-        <EtatVide message="Vous n’avez encore aucun produit." />
+        <EtatVide message="Vous n’avez aucun produit surgelé. Les produits frais se suivent dans Production › Frais du jour." />
       ) : null}
 
       {liste.map((produit) => {
@@ -104,7 +109,7 @@ export default function EcranStock() {
         const valeur = info?.stock ?? 0;
         const seuil = info?.seuil ?? produit.seuil_min;
         // Alerte « sous le seuil » réservée aux surgelés (les frais n’ont pas de seuil métier).
-        const sousSeuil = produit.conservation === 'surgele' && valeur < seuil;
+        const sousSeuil = valeur < seuil;
         const sousTitre = sousSeuil ? `Sous le seuil (min. ${seuil})` : undefined;
 
         return (

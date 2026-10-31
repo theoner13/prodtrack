@@ -11,7 +11,9 @@ import {
 import { useUrlsSignees } from '@/api/photos';
 import { useProduits, type ProduitListe } from '@/api/produits';
 import {
+  sousTitreDisponibleFrais,
   useAnnulerMouvement,
+  useDisponibleFrais,
   useEnregistrerMouvements,
   useMesMouvementsDuJour,
   useStock,
@@ -22,6 +24,7 @@ import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
 import { CarteProduit } from '@/components/carte-produit';
 import { Champ } from '@/components/champ';
+import { ChoixSegmente } from '@/components/choix-segmente';
 import { Compteur } from '@/components/compteur';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
@@ -31,8 +34,10 @@ type Props = {
   type: 'production' | 'sortie';
 };
 
+type OngletProduction = 'frais' | 'surgele';
+
 type CibleAnnulation =
-  | { kind: 'mouvement'; id: string; quantite: number }
+  | { kind: 'mouvement'; id: string; quantite: number; conservation: 'frais' | 'surgele' }
   | { kind: 'perte'; id: string; quantite: number; dansLeStock: boolean };
 
 const MOTIFS: { id: MotifPerte; libelle: string }[] = [
@@ -61,6 +66,7 @@ export function SaisieStock({ type }: Props) {
 
   const produits = useProduits(boutiqueId);
   const stock = useStock(boutiqueId);
+  const disponible = useDisponibleFrais(type === 'production' ? boutiqueId : null);
   const mouvements = useMesMouvementsDuJour(userId, type);
   const pertes = useMesPertesDuJour(type === 'sortie' ? userId : null);
   const enregistrer = useEnregistrerMouvements();
@@ -68,6 +74,7 @@ export function SaisieStock({ type }: Props) {
   const annuler = useAnnulerMouvement();
   const annulerPerte = useAnnulerPerte();
 
+  const [ongletProduction, setOngletProduction] = useState<OngletProduction>('frais');
   const [quantites, setQuantites] = useState<Record<string, number>>({});
   const [recherche, setRecherche] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -80,7 +87,7 @@ export function SaisieStock({ type }: Props) {
   const [perteMotif, setPerteMotif] = useState<MotifPerte | null>(null);
   const [perteDansLeStock, setPerteDansLeStock] = useState(false);
 
-  const listeBase = useMemo(() => {
+  const tousEligibles = useMemo(() => {
     const tous = (produits.data ?? []).filter((produit) => produit.fabricant_id != null);
     if (type === 'production') {
       return tous.filter(
@@ -90,6 +97,17 @@ export function SaisieStock({ type }: Props) {
     return tous;
   }, [produits.data, type, userId]);
 
+  // Sorties : uniquement les surgelés. Production : selon l'onglet Frais / Surgelés.
+  const listeBase = useMemo(() => {
+    if (type === 'production') {
+      return tousEligibles.filter((produit) => produit.conservation === ongletProduction);
+    }
+    return tousEligibles.filter((produit) => produit.conservation === 'surgele');
+  }, [tousEligibles, type, ongletProduction]);
+
+  // Formulaire pertes : frais et surgelés.
+  const listePertes = tousEligibles;
+
   const stockParProduit = useMemo(() => {
     const map = new Map<string, number>();
     for (const ligne of stock.data ?? []) {
@@ -97,6 +115,23 @@ export function SaisieStock({ type }: Props) {
     }
     return map;
   }, [stock.data]);
+
+  const disponibleParProduit = useMemo(() => {
+    const map = new Map<
+      string,
+      { disponible: number; production_jour: number; restes_veille: number }
+    >();
+    for (const ligne of disponible.data ?? []) {
+      if (ligne.produit_id) {
+        map.set(ligne.produit_id, {
+          disponible: ligne.disponible ?? 0,
+          production_jour: ligne.production_jour ?? 0,
+          restes_veille: ligne.restes_veille ?? 0,
+        });
+      }
+    }
+    return map;
+  }, [disponible.data]);
 
   const listeFiltre = useMemo(() => {
     const terme = sansAccents(recherche.trim());
@@ -112,6 +147,7 @@ export function SaisieStock({ type }: Props) {
           quantite: number;
           created_at: string;
           produitNom: string;
+          conservation: 'frais' | 'surgele';
         }
       | {
           kind: 'perte';
@@ -129,6 +165,7 @@ export function SaisieStock({ type }: Props) {
       quantite: saisie.quantite,
       created_at: saisie.created_at,
       produitNom: saisie.produitNom,
+      conservation: saisie.conservation,
     }));
 
     if (type === 'sortie') {
@@ -148,10 +185,16 @@ export function SaisieStock({ type }: Props) {
     return lignes.sort((a, b) => b.created_at.localeCompare(a.created_at));
   }, [mouvements.data, pertes.data, type]);
 
-  const chemins = listeBase
-    .map((produit) => produit.photo_url)
-    .filter((chemin): chemin is string => Boolean(chemin));
-  const photos = useUrlsSignees(chemins);
+  const cheminsPhotos = useMemo(() => {
+    const source = type === 'sortie' ? [...listeBase, ...listePertes] : listeBase;
+    return source
+      .map((produit) => produit.photo_url)
+      .filter((chemin): chemin is string => Boolean(chemin));
+  }, [listeBase, listePertes, type]);
+  const photos = useUrlsSignees(cheminsPhotos);
+
+  const perteProduit = listePertes.find((p) => p.id === perteProduitId) ?? null;
+  const perteEstFrais = perteProduit?.conservation === 'frais';
 
   const fermerMessage = useCallback(() => setMessage(null), []);
 
@@ -162,10 +205,20 @@ export function SaisieStock({ type }: Props) {
     setPerteDansLeStock(false);
   }
 
+  function changerOngletProduction(valeur: OngletProduction) {
+    setOngletProduction(valeur);
+    setQuantites({});
+    setRecherche('');
+  }
+
   async function rafraichir() {
-    const taches = [produits.refetch(), stock.refetch(), mouvements.refetch()];
-    if (type === 'sortie') taches.push(pertes.refetch());
-    await Promise.all(taches);
+    await Promise.all([
+      produits.refetch(),
+      stock.refetch(),
+      mouvements.refetch(),
+      type === 'production' ? disponible.refetch() : Promise.resolve(),
+      type === 'sortie' ? pertes.refetch() : Promise.resolve(),
+    ]);
   }
 
   function definirQuantite(id: string, valeur: number) {
@@ -188,7 +241,12 @@ export function SaisieStock({ type }: Props) {
     }
 
     try {
-      const confirmation = await enregistrer.mutateAsync({ type, lignes });
+      const confirmation = await enregistrer.mutateAsync({
+        type,
+        lignes,
+        confirmation:
+          type === 'production' && ongletProduction === 'frais' ? 'disponible' : 'stock',
+      });
       setQuantites({});
       setTypeMessage('succes');
       setMessage(confirmation);
@@ -216,12 +274,14 @@ export function SaisieStock({ type }: Props) {
       return;
     }
 
-    const produit = listeBase.find((p) => p.id === perteProduitId);
+    const produit = listePertes.find((p) => p.id === perteProduitId);
     if (!produit) {
       setTypeMessage('erreur');
       setMessage('Produit introuvable.');
       return;
     }
+
+    const dansLeStock = produit.conservation === 'frais' ? false : perteDansLeStock;
 
     try {
       const confirmation = await declarerPerte.mutateAsync({
@@ -229,7 +289,7 @@ export function SaisieStock({ type }: Props) {
         nom: produit.nom,
         quantite: perteQuantite,
         motif: perteMotif,
-        dansLeStock: perteDansLeStock,
+        dansLeStock,
       });
       reinitialiserFormulairePerte();
       setFormulairePerteOuvert(false);
@@ -264,9 +324,14 @@ export function SaisieStock({ type }: Props) {
     produits.isLoading ||
     stock.isLoading ||
     mouvements.isLoading ||
+    (type === 'production' && disponible.isLoading) ||
     (type === 'sortie' && pertes.isLoading);
   const erreur =
-    produits.error ?? stock.error ?? mouvements.error ?? (type === 'sortie' ? pertes.error : null);
+    produits.error ??
+    stock.error ??
+    mouvements.error ??
+    (type === 'production' ? disponible.error : null) ??
+    (type === 'sortie' ? pertes.error : null);
 
   if (chargement) {
     return (
@@ -286,11 +351,17 @@ export function SaisieStock({ type }: Props) {
 
   const titre = type === 'production' ? 'Production' : 'Sorties';
   const titreBouton =
-    type === 'production' ? 'Enregistrer la production' : 'Enregistrer les sorties';
+    type === 'production'
+      ? ongletProduction === 'frais'
+        ? 'Enregistrer la production du jour'
+        : 'Enregistrer la production'
+      : 'Enregistrer les sorties';
   const messageVide =
     type === 'production'
-      ? 'Aucun produit à produire. Ajoutez-en dans l’onglet Mes produits.'
-      : 'Aucun produit dans cette boutique.';
+      ? ongletProduction === 'frais'
+        ? 'Aucun produit frais à produire. Ajoutez-en dans l’onglet Mes produits.'
+        : 'Aucun produit surgelé à produire. Ajoutez-en dans l’onglet Mes produits.'
+      : 'Aucun produit surgelé dans cette boutique.';
 
   const annulationEnCours = annuler.isPending || annulerPerte.isPending;
 
@@ -302,10 +373,22 @@ export function SaisieStock({ type }: Props) {
         produits.isRefetching ||
         stock.isRefetching ||
         mouvements.isRefetching ||
+        (type === 'production' && disponible.isRefetching) ||
         (type === 'sortie' && pertes.isRefetching)
       }
       onRafraichir={() => void rafraichir()}
     >
+      {type === 'production' ? (
+        <ChoixSegmente
+          options={[
+            { valeur: 'frais', libelle: 'Frais du jour' },
+            { valeur: 'surgele', libelle: 'Surgelés' },
+          ]}
+          valeur={ongletProduction}
+          onChange={changerOngletProduction}
+        />
+      ) : null}
+
       {type === 'sortie' ? (
         <Text style={styles.rappel}>
           Le chiffre d'affaires reste attribué au fabricant du produit.
@@ -329,24 +412,28 @@ export function SaisieStock({ type }: Props) {
           key={produit.id}
           produit={produit}
           stock={stockParProduit.get(produit.id) ?? 0}
+          dispo={disponibleParProduit.get(produit.id)}
           photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
           quantite={quantites[produit.id] ?? 0}
           onChange={(valeur) => definirQuantite(produit.id, valeur)}
           type={type}
+          modeProduction={type === 'production' ? ongletProduction : undefined}
         />
       ))}
 
-      {listeBase.length > 0 ? (
+      {listeBase.length > 0 || (type === 'sortie' && listePertes.length > 0) ? (
         <>
           {!formulairePerteOuvert ? (
             <Banniere message={message} type={typeMessage} onFermer={fermerMessage} duree={5000} />
           ) : null}
-          <Bouton
-            titre={titreBouton}
-            pleineLargeur
-            onPress={() => void soumettre()}
-            chargement={enregistrer.isPending}
-          />
+          {listeBase.length > 0 ? (
+            <Bouton
+              titre={titreBouton}
+              pleineLargeur
+              onPress={() => void soumettre()}
+              chargement={enregistrer.isPending}
+            />
+          ) : null}
           {type === 'sortie' ? (
             <>
               <Bouton
@@ -363,10 +450,15 @@ export function SaisieStock({ type }: Props) {
                 <View style={styles.formulairePerte}>
                   <Text style={styles.label}>Produit</Text>
                   <View style={styles.puces}>
-                    {listeBase.map((produit) => (
+                    {listePertes.map((produit) => (
                       <Pressable
                         key={produit.id}
-                        onPress={() => setPerteProduitId(produit.id)}
+                        onPress={() => {
+                          setPerteProduitId(produit.id);
+                          if (produit.conservation === 'frais') {
+                            setPerteDansLeStock(false);
+                          }
+                        }}
                         style={[
                           styles.puce,
                           perteProduitId === produit.id && styles.puceActive,
@@ -415,21 +507,25 @@ export function SaisieStock({ type }: Props) {
                     ))}
                   </View>
 
-                  <Pressable
-                    onPress={() => setPerteDansLeStock((v) => !v)}
-                    style={styles.case}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: perteDansLeStock }}
-                  >
-                    <Text style={styles.caseSymbole}>{perteDansLeStock ? '☑' : '☐'}</Text>
-                    <Text style={styles.caseTexte}>
-                      Ces produits étaient encore dans le stock
-                    </Text>
-                  </Pressable>
-                  <Text style={styles.aideCase}>
-                    Laissez décoché si ces produits avaient déjà été sortis : le stock ne change
-                    pas.
-                  </Text>
+                  {!perteEstFrais ? (
+                    <>
+                      <Pressable
+                        onPress={() => setPerteDansLeStock((v) => !v)}
+                        style={styles.case}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: perteDansLeStock }}
+                      >
+                        <Text style={styles.caseSymbole}>{perteDansLeStock ? '☑' : '☐'}</Text>
+                        <Text style={styles.caseTexte}>
+                          Ces produits étaient encore dans le stock
+                        </Text>
+                      </Pressable>
+                      <Text style={styles.aideCase}>
+                        Laissez décoché si ces produits avaient déjà été sortis : le stock ne change
+                        pas.
+                      </Text>
+                    </>
+                  ) : null}
 
                   <Banniere
                     message={message}
@@ -459,7 +555,12 @@ export function SaisieStock({ type }: Props) {
         saisiesDuJour.map((saisie) => {
           const cible: CibleAnnulation =
             saisie.kind === 'mouvement'
-              ? { kind: 'mouvement', id: saisie.id, quantite: saisie.quantite }
+              ? {
+                  kind: 'mouvement',
+                  id: saisie.id,
+                  quantite: saisie.quantite,
+                  conservation: saisie.conservation,
+                }
               : {
                   kind: 'perte',
                   id: saisie.id,
@@ -485,7 +586,9 @@ export function SaisieStock({ type }: Props) {
                 <View style={styles.confirmation}>
                   <Text style={styles.confirmationTexte}>
                     {saisie.kind === 'mouvement'
-                      ? `Annuler cette saisie ? Le stock sera corrigé de ${saisie.quantite}.`
+                      ? saisie.conservation === 'frais'
+                        ? 'Annuler cette saisie ?'
+                        : `Annuler cette saisie ? Le stock sera corrigé de ${saisie.quantite}.`
                       : saisie.dans_le_stock
                         ? `Annuler cette perte ? Le stock sera corrigé de ${saisie.quantite}.`
                         : 'Annuler cette perte ?'}
@@ -525,30 +628,43 @@ export function SaisieStock({ type }: Props) {
 function LigneSaisie({
   produit,
   stock,
+  dispo,
   photoUrl,
   quantite,
   onChange,
   type,
+  modeProduction,
 }: {
   produit: ProduitListe;
   stock: number;
+  dispo?: { disponible: number; production_jour: number; restes_veille: number };
   photoUrl?: string | null;
   quantite: number;
   onChange: (valeur: number) => void;
   type: 'production' | 'sortie';
+  modeProduction?: OngletProduction;
 }) {
-  const sousTitre =
-    type === 'production'
-      ? produit.intermediaire
-        ? `${produit.fabricantNom} · Stock : ${stock}`
-        : `Stock : ${stock}`
-      : `${produit.fabricantNom} · Stock : ${stock}`;
+  let detail: string;
+  if (type === 'production' && modeProduction === 'frais') {
+    const texte = sousTitreDisponibleFrais(
+      dispo?.disponible ?? 0,
+      dispo?.production_jour ?? 0,
+      dispo?.restes_veille ?? 0,
+    );
+    detail = produit.intermediaire ? `${produit.fabricantNom} · ${texte}` : texte;
+  } else if (type === 'production') {
+    detail = produit.intermediaire
+      ? `${produit.fabricantNom} · Stock : ${stock}`
+      : `Stock : ${stock}`;
+  } else {
+    detail = `${produit.fabricantNom} · Stock : ${stock}`;
+  }
 
   return (
     <CarteProduit
       nom={produit.nom}
       photoUrl={photoUrl}
-      sousTitre={sousTitre}
+      sousTitre={detail}
       sousLigne={<Compteur valeur={quantite} onChange={onChange} libelle={produit.nom} />}
     >
       {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}

@@ -46,6 +46,7 @@ Ces points étaient ambigus ou contradictoires. Décisions prises pour coder :
 | D13 | **« Reste » de la vendeuse** | Information uniquement (statistique). Le MVP ne gère pas de stock vitrine. |
 | D14 | « IA » de prévision | Calcul statistique (moyennes par jour de la semaine). Améliorable plus tard. |
 | D15 | **Prévision, seuil, planning et alertes** | Réservés aux produits **surgelés** (décision du propriétaire, 30/10/2026) ; les produits frais sont fabriqués chaque jour sans planning. |
+| D16 | **Produits frais / disponible du jour** | Produits frais : pas de stock de congélateur ni de sorties ; on suit un disponible du jour = production du jour + restes de la veille − pertes du jour − vendus − jetés (vue `disponible_frais`). Le stock, les sorties, le seuil et le planning concernent les surgelés (décision du propriétaire, 31/10/2026). |
 
 ---
 

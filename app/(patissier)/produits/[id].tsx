@@ -12,7 +12,7 @@ import {
   useEnregistrerMonProduit,
   useFicheProduit,
 } from '@/api/produits';
-import { useEnregistrerMouvements, useStock } from '@/api/stock';
+import { useDisponibleFrais, useEnregistrerMouvements, useStock } from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Banniere } from '@/components/banniere';
@@ -80,6 +80,7 @@ export default function EcranFicheProduit() {
   const { profil, verrouillerApresSaisie } = useAuth();
   const fiche = useFicheProduit(creation ? null : (id ?? null));
   const stockBoutique = useStock(profil?.boutique_id ?? null);
+  const disponibleBoutique = useDisponibleFrais(profil?.boutique_id ?? null);
   const enregistrer = useEnregistrerMonProduit();
   const enregistrerProduction = useEnregistrerMouvements();
   const definirPhoto = useDefinirPhotoProduit();
@@ -226,6 +227,7 @@ export default function EcranFicheProduit() {
       const confirmationStock = await enregistrerProduction.mutateAsync({
         type: 'production',
         lignes: [{ produitId: produitCourant.id, quantite: quantiteProduction, nom: produitCourant.nom }],
+        confirmation: produitCourant.conservation === 'frais' ? 'disponible' : 'stock',
       });
       setQuantiteProduction(0);
       setTypeMessageStock('succes');
@@ -237,7 +239,7 @@ export default function EcranFicheProduit() {
     }
   }
 
-  if (!creation && (fiche.isLoading || stockBoutique.isLoading)) {
+  if (!creation && (fiche.isLoading || stockBoutique.isLoading || disponibleBoutique.isLoading)) {
     return (
       <Ecran>
         <EtatChargement />
@@ -279,6 +281,10 @@ export default function EcranFicheProduit() {
 
   const stockActuel =
     (stockBoutique.data ?? []).find((entree) => entree.produit_id === produit?.id)?.stock ?? 0;
+  const disponibleActuel =
+    (disponibleBoutique.data ?? []).find((entree) => entree.produit_id === produit?.id)
+      ?.disponible ?? 0;
+  const estFrais = produit?.conservation === 'frais';
 
   const impose = produit?.impose_par_admin ?? false;
   const boutiqueId = profil?.boutique_id;
@@ -287,8 +293,14 @@ export default function EcranFicheProduit() {
   const zoneStock =
     peutAjouterStock && produit ? (
       <View style={styles.zoneStock}>
-        <Text style={styles.titreSection}>Ajouter du stock</Text>
-        <Text style={styles.texte}>Stock actuel : {stockActuel}</Text>
+        <Text style={styles.titreSection}>
+          {estFrais ? 'Production du jour' : 'Ajouter du stock'}
+        </Text>
+        <Text style={styles.texte}>
+          {estFrais
+            ? `Disponible aujourd'hui : ${disponibleActuel}`
+            : `Stock actuel : ${stockActuel}`}
+        </Text>
         <Compteur
           valeur={quantiteProduction}
           onChange={setQuantiteProduction}

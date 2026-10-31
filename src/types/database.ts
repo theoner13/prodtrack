@@ -104,6 +104,13 @@ export type Database = {
             foreignKeyName: "ingredients_recette_produit_id_fkey"
             columns: ["produit_id"]
             isOneToOne: false
+            referencedRelation: "disponible_frais"
+            referencedColumns: ["produit_id"]
+          },
+          {
+            foreignKeyName: "ingredients_recette_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: false
             referencedRelation: "produits"
             referencedColumns: ["id"]
           },
@@ -145,6 +152,13 @@ export type Database = {
           type?: Database["public"]["Enums"]["type_mouvement"]
         }
         Relationships: [
+          {
+            foreignKeyName: "mouvements_stock_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: false
+            referencedRelation: "disponible_frais"
+            referencedColumns: ["produit_id"]
+          },
           {
             foreignKeyName: "mouvements_stock_produit_id_fkey"
             columns: ["produit_id"]
@@ -242,6 +256,13 @@ export type Database = {
             foreignKeyName: "pertes_production_produit_id_fkey"
             columns: ["produit_id"]
             isOneToOne: false
+            referencedRelation: "disponible_frais"
+            referencedColumns: ["produit_id"]
+          },
+          {
+            foreignKeyName: "pertes_production_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: false
             referencedRelation: "produits"
             referencedColumns: ["id"]
           },
@@ -290,6 +311,13 @@ export type Database = {
           stock_actuel?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "previsions_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: true
+            referencedRelation: "disponible_frais"
+            referencedColumns: ["produit_id"]
+          },
           {
             foreignKeyName: "previsions_produit_id_fkey"
             columns: ["produit_id"]
@@ -510,6 +538,13 @@ export type Database = {
             foreignKeyName: "saisies_vente_produit_id_fkey"
             columns: ["produit_id"]
             isOneToOne: false
+            referencedRelation: "disponible_frais"
+            referencedColumns: ["produit_id"]
+          },
+          {
+            foreignKeyName: "saisies_vente_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: false
             referencedRelation: "produits"
             referencedColumns: ["id"]
           },
@@ -563,6 +598,13 @@ export type Database = {
             foreignKeyName: "saisies_vente_produit_id_fkey"
             columns: ["produit_id"]
             isOneToOne: false
+            referencedRelation: "disponible_frais"
+            referencedColumns: ["produit_id"]
+          },
+          {
+            foreignKeyName: "saisies_vente_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: false
             referencedRelation: "produits"
             referencedColumns: ["id"]
           },
@@ -572,6 +614,37 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "stock_actuel"
             referencedColumns: ["produit_id"]
+          },
+        ]
+      }
+      disponible_frais: {
+        Row: {
+          boutique_id: string | null
+          disponible: number | null
+          fabricant_id: string | null
+          jetes_jour: number | null
+          jour: string | null
+          nom: string | null
+          pertes_jour: number | null
+          production_jour: number | null
+          produit_id: string | null
+          restes_veille: number | null
+          vendus_jour: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produits_boutique_id_fkey"
+            columns: ["boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produits_fabricant_id_fkey"
+            columns: ["fabricant_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -825,7 +898,6 @@ export const Constants = {
   },
 } as const
 
-
 // ---------- Alias pratiques ----------
 export type Produit = Tables<'produits'>;
 export type Profil = Tables<'profils'>;
@@ -835,6 +907,7 @@ export type SaisieVente = Tables<'saisies_vente'>;
 export type Prevision = Tables<'previsions'>;
 export type Notification = Tables<'notifications'>;
 export type StockActuel = Tables<'stock_actuel'>;
+export type DisponibleFrais = Tables<'disponible_frais'>;
 export type CaJournalier = Tables<'ca_journalier'>;
 export type PerteProduction = Tables<'pertes_production'>;
 export type RoleEmploye = Enums<'role_employe'>;
