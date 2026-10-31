@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-31 : cahier des charges v2 (toutes les évolutions) ; PDF de présentation du projet et guide détaillé de l'application dans docs/ (Claude Code)
 - 2026-10-31 : stock du pâtissier limité à ses produits ; formulaire produit compact ; icônes fines (Cursor)
 - 2026-10-30 : tableau de bord admin sans la liste 5 meilleurs / 5 moins bons ; écran du code centré avec logo (Cursor)
 - 2026-10-30 : planning en agenda par jour ; seuil, prévisions et alertes réservés aux surgelés (Cursor)

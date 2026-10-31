@@ -6,6 +6,7 @@ Ce fichier s'adresse à toute IA de code (Cursor, Claude Code, autres). À lire 
 
 - **ProdTrack** : appli de production pour boulangeries (patron, pâtissiers, vendeuses).
 - **Quoi faire** : [cahier-des-charges-mvp.md](cahier-des-charges-mvp.md). Validé : ne pas le modifier.
+- **Version à jour avec toutes les évolutions** : [cahier-des-charges-v2.md](cahier-des-charges-v2.md) (31/10/2026). Présentation et guide en PDF dans `docs/`.
 - **Comment le faire** : [docs/01-ARCHITECTURE.md](docs/01-ARCHITECTURE.md). Stack, structure et décisions à respecter.
 - **Ordre du travail** : [docs/02-PHASES-ET-PROMPTS.md](docs/02-PHASES-ET-PROMPTS.md).
 - **Où on en est** : [docs/AVANCEMENT.md](docs/AVANCEMENT.md). **À lire en premier, à mettre à jour en dernier.**
