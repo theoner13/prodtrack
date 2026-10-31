@@ -733,6 +733,15 @@ export type Database = {
       }
       est_admin: { Args: never; Returns: boolean }
       ma_boutique: { Args: never; Returns: string }
+      mis_en_vente: {
+        Args: { p_boutique: string; p_jour: string }
+        Returns: {
+          arrivee: number
+          produit_id: string
+          restes_veille: number
+          total: number
+        }[]
+      }
       mon_entreprise: { Args: never; Returns: string }
       mon_role: {
         Args: never

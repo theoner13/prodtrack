@@ -27,12 +27,20 @@ export type LigneSaisie = {
   reste: number;
 };
 
+export type MisEnVenteLigne = {
+  produit_id: string;
+  arrivee: number;
+  restes_veille: number;
+  total: number;
+};
+
 export type DetailHistorique = {
   produitId: string;
   nom: string;
   vendu: number;
   jete: number;
   reste: number;
+  misEnVente: number | null;
 };
 
 export type JourHistorique = {
@@ -61,6 +69,18 @@ async function idsProduitsBoutique(
   return data.map((ligne) => ligne.id);
 }
 
+async function chargerMisEnVente(
+  boutiqueId: string,
+  jour: string,
+): Promise<MisEnVenteLigne[]> {
+  const { data, error } = await db().rpc('mis_en_vente', {
+    p_boutique: boutiqueId,
+    p_jour: jour,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export function useSaisiesDuJour(boutiqueId: string | null, jour: string) {
   return useQuery({
     queryKey: ['ventes', 'jour', boutiqueId, jour],
@@ -79,6 +99,15 @@ export function useSaisiesDuJour(boutiqueId: string | null, jour: string) {
       if (error) throw error;
       return data;
     },
+  });
+}
+
+export function useMisEnVente(boutiqueId: string | null, jour: string) {
+  return useQuery({
+    queryKey: ['ventes', 'mis-en-vente', boutiqueId, jour],
+    enabled: Boolean(boutiqueId),
+    queryFn: (): Promise<MisEnVenteLigne[]> =>
+      chargerMisEnVente(boutiqueId ?? '', jour),
   });
 }
 
@@ -130,15 +159,27 @@ export function useHistoriqueVentes(boutiqueId: string | null) {
         data.push(...page);
       }
 
+      const misParJour = new Map<string, Map<string, number>>();
+      for (const jour of jours) {
+        const lignes = await chargerMisEnVente(boutiqueId ?? '', jour);
+        const map = new Map<string, number>();
+        for (const ligne of lignes) {
+          map.set(ligne.produit_id, ligne.total);
+        }
+        misParJour.set(jour, map);
+      }
+
       const parJour = new Map<string, DetailHistorique[]>();
       for (const ligne of data) {
         const produit = ligne.produits;
+        const mis = misParJour.get(ligne.jour)?.get(ligne.produit_id);
         const detail: DetailHistorique = {
           produitId: ligne.produit_id,
           nom: produit?.nom ?? 'Produit',
           vendu: ligne.vendu,
           jete: ligne.jete,
           reste: ligne.reste,
+          misEnVente: mis ?? null,
         };
         const liste = parJour.get(ligne.jour) ?? [];
         liste.push(detail);

@@ -109,7 +109,9 @@ function JourHistoriqueCarte({
               <View key={ligne.produitId} style={styles.produit}>
                 <Text style={styles.nom}>{ligne.nom}</Text>
                 <Text style={styles.quantites}>
-                  Vendu {ligne.vendu} · Jeté {ligne.jete} · Reste {ligne.reste}
+                  {ligne.misEnVente != null
+                    ? `Mis en vente ${ligne.misEnVente} · Vendu ${ligne.vendu} · Jeté ${ligne.jete} · Reste ${ligne.reste}`
+                    : `Vendu ${ligne.vendu} · Jeté ${ligne.jete} · Reste ${ligne.reste}`}
                 </Text>
               </View>
             ))

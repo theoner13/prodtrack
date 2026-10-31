@@ -12,8 +12,10 @@ import { useUrlsSignees } from '@/api/photos';
 import { useProduits, type ProduitListe } from '@/api/produits';
 import {
   useEnregistrerVentes,
+  useMisEnVente,
   useSaisiesDuJour,
   type LigneSaisie,
+  type MisEnVenteLigne,
 } from '@/api/ventes';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
@@ -28,6 +30,12 @@ import {
   formatJourComplet,
   jourPrecedent,
 } from '@/lib/format';
+import {
+  depassementMisEnVente,
+  messageDepassementEnregistrement,
+  messageDepassementLigne,
+  texteMisEnVente,
+} from '@/lib/mis-en-vente';
 import { couleurs, espacements, tailles } from '@/theme';
 
 type ValeursProduit = { vendu: number; jete: number; reste: number };
@@ -62,6 +70,7 @@ export default function EcranFinDeJournee() {
 
   const produits = useProduits(boutiqueId);
   const saisies = useSaisiesDuJour(boutiqueId, jour);
+  const misEnVente = useMisEnVente(boutiqueId, jour);
   const enregistrer = useEnregistrerVentes();
 
   useEffect(() => {
@@ -80,6 +89,14 @@ export default function EcranFinDeJournee() {
     }
     return map;
   }, [saisies.data]);
+
+  const misParProduit = useMemo(() => {
+    const map = new Map<string, MisEnVenteLigne>();
+    for (const ligne of misEnVente.data ?? []) {
+      map.set(ligne.produit_id, ligne);
+    }
+    return map;
+  }, [misEnVente.data]);
 
   const listeVendables = useMemo(
     () =>
@@ -128,6 +145,18 @@ export default function EcranFinDeJournee() {
       });
   }, [listeVendables, valeurs, jour, saisiesParProduit]);
 
+  const produitsEnDepassement = useMemo(() => {
+    const noms: string[] = [];
+    for (const produit of listeVendables) {
+      const v = valeurs[produit.id] ?? { vendu: 0, jete: 0, reste: 0 };
+      const total = misParProduit.get(produit.id)?.total ?? 0;
+      if (depassementMisEnVente(v.vendu, v.jete, v.reste, total)) {
+        noms.push(produit.nom);
+      }
+    }
+    return noms;
+  }, [listeVendables, valeurs, misParProduit]);
+
   const nombreModifications = useMemo(() => {
     let count = 0;
     for (const produit of listeVendables) {
@@ -156,7 +185,7 @@ export default function EcranFinDeJournee() {
         : `Modifications non enregistrées : ${nombreModifications} produits`;
 
   async function rafraichir() {
-    await Promise.all([produits.refetch(), saisies.refetch()]);
+    await Promise.all([produits.refetch(), saisies.refetch(), misEnVente.refetch()]);
   }
 
   function definirValeur(
@@ -182,6 +211,12 @@ export default function EcranFinDeJournee() {
       return;
     }
 
+    if (produitsEnDepassement.length > 0) {
+      setTypeMessage('erreur');
+      setMessage(messageDepassementEnregistrement(produitsEnDepassement));
+      return;
+    }
+
     try {
       const nombre = await enregistrer.mutateAsync(lignesAEnvoyer);
       setTypeMessage('succes');
@@ -197,8 +232,8 @@ export default function EcranFinDeJournee() {
     }
   }
 
-  const chargement = produits.isLoading || saisies.isLoading;
-  const erreur = produits.error ?? saisies.error;
+  const chargement = produits.isLoading || saisies.isLoading || misEnVente.isLoading;
+  const erreur = produits.error ?? saisies.error ?? misEnVente.error;
 
   if (chargement) {
     return (
@@ -221,7 +256,9 @@ export default function EcranFinDeJournee() {
   return (
     <Ecran
       defilement
-      enRafraichissement={produits.isRefetching || saisies.isRefetching}
+      enRafraichissement={
+        produits.isRefetching || saisies.isRefetching || misEnVente.isRefetching
+      }
       onRafraichir={() => void rafraichir()}
       pied={
         liste.length > 0 ? (
@@ -272,17 +309,27 @@ export default function EcranFinDeJournee() {
         <EtatVide message="Aucun produit dans cette boutique pour l'instant." />
       ) : null}
 
-      {liste.map((produit) => (
-        <LigneVente
-          key={produit.id}
-          produit={produit}
-          photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
-          valeurs={valeurs[produit.id] ?? { vendu: 0, jete: 0, reste: 0 }}
-          dejaEnregistre={saisiesParProduit.has(produit.id)}
-          etroit={etroit}
-          onChange={(champ, valeur) => definirValeur(produit.id, champ, valeur)}
-        />
-      ))}
+      {liste.map((produit) => {
+        const mis = misParProduit.get(produit.id);
+        const arrivee = mis?.arrivee ?? 0;
+        const restes = mis?.restes_veille ?? 0;
+        const total = mis?.total ?? 0;
+        const v = valeurs[produit.id] ?? { vendu: 0, jete: 0, reste: 0 };
+        return (
+          <LigneVente
+            key={produit.id}
+            produit={produit}
+            photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
+            valeurs={v}
+            dejaEnregistre={saisiesParProduit.has(produit.id)}
+            texteMis={texteMisEnVente(produit.conservation, arrivee, restes)}
+            totalMis={total}
+            depassement={depassementMisEnVente(v.vendu, v.jete, v.reste, total)}
+            etroit={etroit}
+            onChange={(champ, valeur) => definirValeur(produit.id, champ, valeur)}
+          />
+        );
+      })}
     </Ecran>
   );
 }
@@ -292,6 +339,9 @@ function LigneVente({
   photoUrl,
   valeurs,
   dejaEnregistre,
+  texteMis,
+  totalMis,
+  depassement,
   etroit,
   onChange,
 }: {
@@ -299,9 +349,14 @@ function LigneVente({
   photoUrl?: string | null;
   valeurs: ValeursProduit;
   dejaEnregistre: boolean;
+  texteMis: string;
+  totalMis: number;
+  depassement: boolean;
   etroit: boolean;
   onChange: (champ: keyof ValeursProduit, valeur: number) => void;
 }) {
+  const sousTitre = dejaEnregistre ? `${texteMis} · Déjà enregistré` : texteMis;
+
   const compteurs = (
     <View style={etroit ? styles.compteursEtroit : styles.compteursLarge}>
       <ChampCompteur
@@ -325,6 +380,9 @@ function LigneVente({
         etroit={etroit}
         onChange={(valeur) => onChange('reste', valeur)}
       />
+      {depassement ? (
+        <Text style={styles.depassement}>{messageDepassementLigne(totalMis)}</Text>
+      ) : null}
     </View>
   );
 
@@ -332,7 +390,8 @@ function LigneVente({
     <CarteProduit
       nom={produit.nom}
       photoUrl={photoUrl}
-      sousTitre={dejaEnregistre ? 'Déjà enregistré' : undefined}
+      sousTitre={sousTitre}
+      alerte={depassement}
       sousLigne={<View style={styles.sousLignePleine}>{compteurs}</View>}
     />
   );
@@ -407,6 +466,7 @@ const styles = StyleSheet.create({
   },
   compteursLarge: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: espacements.s,
   },
@@ -437,5 +497,11 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     textAlign: 'center',
+  },
+  depassement: {
+    width: '100%',
+    fontSize: tailles.petit,
+    color: couleurs.alerte,
+    fontWeight: '600',
   },
 });
