@@ -53,8 +53,14 @@ export default function EcranFicheEmploye() {
   const [auTexte, setAuTexte] = useState(formatDateFr(aujourdhui));
 
   const boutiqueId = employe.data?.boutique_id ?? null;
-  const datesMois = useMemo(() => datesPeriode('mois', aujourdhui), [aujourdhui]);
-  const caMois = useCaJournalier(datesMois.debut, datesMois.fin, boutiqueId);
+  // Couvre le début de semaine même s’il tombe le mois précédent.
+  const datesTuiles = useMemo(() => {
+    const sem = datesPeriode('semaine', aujourdhui);
+    const mois = datesPeriode('mois', aujourdhui);
+    const debut = sem.debut < mois.debut ? sem.debut : mois.debut;
+    return { debut, fin: aujourdhui };
+  }, [aujourdhui]);
+  const caTuiles = useCaJournalier(datesTuiles.debut, datesTuiles.fin, boutiqueId);
 
   const datesDetail = useMemo(() => {
     if (periode !== 'perso') {
@@ -81,9 +87,9 @@ export default function EcranFicheEmploye() {
     boutiqueId,
   );
 
-  const lignesMois = useMemo(
-    () => (caMois.data ?? []).filter((l) => l.fabricant_id === employeId),
-    [caMois.data, employeId],
+  const lignesTuiles = useMemo(
+    () => (caTuiles.data ?? []).filter((l) => l.fabricant_id === employeId),
+    [caTuiles.data, employeId],
   );
 
   const tuiles = useMemo(() => {
@@ -91,15 +97,15 @@ export default function EcranFicheEmploye() {
     const sem = datesPeriode('semaine', aujourdhui);
     const mois = datesPeriode('mois', aujourdhui);
     return {
-      aujourdhui: totaux(lignesMois.filter((l) => l.jour === auj.debut)),
+      aujourdhui: totaux(lignesTuiles.filter((l) => l.jour === auj.debut)),
       semaine: totaux(
-        lignesMois.filter((l) => l.jour && l.jour >= sem.debut && l.jour <= sem.fin),
+        lignesTuiles.filter((l) => l.jour && l.jour >= sem.debut && l.jour <= sem.fin),
       ),
       mois: totaux(
-        lignesMois.filter((l) => l.jour && l.jour >= mois.debut && l.jour <= mois.fin),
+        lignesTuiles.filter((l) => l.jour && l.jour >= mois.debut && l.jour <= mois.fin),
       ),
     };
-  }, [lignesMois, aujourdhui]);
+  }, [lignesTuiles, aujourdhui]);
 
   const lignesDetail = useMemo(
     () => (caDetail.data ?? []).filter((l) => l.fabricant_id === employeId),
@@ -190,13 +196,13 @@ export default function EcranFicheEmploye() {
       {estPatissier ? (
         <>
           <Text style={styles.section}>Chiffre d'affaires</Text>
-          {caMois.isLoading ? (
+          {caTuiles.isLoading ? (
             <EtatChargement />
-          ) : caMois.isError ? (
+          ) : caTuiles.isError ? (
             <EtatErreur
               message="Impossible de charger le chiffre d'affaires."
               onReessayer={() => {
-                void caMois.refetch();
+                void caTuiles.refetch();
               }}
             />
           ) : (

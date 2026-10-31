@@ -522,7 +522,6 @@ function GraphiqueCaJours({
       <View style={styles.graphiqueBarres}>
         {parJour.map(([jour, ca], index) => {
           const h = Math.max(4, Math.round((ca / max) * 80));
-          const recent = index >= parJour.length - 7;
           const dernierJour = index === parJour.length - 1;
           return (
             <View
@@ -532,10 +531,8 @@ function GraphiqueCaJours({
                 {
                   height: h,
                   backgroundColor: dernierJour
-                    ? '#B87A45'
-                    : recent
-                      ? 'rgba(210,153,105,0.85)'
-                      : 'rgba(210,153,105,0.35)',
+                    ? couleurs.croute
+                    : 'rgba(210,153,105,0.45)',
                 },
               ]}
             />
