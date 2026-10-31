@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   videCompact: {
-    backgroundColor: '#F2F2F7',
+    backgroundColor: couleurs.fondGroupe,
     alignItems: 'center',
     justifyContent: 'center',
   },

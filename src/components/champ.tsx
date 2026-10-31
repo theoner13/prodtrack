@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 
-import { couleurs, espacements, hauteurBouton, rayon, tailles } from '@/theme';
+import { couleurs, espacements, hauteurBouton, polices, rayonPetit, tailles } from '@/theme';
 
 type Props = TextInputProps & {
   libelle: string;
@@ -8,15 +8,13 @@ type Props = TextInputProps & {
 };
 
 // Champ texte avec libellé et message d'erreur.
-// Avec react-hook-form : l'utiliser dans un <Controller> en passant
-// value, onChangeText, onBlur et erreur={fieldState.error?.message}.
 export function Champ({ libelle, erreur, style, ...props }: Props) {
   return (
     <View style={styles.conteneur}>
       <Text style={styles.libelle}>{libelle}</Text>
       <TextInput
         accessibilityLabel={libelle}
-        placeholderTextColor={couleurs.texteSecondaire}
+        placeholderTextColor={couleurs.texteMuet}
         style={[styles.champ, erreur ? styles.champErreur : null, style]}
         {...props}
       />
@@ -30,26 +28,28 @@ const styles = StyleSheet.create({
     gap: espacements.xs,
   },
   libelle: {
-    fontSize: tailles.petit,
-    fontWeight: '600',
-    color: couleurs.texte,
+    fontSize: tailles.legend,
+    fontWeight: '500',
+    color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   champ: {
-    minHeight: hauteurBouton,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
-    borderRadius: rayon,
+    minHeight: hauteurBouton - 12,
+    borderWidth: 0,
+    borderRadius: rayonPetit,
     paddingHorizontal: espacements.m,
     fontSize: tailles.normal,
     color: couleurs.texte,
-    backgroundColor: couleurs.surface,
+    backgroundColor: couleurs.fondGroupe,
+    fontFamily: polices.sans,
   },
   champErreur: {
-    borderColor: couleurs.erreur,
     borderWidth: 1,
+    borderColor: couleurs.erreur,
   },
   erreur: {
     fontSize: tailles.petit,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
   },
 });

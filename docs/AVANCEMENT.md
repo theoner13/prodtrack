@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-10-31 : essai de design « Beige et marron » sur la branche design-beige (Cursor)
 - 2026-10-31 : vente : quantité mise en vente par produit (sorties ou production + restes d'hier) et contrôle vendu + jeté + reste (Cursor)
 - 2026-10-31 : produits frais : production du jour et disponible (production + restes − pertes − ventes), stock et sorties réservés aux surgelés (Cursor)
 - 2026-10-31 : cahier des charges v2 (toutes les évolutions) ; PDF de présentation du projet et guide détaillé de l'application dans docs/ (Claude Code)

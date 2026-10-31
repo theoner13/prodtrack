@@ -1,29 +1,24 @@
-import { Link, Stack } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Stack } from 'expo-router';
 
-import { ClocheNotifications } from '@/components/cloche-notifications';
+import { ActionsEntete } from '@/components/actions-entete';
 import { LogoEntete } from '@/components/logo';
-import { couleurs, tailles } from '@/theme';
-
-function ActionsEntete() {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 16 }}>
-      <ClocheNotifications />
-      <Link href="/profil">
-        <Text style={{ color: couleurs.principal, fontSize: tailles.petit, fontWeight: '700' }}>Profil</Text>
-      </Link>
-    </View>
-  );
-}
+import { couleurs, polices } from '@/theme';
 
 export default function LayoutMesProduits() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: couleurs.fond },
+        headerStyle: {
+          backgroundColor: couleurs.fond,
+        },
         headerShadowVisible: false,
         headerTintColor: couleurs.texte,
-        headerTitleStyle: { fontSize: 16, fontWeight: '600' },
+        headerTitleStyle: {
+          fontSize: 16,
+          fontWeight: '500',
+          fontFamily: polices.sans,
+          color: couleurs.texte,
+        },
         contentStyle: { backgroundColor: couleurs.fond },
       }}
     >

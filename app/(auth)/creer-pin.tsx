@@ -87,7 +87,7 @@ export default function EcranCreerPin() {
   return (
     <Ecran>
       <View style={styles.centre}>
-        <Logo />
+        <Logo variante="complet" taille={140} />
         <Text style={styles.titre}>{titreEcran}</Text>
         <Text style={styles.consigne}>{titre}</Text>
         {etape === 'biometrie' ? (

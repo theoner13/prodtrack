@@ -572,27 +572,27 @@ export function genererHtmlRapport(
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       font-size: 11px;
-      color: #1D1D1F;
+      color: #5C3D27;
       margin: 0;
     }
     .marque { font-size: 16px; font-weight: 700; margin: 0 0 4px; }
     .titre { font-size: 13px; font-weight: 600; margin: 0 0 4px; }
-    .meta { color: #6E6E73; margin: 0 0 16px; }
+    .meta { color: #86694F; margin: 0 0 16px; }
     table { width: 100%; border-collapse: collapse; }
     th {
-      background: #E5E5EA;
+      background: #F5EEE5;
       font-weight: 700;
       padding: 6px 8px;
-      border-bottom: 1px solid #C7C7CC;
+      border-bottom: 1px solid #EEE6DB;
     }
     td {
       padding: 5px 8px;
-      border-bottom: 1px solid #E5E5EA;
+      border-bottom: 1px solid #EEE6DB;
       vertical-align: top;
     }
     tr.total td {
       font-weight: 700;
-      border-top: 2px solid #1D1D1F;
+      border-top: 2px solid #5C3D27;
       border-bottom: none;
       padding-top: 8px;
     }

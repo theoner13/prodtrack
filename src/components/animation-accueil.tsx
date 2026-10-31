@@ -2,30 +2,34 @@ import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Animated,
+  Easing,
   Platform,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
+import { useAuth } from '@/auth/AuthProvider';
 import { Logo } from '@/components/logo';
+import { couleurs, polices } from '@/theme';
 
-const TAILLE_LOGO = 140;
+const TAILLE_LOGO = 210;
 const NATIVE_DRIVER = Platform.OS !== 'web';
 
 /**
- * Calque d'accueil plein écran, une seule fois au chargement de l'appli.
- * Ne retarde pas le montage du reste : se superpose seulement.
+ * Calque d'accueil plein écran (Splash-beige) : logo en fondu, barre, nom boutique.
+ * Une seule fois au chargement. Ne retarde pas le montage du reste.
  */
 export function AnimationAccueil() {
+  const { boutiqueNom } = useAuth();
   const [visible, setVisible] = useState(true);
   const [pointerActif, setPointerActif] = useState(true);
 
   const opaciteFond = useRef(new Animated.Value(1)).current;
   const opaciteLogo = useRef(new Animated.Value(0)).current;
-  const echelleLogo = useRef(new Animated.Value(0.6)).current;
+  const echelleLogo = useRef(new Animated.Value(0.92)).current;
+  const barre = useRef(new Animated.Value(0)).current;
   const opaciteTexte = useRef(new Animated.Value(0)).current;
-  const translateTexte = useRef(new Animated.Value(8)).current;
 
   useEffect(() => {
     let annule = false;
@@ -42,8 +46,8 @@ export function AnimationAccueil() {
       if (reduire) {
         opaciteLogo.setValue(1);
         echelleLogo.setValue(1);
+        barre.setValue(1);
         opaciteTexte.setValue(1);
-        translateTexte.setValue(0);
         setPointerActif(false);
         Animated.timing(opaciteFond, {
           toValue: 0,
@@ -53,75 +57,50 @@ export function AnimationAccueil() {
         return;
       }
 
-      // Entrée ≈ 500 ms : logo (fondu + spring), puis texte.
+      // Entrée logo ≈ markIn 1,1 s (fondu + scale, flou simulé par scale).
       Animated.parallel([
         Animated.timing(opaciteLogo, {
           toValue: 1,
-          duration: 400,
+          duration: 1100,
+          easing: Easing.bezier(0.2, 0.8, 0.2, 1),
           useNativeDriver: NATIVE_DRIVER,
         }),
-        Animated.spring(echelleLogo, {
+        Animated.timing(echelleLogo, {
           toValue: 1,
-          friction: 5,
-          tension: 80,
+          duration: 1100,
+          easing: Easing.bezier(0.2, 0.8, 0.2, 1),
           useNativeDriver: NATIVE_DRIVER,
+        }),
+        Animated.timing(opaciteTexte, {
+          toValue: 1,
+          duration: 600,
+          delay: 400,
+          useNativeDriver: NATIVE_DRIVER,
+        }),
+        Animated.timing(barre, {
+          toValue: 1,
+          duration: 1600,
+          delay: 300,
+          easing: Easing.bezier(0.65, 0, 0.35, 1),
+          useNativeDriver: false,
         }),
       ]).start();
 
+      // Pause puis sortie.
       Animated.sequence([
-        Animated.delay(180),
-        Animated.parallel([
-          Animated.timing(opaciteTexte, {
-            toValue: 1,
-            duration: 320,
-            useNativeDriver: NATIVE_DRIVER,
-          }),
-          Animated.timing(translateTexte, {
-            toValue: 0,
-            duration: 320,
-            useNativeDriver: NATIVE_DRIVER,
-          }),
-        ]),
-      ]).start();
-
-      // Pause ≈ 400 ms puis sortie ≈ 450 ms (total ≈ 1,5 s).
-      Animated.sequence([
-        Animated.delay(900),
-        Animated.parallel([
-          Animated.timing(opaciteFond, {
-            toValue: 0,
-            duration: 450,
-            useNativeDriver: NATIVE_DRIVER,
-          }),
-          Animated.timing(opaciteLogo, {
-            toValue: 0,
-            duration: 450,
-            useNativeDriver: NATIVE_DRIVER,
-          }),
-          Animated.timing(echelleLogo, {
-            toValue: 0.3,
-            duration: 450,
-            useNativeDriver: NATIVE_DRIVER,
-          }),
-          Animated.timing(opaciteTexte, {
-            toValue: 0,
-            duration: 450,
-            useNativeDriver: NATIVE_DRIVER,
-          }),
-          Animated.timing(translateTexte, {
-            toValue: -4,
-            duration: 450,
-            useNativeDriver: NATIVE_DRIVER,
-          }),
-        ]),
+        Animated.delay(2200),
+        Animated.timing(opaciteFond, {
+          toValue: 0,
+          duration: 450,
+          useNativeDriver: NATIVE_DRIVER,
+        }),
       ]).start(({ finished }) => {
         if (finished) terminer();
       });
 
-      // Pendant la sortie : ne plus bloquer les clics.
       const timerPointer = setTimeout(() => {
         if (!annule) setPointerActif(false);
-      }, 900);
+      }, 2000);
       return () => clearTimeout(timerPointer);
     };
 
@@ -136,12 +115,17 @@ export function AnimationAccueil() {
       opaciteFond.stopAnimation();
       opaciteLogo.stopAnimation();
       echelleLogo.stopAnimation();
+      barre.stopAnimation();
       opaciteTexte.stopAnimation();
-      translateTexte.stopAnimation();
     };
-  }, [opaciteFond, opaciteLogo, echelleLogo, opaciteTexte, translateTexte]);
+  }, [opaciteFond, opaciteLogo, echelleLogo, barre, opaciteTexte]);
 
   if (!visible) return null;
+
+  const largeurBarre = barre.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
   return (
     <Animated.View
@@ -158,19 +142,18 @@ export function AnimationAccueil() {
             transform: [{ scale: echelleLogo }],
           }}
         >
-          <Logo taille={TAILLE_LOGO} />
+          <Logo variante="complet" taille={TAILLE_LOGO} />
         </Animated.View>
-        <Animated.View
-          style={{
-            opacity: opaciteTexte,
-            transform: [{ translateY: translateTexte }],
-          }}
-        >
-          <Text style={styles.nom}>
-            Prod
-            <Text style={styles.track}>Track</Text>
-          </Text>
-        </Animated.View>
+      </View>
+      <View style={styles.bas}>
+        <View style={styles.piste}>
+          <Animated.View style={[styles.remplissage, { width: largeurBarre }]} />
+        </View>
+        {boutiqueNom ? (
+          <Animated.Text style={[styles.nomBoutique, { opacity: opaciteTexte }]}>
+            {boutiqueNom}
+          </Animated.Text>
+        ) : null}
       </View>
     </Animated.View>
   );
@@ -179,21 +162,36 @@ export function AnimationAccueil() {
 const styles = StyleSheet.create({
   calque: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: couleurs.fond,
     zIndex: 100,
     justifyContent: 'center',
     alignItems: 'center',
   },
   centre: {
     alignItems: 'center',
-    gap: 16,
   },
-  nom: {
-    fontSize: 26,
-    fontWeight: '600',
-    color: '#1D1D1F',
+  bas: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 64,
+    alignItems: 'center',
+    gap: 14,
   },
-  track: {
-    color: '#A86B2D',
+  piste: {
+    width: 64,
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: couleurs.bordure,
+    overflow: 'hidden',
+  },
+  remplissage: {
+    height: '100%',
+    backgroundColor: couleurs.croute,
+  },
+  nomBoutique: {
+    fontSize: 12,
+    color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
 });

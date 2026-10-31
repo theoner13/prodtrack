@@ -313,6 +313,14 @@ export default function EcranTableauDeBord() {
         <EtatVide message="Aucune vente enregistrée sur cette période." />
       ) : (
         <>
+          <View style={styles.blocCa}>
+            <Text style={styles.caLibelle}>Chiffre d'affaires</Text>
+            <Text style={styles.caValeur} accessibilityLabel={`CA total ${formatEuros(chiffres.caCentimes)}`}>
+              {formatEuros(chiffres.caCentimes)}
+            </Text>
+            <GraphiqueCaJours lignes={lignes} />
+          </View>
+
           <View style={styles.chiffres}>
             <ChiffreCle libelle="CA total" valeur={formatEuros(chiffres.caCentimes)} />
             <ChiffreCle libelle="Vendus" valeur={String(chiffres.vendu)} />
@@ -482,6 +490,67 @@ function ChiffreCle({
   return <View style={styles.chiffre}>{contenu}</View>;
 }
 
+/** Mini-graphique du CA par jour à partir des lignes déjà chargées. */
+function GraphiqueCaJours({
+  lignes,
+}: {
+  lignes: { jour: string | null; ca_centimes: number | null }[];
+}) {
+  const parJour = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const l of lignes) {
+      if (!l.jour) continue;
+      const ca = l.ca_centimes ?? 0;
+      map.set(l.jour, (map.get(l.jour) ?? 0) + ca);
+    }
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [lignes]);
+
+  if (parJour.length < 2) return null;
+
+  const max = Math.max(...parJour.map(([, v]) => v), 1);
+  const premier = parJour[0]?.[0] ?? '';
+  const milieu = parJour[Math.floor(parJour.length / 2)]?.[0] ?? '';
+  const dernier = parJour[parJour.length - 1]?.[0] ?? '';
+
+  return (
+    <View
+      accessible
+      accessibilityLabel="Chiffre d'affaires par jour"
+      style={styles.graphique}
+    >
+      <View style={styles.graphiqueBarres}>
+        {parJour.map(([jour, ca], index) => {
+          const h = Math.max(4, Math.round((ca / max) * 80));
+          const recent = index >= parJour.length - 7;
+          const dernierJour = index === parJour.length - 1;
+          return (
+            <View
+              key={jour}
+              style={[
+                styles.barreJour,
+                {
+                  height: h,
+                  backgroundColor: dernierJour
+                    ? '#B87A45'
+                    : recent
+                      ? 'rgba(210,153,105,0.85)'
+                      : 'rgba(210,153,105,0.35)',
+                },
+              ]}
+            />
+          );
+        })}
+      </View>
+      <View style={styles.graphiqueLabels}>
+        <Text style={styles.graphiqueLabel}>{formatDateFr(premier)}</Text>
+        <Text style={styles.graphiqueLabel}>{formatDateFr(milieu)}</Text>
+        <Text style={styles.graphiqueLabel}>{formatDateFr(dernier)}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   section: {
     ...styleTitreSection,
@@ -489,7 +558,7 @@ const styles = StyleSheet.create({
   },
   sousSection: {
     fontSize: tailles.petit,
-    fontWeight: '600',
+    fontWeight: '500',
     color: couleurs.texteSecondaire,
   },
   puces: {
@@ -509,8 +578,8 @@ const styles = StyleSheet.create({
   },
   puceTexte: {
     fontSize: tailles.petit,
-    color: couleurs.texte,
-    fontWeight: '600',
+    color: couleurs.texteSecondaire,
+    fontWeight: '500',
   },
   puceTexteActive: {
     color: couleurs.texteSurPrincipal,
@@ -522,32 +591,81 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     color: couleurs.erreur,
   },
+  blocCa: {
+    gap: 6,
+    marginTop: espacements.s,
+  },
+  caLibelle: {
+    fontSize: 13,
+    color: couleurs.texteSecondaire,
+  },
+  caValeur: {
+    fontSize: tailles.ca,
+    fontWeight: '400',
+    letterSpacing: -1,
+    color: couleurs.texte,
+    fontVariant: ['tabular-nums'],
+  },
+  graphique: {
+    marginTop: 16,
+    gap: 8,
+  },
+  graphiqueBarres: {
+    height: 84,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: couleurs.bordure,
+    gap: 2,
+  },
+  barreJour: {
+    flex: 1,
+    maxWidth: 8,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+  },
+  graphiqueLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  graphiqueLabel: {
+    fontSize: 11,
+    color: couleurs.texteSecondaire,
+  },
   chiffres: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: espacements.s,
+    marginTop: espacements.m,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: couleurs.bordure,
   },
   chiffre: {
     flexGrow: 1,
-    flexBasis: '40%',
-    backgroundColor: couleurs.fondGroupe,
-    borderRadius: 10,
-    padding: espacements.m,
-    gap: espacements.xs,
+    flexBasis: '30%',
+    paddingVertical: espacements.xs,
+    paddingHorizontal: espacements.s,
+    gap: 4,
+    borderLeftWidth: 1,
+    borderLeftColor: couleurs.bordure,
   },
   chiffreLibelle: {
-    fontSize: tailles.petit,
+    fontSize: 12,
     color: couleurs.texteSecondaire,
   },
   chiffreValeur: {
-    fontSize: tailles.grand,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '500',
+    letterSpacing: -0.3,
     color: couleurs.texte,
+    fontVariant: ['tabular-nums'],
   },
   carteEmploye: {
     paddingVertical: 12,
     gap: espacements.s,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
     borderBottomColor: couleurs.bordure,
   },
   enteteCarte: {
@@ -561,24 +679,25 @@ const styles = StyleSheet.create({
   nomEmploye: {
     flex: 1,
     fontSize: tailles.normal,
-    fontWeight: '600',
+    fontWeight: '500',
     color: couleurs.texte,
   },
   montantEmploye: {
     fontSize: tailles.normal,
-    fontWeight: '600',
-    color: couleurs.principalFonce,
+    fontWeight: '500',
+    color: couleurs.texte,
+    fontVariant: ['tabular-nums'],
   },
   barreFond: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: couleurs.fondPuce,
+    height: 3,
+    borderRadius: 3,
+    backgroundColor: couleurs.fondSegment,
     overflow: 'hidden',
   },
   barreRemplie: {
     height: '100%',
-    backgroundColor: couleurs.principal,
-    borderRadius: 4,
+    backgroundColor: couleurs.croute,
+    borderRadius: 3,
   },
   detailLigne: {
     fontSize: tailles.petit,

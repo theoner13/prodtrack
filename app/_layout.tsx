@@ -25,12 +25,10 @@ const optionsAvecLogo = {
   headerShown: true as const,
   headerStyle: {
     backgroundColor: couleurs.fond,
-    borderBottomWidth: 1,
-    borderBottomColor: couleurs.bordure,
   },
   headerShadowVisible: false,
   headerTintColor: couleurs.texte,
-  headerTitleStyle: { fontSize: 16, fontWeight: '600' as const },
+  headerTitleStyle: { fontSize: 16, fontWeight: '500' as const },
   headerLeft: () => <LogoEntete />,
 };
 
@@ -49,8 +47,8 @@ export default function LayoutRacine() {
             />
           </Stack>
           <Gardien />
+          <AnimationAccueil />
         </AuthProvider>
-        <AnimationAccueil />
       </View>
     </QueryClientProvider>
   );
@@ -88,8 +86,9 @@ function Gardien() {
   useEffect(() => {
     if (!navigation?.key || chargement) return;
 
-    const racine = segments[0] ? String(segments[0]) : '';
-    const suite = segments[1] ? String(segments[1]) : '';
+    const parties = segments as string[];
+    const racine = parties[0] ? String(parties[0]) : '';
+    const suite = parties[1] ? String(parties[1]) : '';
     const etat = {
       connecte: session !== null,
       profil,

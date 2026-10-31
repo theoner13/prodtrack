@@ -2,20 +2,20 @@ import type { ReactNode } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatEuros } from '@/lib/format';
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, polices, tailles } from '@/theme';
 
 type Props = {
   nom: string;
   prixCentimes?: number;
   photoUrl?: string | null;
-  sousTitre?: string; // ex. nom du fabricant, stock
-  children?: ReactNode; // contenu libre à droite (compteur, badge…)
-  sousLigne?: ReactNode; // contenu sous la ligne photo + nom (ex. compteur)
-  alerte?: boolean; // bordure orange (stock sous le seuil)
-  onPressNom?: () => void; // ouvre la fiche produit (lien sur le nom seulement)
+  sousTitre?: string;
+  children?: ReactNode;
+  sousLigne?: ReactNode;
+  alerte?: boolean;
+  onPressNom?: () => void;
 };
 
-// Ligne produit : photo (ou initiale), nom, prix — style liste iOS sans carte.
+// Ligne produit : photo (ou initiale), nom, prix.
 export function CarteProduit({
   nom,
   prixCentimes,
@@ -67,55 +67,61 @@ export function CarteProduit({
   );
 }
 
-const TAILLE_PHOTO = 36;
+const TAILLE_PHOTO = 40;
 
 const styles = StyleSheet.create({
   ligneListe: {
     gap: espacements.s,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
     borderBottomColor: couleurs.bordure,
     backgroundColor: couleurs.fond,
   },
   alerte: {
-    backgroundColor: couleurs.alerteClair,
+    backgroundColor: couleurs.erreurClair,
   },
   ligne: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: espacements.m,
+    gap: 12,
   },
   photo: {
     width: TAILLE_PHOTO,
     height: TAILLE_PHOTO,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   initiale: {
-    backgroundColor: couleurs.principalClair,
+    backgroundColor: couleurs.principal,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lettre: {
-    fontSize: tailles.normal,
-    fontWeight: '600',
-    color: couleurs.principalFonce,
+    fontSize: tailles.petit,
+    fontWeight: '500',
+    color: couleurs.texteSurPrincipal,
+    fontFamily: polices.sans,
   },
   textes: {
     flex: 1,
     gap: 2,
+    minWidth: 0,
   },
   nom: {
-    fontSize: tailles.normal,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '400',
+    letterSpacing: -0.1,
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   nomLien: {
     color: couleurs.principal,
     textDecorationLine: 'underline',
+    textDecorationColor: couleurs.soulignement,
   },
   detail: {
-    fontSize: tailles.petit,
+    fontSize: tailles.legend,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   sousLigne: {
     alignItems: 'flex-end',

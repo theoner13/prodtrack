@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, polices, styleTitreEcran } from '@/theme';
 
 type Props = {
   titre?: string;
@@ -14,7 +14,7 @@ type Props = {
   pied?: ReactNode;
 };
 
-// Cadre commun à tous les écrans : marges 16, fond blanc, titre et défilement.
+// Cadre commun à tous les écrans : marges 20, fond blanc, titre et défilement.
 export function Ecran({
   titre,
   defilement = false,
@@ -78,24 +78,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contenu: {
-    padding: espacements.m,
+    padding: espacements.l,
     gap: espacements.s,
   },
   plein: {
     flex: 1,
   },
   titre: {
-    fontSize: tailles.titre,
-    fontWeight: '600',
-    color: couleurs.texte,
+    ...styleTitreEcran,
     marginBottom: espacements.xs,
+    fontFamily: polices.sans,
   },
   pied: {
-    paddingHorizontal: espacements.m,
+    paddingHorizontal: espacements.l,
     paddingTop: espacements.s,
     paddingBottom: espacements.s,
     gap: espacements.s,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 1,
     borderTopColor: couleurs.bordure,
     backgroundColor: couleurs.fond,
   },

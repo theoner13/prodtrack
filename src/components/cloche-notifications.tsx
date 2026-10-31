@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { useNombreNonLues } from '@/api/notifications';
 import { useAuth } from '@/auth/AuthProvider';
@@ -19,12 +19,8 @@ export function ClocheNotifications() {
       accessibilityLabel={n > 0 ? `Notifications, ${libelle} non lues` : 'Notifications'}
     >
       <View style={styles.boite}>
-        <Ionicons name="notifications-outline" size={22} color={couleurs.principal} />
-        {n > 0 ? (
-          <View style={styles.pastille}>
-            <Text style={styles.pastilleTexte}>{libelle}</Text>
-          </View>
-        ) : null}
+        <Ionicons name="notifications-outline" size={20} color={couleurs.texte} />
+        {n > 0 ? <View style={styles.pastille} /> : null}
       </View>
     </Link>
   );
@@ -32,27 +28,20 @@ export function ClocheNotifications() {
 
 const styles = StyleSheet.create({
   boite: {
-    width: 44,
-    height: 44,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pastille: {
     position: 'absolute',
-    top: -2,
-    right: -6,
-    minWidth: 22,
-    height: 22,
-    paddingHorizontal: 4,
-    borderRadius: 11,
-    backgroundColor: couleurs.erreur,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pastilleTexte: {
-    color: couleurs.texteSurPrincipal,
-    fontSize: 11,
-    fontWeight: '700',
-    lineHeight: 14,
+    top: 8,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: couleurs.croutePoint,
+    borderWidth: 2,
+    borderColor: couleurs.fond,
   },
 });

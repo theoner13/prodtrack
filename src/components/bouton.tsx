@@ -1,6 +1,14 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
-import { couleurs, espacements, hauteurBouton, rayon, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  hauteurBouton,
+  hauteurBoutonCompact,
+  polices,
+  rayon,
+  tailles,
+} from '@/theme';
 
 type Variante = 'principal' | 'secondaire' | 'danger';
 
@@ -12,6 +20,8 @@ type Props = {
   desactive?: boolean;
   /** Bouton fixe en pied d'écran : toute la largeur. */
   pleineLargeur?: boolean;
+  /** Hauteur réduite (ex. barre d'enregistrement flottante). */
+  compact?: boolean;
 };
 
 const textes: Record<Variante, string> = {
@@ -27,9 +37,11 @@ export function Bouton({
   chargement = false,
   desactive = false,
   pleineLargeur = false,
+  compact = false,
 }: Props) {
   const inactif = desactive || chargement;
   const texteSeul = variante === 'secondaire' || variante === 'danger';
+  const hauteur = compact ? hauteurBoutonCompact : hauteurBouton;
 
   return (
     <Pressable
@@ -41,6 +53,8 @@ export function Bouton({
       style={({ pressed }) => [
         texteSeul ? styles.texteSeul : styles.bouton,
         !texteSeul && {
+          height: hauteur,
+          borderRadius: compact ? 14 : rayon,
           backgroundColor: inactif ? couleurs.desactive : couleurs.principal,
         },
         pleineLargeur ? styles.pleineLargeur : !texteSeul && styles.autoLargeur,
@@ -54,9 +68,9 @@ export function Bouton({
           style={[
             texteSeul ? styles.texteLien : styles.texte,
             {
-              color: inactif
-                ? couleurs.texteSecondaire
-                : textes[variante],
+              color: inactif ? couleurs.texteSecondaire : textes[variante],
+              textDecorationLine: texteSeul ? 'underline' : 'none',
+              textDecorationColor: couleurs.soulignement,
             },
           ]}
         >
@@ -69,8 +83,6 @@ export function Bouton({
 
 const styles = StyleSheet.create({
   bouton: {
-    height: hauteurBouton,
-    borderRadius: rayon,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
@@ -82,7 +94,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   texteSeul: {
-    minHeight: hauteurBouton,
+    minHeight: hauteurBoutonCompact,
     paddingHorizontal: espacements.s,
     alignItems: 'center',
     justifyContent: 'center',
@@ -90,14 +102,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   appuye: {
-    opacity: 0.8,
+    opacity: 0.85,
+    transform: [{ scale: 0.97 }],
   },
   texte: {
     fontSize: tailles.bouton,
-    fontWeight: '600',
+    fontWeight: '500',
+    fontFamily: polices.sans,
   },
   texteLien: {
     fontSize: tailles.bouton,
-    fontWeight: '600',
+    fontWeight: '500',
+    fontFamily: polices.sans,
   },
 });

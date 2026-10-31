@@ -1,57 +1,26 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Link, Tabs } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Tabs } from 'expo-router';
 
-import { ClocheNotifications } from '@/components/cloche-notifications';
+import { ActionsEntete } from '@/components/actions-entete';
 import { LogoEntete } from '@/components/logo';
-import { couleurs, tailles } from '@/theme';
-
-function ActionsEntete() {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 16 }}>
-      <ClocheNotifications />
-      <Link href="/profil">
-        <Text style={{ color: couleurs.principal, fontSize: tailles.petit, fontWeight: '700' }}>Profil</Text>
-      </Link>
-    </View>
-  );
-}
+import { OngletIcone } from '@/components/onglet-icone';
+import { optionsOngletsCommunes } from '@/lib/options-onglets';
 
 export default function LayoutAdmin() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: {
-          backgroundColor: couleurs.fond,
-          borderBottomWidth: 1,
-          borderBottomColor: couleurs.bordure,
-        },
-        headerShadowVisible: false,
-        headerTintColor: couleurs.texte,
-        headerTitleStyle: { fontSize: 16, fontWeight: '600' },
+        ...optionsOngletsCommunes,
         headerLeft: () => <LogoEntete />,
         headerRight: () => <ActionsEntete />,
-        tabBarActiveTintColor: couleurs.principal,
-        tabBarInactiveTintColor: couleurs.ongletInactif,
-        tabBarStyle: {
-          backgroundColor: couleurs.surface,
-          borderTopWidth: 1,
-          borderTopColor: couleurs.bordure,
-        },
-        tabBarLabelStyle: { fontSize: tailles.petit },
-        sceneStyle: { backgroundColor: couleurs.fond },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Tableau de bord',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'stats-chart' : 'stats-chart-outline'}
-              color={typeof color === 'string' ? color : couleurs.texte}
-              size={22}
-            />
+          tabBarLabel: 'Tableau',
+          tabBarIcon: ({ focused }) => (
+            <OngletIcone nom="stats-chart-outline" nomActif="stats-chart" focused={focused} />
           ),
         }}
       />
@@ -59,12 +28,8 @@ export default function LayoutAdmin() {
         name="boutiques"
         options={{
           title: 'Boutiques',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'storefront' : 'storefront-outline'}
-              color={typeof color === 'string' ? color : couleurs.texte}
-              size={22}
-            />
+          tabBarIcon: ({ focused }) => (
+            <OngletIcone nom="storefront-outline" nomActif="storefront" focused={focused} />
           ),
         }}
       />
@@ -72,12 +37,8 @@ export default function LayoutAdmin() {
         name="employes"
         options={{
           title: 'Employés',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'people' : 'people-outline'}
-              color={typeof color === 'string' ? color : couleurs.texte}
-              size={22}
-            />
+          tabBarIcon: ({ focused }) => (
+            <OngletIcone nom="people-outline" nomActif="people" focused={focused} />
           ),
         }}
       />
@@ -85,12 +46,8 @@ export default function LayoutAdmin() {
         name="produits"
         options={{
           title: 'Produits',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'cube' : 'cube-outline'}
-              color={typeof color === 'string' ? color : couleurs.texte}
-              size={22}
-            />
+          tabBarIcon: ({ focused }) => (
+            <OngletIcone nom="pricetag-outline" nomActif="pricetag" focused={focused} />
           ),
         }}
       />
@@ -98,12 +55,8 @@ export default function LayoutAdmin() {
         name="export"
         options={{
           title: 'Export',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'download' : 'download-outline'}
-              color={typeof color === 'string' ? color : couleurs.texte}
-              size={22}
-            />
+          tabBarIcon: ({ focused }) => (
+            <OngletIcone nom="download-outline" nomActif="download" focused={focused} />
           ),
         }}
       />

@@ -16,7 +16,15 @@ import {
   libelleAccessibiliteLigne,
   type LignePlanning,
 } from '@/lib/planning';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  ombres,
+  polices,
+  tailles,
+} from '@/theme';
+
+const BORDURE_AUJOURDHUI = '#E6D8C6';
 
 function nomJour(jour: string, capitale: boolean): string {
   const date = new Date(`${jour}T12:00:00Z`);
@@ -25,6 +33,17 @@ function nomJour(jour: string, capitale: boolean): string {
   const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
   const libelle = `${nom} ${jj}/${mm}`;
   return capitale ? libelle.charAt(0).toUpperCase() + libelle.slice(1) : libelle;
+}
+
+function initialeJour(jour: string): string {
+  const date = new Date(`${jour}T12:00:00Z`);
+  const nom = date.toLocaleDateString('fr-FR', { weekday: 'short', timeZone: 'UTC' });
+  const court = nom.replace(/\./g, '').trim();
+  return court.charAt(0).toUpperCase() + court.slice(1);
+}
+
+function numeroJour(jour: string): string {
+  return String(new Date(`${jour}T12:00:00Z`).getUTCDate());
 }
 
 function formatMoment(iso: string): string {
@@ -81,12 +100,14 @@ function LigneProduitPlanning({
   prevision,
   deplie,
   onBasculer,
+  derniere,
 }: {
   ligne: LignePlanning;
   aujourdhui: string;
   prevision: PrevisionProduit | undefined;
   deplie: boolean;
   onBasculer: () => void;
+  derniere: boolean;
 }) {
   const aDetail = Boolean(prevision?.detail.length);
 
@@ -96,12 +117,9 @@ function LigneProduitPlanning({
       accessibilityLabel={libelleAccessibiliteLigne(ligne, aujourdhui)}
       accessibilityState={{ expanded: aDetail ? deplie : undefined }}
       onPress={aDetail ? onBasculer : undefined}
-      style={styles.ligneProduit}
+      style={[styles.ligneProduit, !derniere && styles.ligneProduitBordure]}
     >
       <View style={styles.ligneHaute}>
-        <View style={styles.pointSlot}>
-          {ligne.sousSeuil ? <View style={styles.point} /> : null}
-        </View>
         <View style={styles.centre}>
           <Pressable
             accessibilityRole="link"
@@ -119,12 +137,15 @@ function LigneProduitPlanning({
         </View>
         <View style={styles.droite}>
           {ligne.quantite !== null ? (
-            <>
+            <View style={styles.blocQuantite}>
               <Text style={styles.quantite}>{ligne.quantite}</Text>
               <Text style={styles.aFaire}>à faire</Text>
-            </>
+            </View>
           ) : (
-            <Text style={styles.desQuePossible}>dès que possible</Text>
+            <View style={styles.badgeUrgent}>
+              <View style={styles.pointUrgent} />
+              <Text style={styles.desQuePossible}>dès que possible</Text>
+            </View>
           )}
         </View>
       </View>
@@ -140,6 +161,7 @@ export default function EcranPlanning() {
   const previsions = useMesPrevisions(profil?.id ?? null);
   const stock = useStock(boutiqueId);
   const [ouvert, setOuvert] = useState<string | null>(null);
+  const [jourSelectionne, setJourSelectionne] = useState<string | null>(null);
 
   async function rafraichir() {
     await Promise.all([mes.refetch(), previsions.refetch(), stock.refetch()]);
@@ -228,6 +250,8 @@ export default function EcranPlanning() {
   });
 
   const groupes = construirePlanning(entrees, aujourdhui);
+  const jourActif = jourSelectionne ?? aujourdhui;
+  const groupeActif = groupes.find((groupe) => groupe.jour === jourActif) ?? groupes[0];
   const aSousSeuil = groupes.some((groupe) => groupe.lignes.some((ligne) => ligne.sousSeuil));
   const aIndicative = groupes.some((groupe) =>
     groupe.lignes.some((ligne) => ligne.fiable === false),
@@ -254,27 +278,84 @@ export default function EcranPlanning() {
         </Text>
       ) : null}
 
-      {groupes.map((groupe) => (
-        <View key={groupe.jour} style={styles.caseJour}>
-          <Text style={styles.enteteJour}>{groupe.libelle}</Text>
-          {groupe.lignes.length === 0 ? (
-            <Text style={styles.jourVide}>Rien à fabriquer</Text>
-          ) : (
-            groupe.lignes.map((ligne) => (
-              <LigneProduitPlanning
-                key={ligne.produitId}
-                ligne={ligne}
-                aujourdhui={aujourdhui}
-                prevision={previsionParId.get(ligne.produitId)}
-                deplie={ouvert === ligne.produitId}
-                onBasculer={() =>
-                  setOuvert((actuel) => (actuel === ligne.produitId ? null : ligne.produitId))
-                }
-              />
-            ))
-          )}
-        </View>
-      ))}
+      <View style={styles.bandeJours} accessibilityRole="tablist">
+        {groupes.map((groupe) => {
+          const selectionne = groupe.jour === groupeActif.jour;
+          const estAujourdhui = groupe.jour === aujourdhui;
+          return (
+            <Pressable
+              key={groupe.jour}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: selectionne }}
+              accessibilityLabel={groupe.libelle}
+              onPress={() => {
+                setJourSelectionne(groupe.jour);
+                setOuvert(null);
+              }}
+              style={[
+                styles.caseJour,
+                selectionne && styles.caseJourActive,
+                !selectionne && estAujourdhui && styles.caseJourAujourdhui,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.caseJourSemaine,
+                  selectionne && styles.caseJourSemaineActive,
+                ]}
+              >
+                {initialeJour(groupe.jour)}
+              </Text>
+              <Text
+                style={[styles.caseJourNumero, selectionne && styles.caseJourNumeroActive]}
+              >
+                {numeroJour(groupe.jour)}
+              </Text>
+              <View style={styles.pointsJour}>
+                {groupe.lignes.slice(0, 3).map((ligne) => (
+                  <View
+                    key={ligne.produitId}
+                    style={[
+                      styles.pointJour,
+                      {
+                        backgroundColor: selectionne
+                          ? ligne.sousSeuil
+                            ? '#F2A49B'
+                            : '#E9B98C'
+                          : ligne.sousSeuil
+                            ? couleurs.erreur
+                            : couleurs.croutePoint,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <Text style={styles.enteteJour}>{groupeActif.libelle}</Text>
+
+      <View style={styles.carteListe}>
+        {groupeActif.lignes.length === 0 ? (
+          <Text style={styles.jourVide}>Rien à fabriquer</Text>
+        ) : (
+          groupeActif.lignes.map((ligne, index) => (
+            <LigneProduitPlanning
+              key={ligne.produitId}
+              ligne={ligne}
+              aujourdhui={aujourdhui}
+              prevision={previsionParId.get(ligne.produitId)}
+              deplie={ouvert === ligne.produitId}
+              derniere={index === groupeActif.lignes.length - 1}
+              onBasculer={() =>
+                setOuvert((actuel) => (actuel === ligne.produitId ? null : ligne.produitId))
+              }
+            />
+          ))
+        )}
+      </View>
 
       {aSousSeuil ? <Text style={styles.legende}>● sous le seuil de stock</Text> : null}
       {dernier ? <Text style={styles.calcul}>Dernier calcul : {formatMoment(dernier)}</Text> : null}
@@ -287,105 +368,185 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     marginBottom: espacements.s,
+    fontFamily: polices.sans,
   },
   indicative: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     marginBottom: espacements.s,
+    fontFamily: polices.sans,
+  },
+  bandeJours: {
+    flexDirection: 'row',
+    gap: 4,
+    padding: 6,
+    borderRadius: 22,
+    backgroundColor: couleurs.fondSegment,
+    marginBottom: espacements.s,
   },
   caseJour: {
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
-    borderRadius: rayon,
-    padding: espacements.s,
-    marginBottom: espacements.s,
+    flex: 1,
+    minHeight: 84,
+    paddingTop: 9,
+    paddingBottom: 10,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'transparent',
+  },
+  caseJourActive: {
+    backgroundColor: couleurs.principal,
+    ...ombres.jourActif,
+  },
+  caseJourAujourdhui: {
     backgroundColor: couleurs.fond,
+    borderWidth: 1,
+    borderColor: BORDURE_AUJOURDHUI,
+  },
+  caseJourSemaine: {
+    fontSize: 10,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
+  },
+  caseJourSemaineActive: {
+    color: '#E8D9C6',
+  },
+  caseJourNumero: {
+    fontSize: 19,
+    fontWeight: '500',
+    letterSpacing: -0.4,
+    color: couleurs.texte,
+    fontFamily: polices.sans,
+  },
+  caseJourNumeroActive: {
+    color: couleurs.texteSurPrincipal,
+  },
+  pointsJour: {
+    height: 6,
+    flexDirection: 'row',
+    gap: 3,
+    alignItems: 'center',
+  },
+  pointJour: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   enteteJour: {
-    fontSize: tailles.normal,
-    fontWeight: '700',
+    fontSize: tailles.grand,
+    fontWeight: '500',
     color: couleurs.texte,
     marginBottom: espacements.xs,
+    letterSpacing: -0.4,
+    fontFamily: polices.sans,
+  },
+  carteListe: {
+    borderRadius: 22,
+    backgroundColor: couleurs.fond,
+    borderWidth: 1,
+    borderColor: couleurs.bordureDouce,
+    paddingHorizontal: espacements.m,
+    marginBottom: espacements.s,
   },
   jourVide: {
-    fontSize: tailles.petit,
-    color: couleurs.texteSecondaire,
-    paddingVertical: 4,
+    fontSize: tailles.normal,
+    color: couleurs.texte,
+    paddingVertical: 34,
+    textAlign: 'center',
+    fontFamily: polices.sans,
   },
   ligneProduit: {
-    paddingVertical: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: couleurs.bordure,
+    paddingVertical: 15,
     backgroundColor: couleurs.fond,
     gap: espacements.s,
+  },
+  ligneProduitBordure: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1E9DE',
   },
   ligneHaute: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: espacements.s,
-  },
-  pointSlot: {
-    width: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  point: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: couleurs.alerte,
+    gap: 12,
   },
   centre: {
     flex: 1,
-    gap: 2,
+    gap: 3,
     minWidth: 0,
   },
   nomLien: {
-    fontSize: tailles.normal,
-    fontWeight: '600',
-    color: couleurs.principal,
-    textDecorationLine: 'underline',
+    fontSize: 16,
+    fontWeight: '500',
+    color: couleurs.texte,
+    letterSpacing: -0.1,
+    fontFamily: polices.sans,
   },
   badge: {
     alignSelf: 'flex-start',
     overflow: 'hidden',
-    backgroundColor: couleurs.fondPuce,
+    backgroundColor: couleurs.fondGroupe,
     color: couleurs.texteSecondaire,
-    fontSize: 12,
-    fontWeight: '600',
-    paddingHorizontal: espacements.s,
-    paddingVertical: 2,
-    borderRadius: 8,
+    fontSize: 11,
+    fontWeight: '500',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 5,
     marginTop: 2,
+    fontFamily: polices.sans,
   },
   droite: {
     alignItems: 'flex-end',
     justifyContent: 'center',
-    minWidth: 56,
+  },
+  blocQuantite: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
   },
   quantite: {
     fontSize: tailles.grand,
-    fontWeight: '700',
+    fontWeight: '500',
     color: couleurs.texte,
+    letterSpacing: -0.4,
+    fontFamily: polices.sans,
   },
   aFaire: {
-    fontSize: tailles.petit,
+    fontSize: 12,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
+  },
+  badgeUrgent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: couleurs.erreurClair,
+  },
+  pointUrgent: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: couleurs.erreur,
   },
   desQuePossible: {
-    fontSize: tailles.petit,
-    color: couleurs.texteSecondaire,
-    textAlign: 'right',
-    maxWidth: 88,
+    fontSize: 12,
+    fontWeight: '500',
+    color: couleurs.erreur,
+    fontFamily: polices.sans,
   },
   detail: {
     gap: 2,
-    paddingLeft: 8 + espacements.s,
+    paddingBottom: 4,
   },
   repere: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     marginTop: 2,
+    fontFamily: polices.sans,
   },
   ligneTableau: {
     flexDirection: 'row',
@@ -403,10 +564,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   cellule: {
     fontSize: 12,
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   orange: {
     color: couleurs.alerte,
@@ -416,10 +579,12 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     marginTop: espacements.m,
+    fontFamily: polices.sans,
   },
   calcul: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     marginTop: espacements.s,
+    fontFamily: polices.sans,
   },
 });

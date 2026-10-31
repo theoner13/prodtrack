@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Logo } from '@/components/logo';
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, polices, styleTitreEcran } from '@/theme';
 
 type Props = {
   titre: string;
@@ -48,7 +48,7 @@ export function EcranAuth({
           <View style={[styles.bloc, { maxWidth: largeurMax }]}>
             {avecLogo ? (
               <View style={styles.logoWrap}>
-                <Logo />
+                <Logo variante="complet" taille={160} />
               </View>
             ) : null}
             <Text style={styles.titre}>{titre}</Text>
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
-    padding: espacements.m,
+    padding: espacements.l,
   },
   scrollCentre: {
     justifyContent: 'center',
@@ -82,13 +82,12 @@ const styles = StyleSheet.create({
   },
   logoWrap: {
     alignItems: 'center',
-    marginBottom: espacements.xs,
+    marginBottom: espacements.s,
   },
   titre: {
-    fontSize: tailles.titre,
-    fontWeight: '600',
-    color: couleurs.texte,
+    ...styleTitreEcran,
     textAlign: 'center',
     marginBottom: espacements.xs,
+    fontFamily: polices.sans,
   },
 });

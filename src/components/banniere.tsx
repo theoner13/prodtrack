@@ -1,17 +1,16 @@
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, polices, rayon, tailles } from '@/theme';
 
 type Props = {
-  message: string | null; // null = rien à afficher
+  message: string | null;
   type?: 'succes' | 'erreur';
   onFermer: () => void;
-  duree?: number; // ms avant disparition automatique
+  duree?: number;
 };
 
 // Bannière de confirmation (ou d'erreur) qui disparaît toute seule.
-// Toucher la bannière la ferme tout de suite.
 export function Banniere({ message, type = 'succes', onFermer, duree = 3000 }: Props) {
   useEffect(() => {
     if (!message) return;
@@ -28,11 +27,17 @@ export function Banniere({ message, type = 'succes', onFermer, duree = 3000 }: P
       onPress={onFermer}
       style={[
         styles.banniere,
-        { backgroundColor: succes ? couleurs.succesClair : couleurs.erreurClair },
-        { borderColor: succes ? couleurs.succes : couleurs.erreur },
+        succes
+          ? { backgroundColor: couleurs.principal }
+          : { backgroundColor: couleurs.erreurClair, borderWidth: 1, borderColor: couleurs.erreur },
       ]}
     >
-      <Text style={[styles.texte, { color: succes ? couleurs.succes : couleurs.erreur }]}>
+      <Text
+        style={[
+          styles.texte,
+          { color: succes ? couleurs.texteSurPrincipal : couleurs.erreur },
+        ]}
+      >
         {succes ? '✓ ' : '⚠ '}
         {message}
       </Text>
@@ -42,12 +47,12 @@ export function Banniere({ message, type = 'succes', onFermer, duree = 3000 }: P
 
 const styles = StyleSheet.create({
   banniere: {
-    borderWidth: 1,
     borderRadius: rayon,
     padding: espacements.m,
   },
   texte: {
-    fontSize: tailles.normal,
-    fontWeight: '600',
+    fontSize: tailles.petit,
+    fontWeight: '500',
+    fontFamily: polices.sans,
   },
 });

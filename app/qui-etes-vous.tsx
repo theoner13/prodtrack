@@ -14,10 +14,9 @@ import { useAuth } from '@/auth/AuthProvider';
 import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
 import { Ecran } from '@/components/ecran';
-import { Logo } from '@/components/logo';
 import { PaveNumerique } from '@/components/pave-numerique';
 import type { CompteAppareil } from '@/lib/comptes-appareil';
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, polices, rayon, tailles } from '@/theme';
 import type { RoleEmploye } from '@/types/database';
 
 const ROLES: Record<RoleEmploye, string> = {
@@ -36,6 +35,7 @@ export default function EcranQuiEtesVous() {
     definirAnnonce,
     basculerVersCompte,
     preparerAjoutCompte,
+    boutiqueNom,
   } = useAuth();
   const { width } = useWindowDimensions();
   const [compteChoisi, setCompteChoisi] = useState<CompteAppareil | null>(null);
@@ -76,6 +76,7 @@ export default function EcranQuiEtesVous() {
   }
 
   if (compteChoisi) {
+    const initiale = compteChoisi.prenom.trim().charAt(0).toUpperCase() || '?';
     return (
       <Ecran>
         <Banniere
@@ -88,7 +89,9 @@ export default function EcranQuiEtesVous() {
           contentContainerStyle={styles.centreScroll}
           keyboardShouldPersistTaps="handled"
         >
-          <Logo />
+          <View style={styles.avatarCode}>
+            <Text style={styles.avatarCodeLettre}>{initiale}</Text>
+          </View>
           <Text style={styles.titreCode}>Code de {compteChoisi.prenom}</Text>
           <Text style={styles.consigne}>Saisissez votre code à 4 chiffres.</Text>
           <PaveNumerique valeur={saisie} onChange={(valeur) => void onSaisie(valeur)} />
@@ -110,9 +113,13 @@ export default function EcranQuiEtesVous() {
   return (
     <Ecran titre="Qui êtes-vous ?" defilement>
       <Banniere message={annonce} type="erreur" onFermer={() => definirAnnonce(null)} />
+      {boutiqueNom ? (
+        <Text style={styles.sousTitre}>{boutiqueNom} · tablette partagée</Text>
+      ) : null}
       <View style={styles.grille}>
         {comptes.map((compte) => {
           const photoUrl = compte.photo_url ? photos.data?.[compte.photo_url] : null;
+          const initiale = compte.prenom.trim().charAt(0).toUpperCase() || '?';
           return (
             <Pressable
               key={compte.id}
@@ -138,15 +145,15 @@ export default function EcranQuiEtesVous() {
                   />
                 ) : (
                   <View style={[styles.photo, styles.initiale]}>
-                    <Text style={styles.lettre}>
-                      {compte.prenom.trim().charAt(0).toUpperCase() || '?'}
-                    </Text>
+                    <Text style={styles.lettre}>{initiale}</Text>
                   </View>
                 )}
-                <Text style={styles.prenom} numberOfLines={1}>
-                  {compte.prenom}
-                </Text>
-                <Text style={styles.role}>{ROLES[compte.role]}</Text>
+                <View style={styles.tuileTextes}>
+                  <Text style={styles.prenom} numberOfLines={1}>
+                    {compte.prenom}
+                  </Text>
+                  <Text style={styles.role}>{ROLES[compte.role]}</Text>
+                </View>
               </View>
             </Pressable>
           );
@@ -161,7 +168,7 @@ export default function EcranQuiEtesVous() {
   );
 }
 
-const TAILLE_PHOTO = 88;
+const TAILLE_PHOTO = 40;
 
 const styles = StyleSheet.create({
   flex: {
@@ -173,37 +180,62 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: espacements.m,
+    paddingVertical: espacements.xl,
+  },
+  sousTitre: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    marginTop: -espacements.xs,
+    marginBottom: espacements.s,
+    fontFamily: polices.sans,
   },
   titreCode: {
-    fontSize: tailles.titre,
-    fontWeight: '600',
+    fontSize: tailles.titreMoyen,
+    fontWeight: '500',
     color: couleurs.texte,
     textAlign: 'center',
+    letterSpacing: -0.3,
+    fontFamily: polices.sans,
   },
   consigne: {
-    fontSize: tailles.normal,
-    color: couleurs.texte,
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
     textAlign: 'center',
+    fontFamily: polices.sans,
+  },
+  avatarCode: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: couleurs.principal,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarCodeLettre: {
+    fontSize: 20,
+    fontWeight: '500',
+    color: couleurs.texteSurPrincipal,
+    fontFamily: polices.sans,
   },
   grille: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -espacements.s,
+    marginHorizontal: -5,
   },
   tuile: {
-    padding: espacements.s,
+    padding: 5,
   },
   tuileInterieur: {
-    alignItems: 'center',
-    gap: espacements.s,
-    paddingVertical: espacements.m,
-    paddingHorizontal: espacements.s,
-    borderRadius: 10,
+    alignItems: 'flex-start',
+    gap: 20,
+    padding: 16,
+    borderRadius: rayon,
     backgroundColor: couleurs.fondGroupe,
-    minHeight: 160,
+    minHeight: 120,
   },
   tuileAppuyee: {
-    opacity: 0.8,
+    transform: [{ scale: 0.96 }],
+    opacity: 0.92,
   },
   photo: {
     width: TAILLE_PHOTO,
@@ -211,29 +243,34 @@ const styles = StyleSheet.create({
     borderRadius: TAILLE_PHOTO / 2,
   },
   initiale: {
-    backgroundColor: couleurs.principalClair,
+    backgroundColor: couleurs.principal,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lettre: {
-    fontSize: tailles.titre,
-    fontWeight: '700',
-    color: couleurs.principalFonce,
+    fontSize: 15,
+    fontWeight: '500',
+    color: couleurs.texteSurPrincipal,
+    fontFamily: polices.sans,
+  },
+  tuileTextes: {
+    gap: 2,
   },
   prenom: {
-    fontSize: tailles.normal,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '500',
     color: couleurs.texte,
-    textAlign: 'center',
+    fontFamily: polices.sans,
   },
   role: {
-    fontSize: tailles.petit,
+    fontSize: 13,
     color: couleurs.texteSecondaire,
-    textAlign: 'center',
+    fontFamily: polices.sans,
   },
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
     textAlign: 'center',
+    fontFamily: polices.sans,
   },
 });

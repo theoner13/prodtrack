@@ -77,7 +77,7 @@ export default function EcranDeverrouiller() {
   return (
     <Ecran>
       <View style={styles.centre}>
-        <Logo />
+        <Logo variante="complet" taille={140} />
         <Text style={styles.titre}>Déverrouiller</Text>
         <Text style={styles.consigne}>Saisissez votre code à 4 chiffres.</Text>
         <PaveNumerique valeur={saisie} onChange={(valeur) => void onSaisie(valeur)} />

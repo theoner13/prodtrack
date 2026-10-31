@@ -28,7 +28,14 @@ import { ChoixSegmente } from '@/components/choix-segmente';
 import { Compteur } from '@/components/compteur';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  polices,
+  rayonPetit,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 
 type Props = {
   type: 'production' | 'sortie';
@@ -676,6 +683,7 @@ const styles = StyleSheet.create({
   rappel: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   section: {
     ...styleTitreSection,
@@ -684,11 +692,12 @@ const styles = StyleSheet.create({
   vide: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   saisie: {
     gap: espacements.s,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
     borderBottomColor: couleurs.bordure,
   },
   saisieInfos: {
@@ -700,12 +709,14 @@ const styles = StyleSheet.create({
   saisieTexte: {
     flex: 1,
     fontSize: tailles.normal,
-    fontWeight: '600',
+    fontWeight: '500',
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   heure: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   confirmation: {
     gap: espacements.s,
@@ -713,12 +724,15 @@ const styles = StyleSheet.create({
   confirmationTexte: {
     fontSize: tailles.petit,
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   formulairePerte: {
     gap: espacements.m,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: rayonPetit,
     backgroundColor: couleurs.fondGroupe,
+    borderWidth: 1,
+    borderColor: couleurs.bordure,
   },
   label: {
     ...styleTitreSection,
@@ -727,12 +741,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: espacements.s,
+    padding: 2,
+    borderRadius: rayonPetit,
+    backgroundColor: couleurs.fondSegment,
   },
   puce: {
     height: 32,
     paddingHorizontal: espacements.m,
-    borderRadius: 16,
-    backgroundColor: couleurs.fondPuce,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
     justifyContent: 'center',
   },
   puceActive: {
@@ -740,11 +757,13 @@ const styles = StyleSheet.create({
   },
   puceTexte: {
     fontSize: tailles.petit,
-    color: couleurs.texte,
-    fontWeight: '600',
+    color: couleurs.texteSecondaire,
+    fontWeight: '400',
+    fontFamily: polices.sans,
   },
   puceTexteActive: {
     color: couleurs.texteSurPrincipal,
+    fontWeight: '500',
   },
   case: {
     flexDirection: 'row',
@@ -760,20 +779,23 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: tailles.normal,
     color: couleurs.texte,
-    fontWeight: '600',
+    fontWeight: '500',
+    fontFamily: polices.sans,
   },
   aideCase: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   badge: {
     overflow: 'hidden',
-    backgroundColor: couleurs.principalClair,
-    color: couleurs.principalFonce,
-    fontSize: 12,
-    fontWeight: '600',
-    paddingHorizontal: espacements.s,
-    paddingVertical: 2,
-    borderRadius: 8,
+    backgroundColor: couleurs.fondGroupe,
+    color: couleurs.texteSecondaire,
+    fontSize: 11,
+    fontWeight: '500',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 5,
+    fontFamily: polices.sans,
   },
 });

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -22,6 +21,7 @@ import { messageErreur } from '@/auth/erreurs';
 import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
 import { CarteProduit } from '@/components/carte-produit';
+import { ChoixSegmente } from '@/components/choix-segmente';
 import { Compteur } from '@/components/compteur';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
@@ -36,7 +36,7 @@ import {
   messageDepassementLigne,
   texteMisEnVente,
 } from '@/lib/mis-en-vente';
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, ombres, polices, tailles } from '@/theme';
 
 type ValeursProduit = { vendu: number; jete: number; reste: number };
 
@@ -126,6 +126,19 @@ export default function EcranFinDeJournee() {
   const photos = useUrlsSignees(chemins);
 
   const fermerMessage = useCallback(() => setMessage(null), []);
+
+  const totaux = useMemo(() => {
+    let vendus = 0;
+    let jetes = 0;
+    let reste = 0;
+    for (const produit of listeVendables) {
+      const v = valeurs[produit.id] ?? { vendu: 0, jete: 0, reste: 0 };
+      vendus += v.vendu;
+      jetes += v.jete;
+      reste += v.reste;
+    }
+    return { vendus, jetes, reste };
+  }, [listeVendables, valeurs]);
 
   const lignesAEnvoyer = useMemo((): LigneSaisie[] => {
     return listeVendables
@@ -252,6 +265,7 @@ export default function EcranFinDeJournee() {
   }
 
   const liste = listeVendables;
+  const jourChoisi: 'aujourdhui' | 'hier' = jour === hier ? 'hier' : 'aujourdhui';
 
   return (
     <Ecran
@@ -262,7 +276,7 @@ export default function EcranFinDeJournee() {
       onRafraichir={() => void rafraichir()}
       pied={
         liste.length > 0 ? (
-          <>
+          <View style={styles.piedFeuille}>
             {texteModifications ? (
               <Text style={styles.confirmation}>{texteModifications}</Text>
             ) : null}
@@ -273,37 +287,40 @@ export default function EcranFinDeJournee() {
               onPress={() => void soumettre()}
               chargement={enregistrer.isPending}
             />
-          </>
+          </View>
         ) : undefined
       }
     >
       <Text style={styles.date}>{majusculeInitiale(formatJourComplet(jour))}</Text>
-      <View style={styles.choixJour}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ selected: jour === aujourdhui }}
-          onPress={() => {
-            setJour(aujourdhui);
-            router.setParams({ jour: aujourdhui });
-          }}
-          style={[styles.puce, jour === aujourdhui && styles.puceActive]}
-        >
-          <Text style={[styles.puceTexte, jour === aujourdhui && styles.puceTexteActive]}>
-            Aujourd'hui
-          </Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ selected: jour === hier }}
-          onPress={() => {
-            setJour(hier);
-            router.setParams({ jour: hier });
-          }}
-          style={[styles.puce, jour === hier && styles.puceActive]}
-        >
-          <Text style={[styles.puceTexte, jour === hier && styles.puceTexteActive]}>Hier</Text>
-        </Pressable>
-      </View>
+      <ChoixSegmente
+        options={[
+          { valeur: 'aujourdhui', libelle: "Aujourd'hui" },
+          { valeur: 'hier', libelle: 'Hier' },
+        ]}
+        valeur={jourChoisi}
+        onChange={(valeur) => {
+          const prochain = valeur === 'hier' ? hier : aujourdhui;
+          setJour(prochain);
+          router.setParams({ jour: prochain });
+        }}
+      />
+
+      {liste.length > 0 ? (
+        <View style={styles.totaux}>
+          <View style={styles.totalColonne}>
+            <Text style={styles.totalLibelle}>Vendus</Text>
+            <Text style={styles.totalValeur}>{totaux.vendus}</Text>
+          </View>
+          <View style={[styles.totalColonne, styles.totalColonneMilieu]}>
+            <Text style={styles.totalLibelle}>Jetés</Text>
+            <Text style={styles.totalValeur}>{totaux.jetes}</Text>
+          </View>
+          <View style={[styles.totalColonne, styles.totalColonneMilieu]}>
+            <Text style={styles.totalLibelle}>Reste</Text>
+            <Text style={styles.totalValeur}>{totaux.reste}</Text>
+          </View>
+        </View>
+      ) : null}
 
       {liste.length === 0 ? (
         <EtatVide message="Aucun produit dans cette boutique pour l'instant." />
@@ -371,6 +388,7 @@ function LigneVente({
         libelle={`Jeté ${produit.nom}`}
         valeur={valeurs.jete}
         etroit={etroit}
+        danger
         onChange={(valeur) => onChange('jete', valeur)}
       />
       <ChampCompteur
@@ -402,19 +420,27 @@ function ChampCompteur({
   libelle,
   valeur,
   etroit,
+  danger,
   onChange,
 }: {
   etiquette: string;
   libelle: string;
   valeur: number;
   etroit: boolean;
+  danger?: boolean;
   onChange: (valeur: number) => void;
 }) {
   if (etroit) {
     return (
       <View style={styles.ligneEtroit}>
         <Text style={styles.etiquette}>{etiquette}</Text>
-        <Compteur valeur={valeur} onChange={onChange} libelle={libelle} compact />
+        <Compteur
+          valeur={valeur}
+          onChange={onChange}
+          libelle={libelle}
+          compact
+          danger={danger}
+        />
       </View>
     );
   }
@@ -422,7 +448,13 @@ function ChampCompteur({
   return (
     <View style={styles.colonneLarge}>
       <Text style={styles.etiquetteCentre}>{etiquette}</Text>
-      <Compteur valeur={valeur} onChange={onChange} libelle={libelle} compact />
+      <Compteur
+        valeur={valeur}
+        onChange={onChange}
+        libelle={libelle}
+        compact
+        danger={danger}
+      />
     </View>
   );
 }
@@ -430,32 +462,46 @@ function ChampCompteur({
 const styles = StyleSheet.create({
   date: {
     fontSize: tailles.grand,
-    fontWeight: '600',
+    fontWeight: '500',
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
-  choixJour: {
+  totaux: {
+    marginTop: espacements.s,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: couleurs.bordure,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: espacements.s,
   },
-  puce: {
-    height: 32,
-    paddingHorizontal: espacements.m,
-    borderRadius: 16,
-    backgroundColor: couleurs.fondPuce,
-    justifyContent: 'center',
-    alignItems: 'center',
+  totalColonne: {
+    flex: 1,
+    gap: 2,
   },
-  puceActive: {
-    backgroundColor: couleurs.principal,
+  totalColonneMilieu: {
+    paddingLeft: espacements.m,
+    borderLeftWidth: 1,
+    borderLeftColor: couleurs.bordure,
   },
-  puceTexte: {
-    fontSize: tailles.petit,
+  totalLibelle: {
+    fontSize: 12,
+    color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
+  },
+  totalValeur: {
+    fontSize: 22,
+    fontWeight: '400',
+    letterSpacing: -0.6,
     color: couleurs.texte,
-    fontWeight: '600',
+    fontFamily: polices.sans,
   },
-  puceTexteActive: {
-    color: couleurs.texteSurPrincipal,
+  piedFeuille: {
+    backgroundColor: couleurs.fondGroupe,
+    borderRadius: 18,
+    padding: 8,
+    paddingLeft: espacements.m,
+    gap: espacements.s,
+    ...ombres.feuille,
   },
   sousLignePleine: {
     alignSelf: 'stretch',
@@ -486,22 +532,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: couleurs.texte,
     minWidth: 56,
+    fontFamily: polices.sans,
   },
   etiquetteCentre: {
     fontSize: tailles.petit,
     fontWeight: '600',
     color: couleurs.texte,
     textAlign: 'center',
+    fontFamily: polices.sans,
   },
   confirmation: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     textAlign: 'center',
+    fontFamily: polices.sans,
   },
   depassement: {
     width: '100%',
     fontSize: tailles.petit,
     color: couleurs.alerte,
     fontWeight: '600',
+    fontFamily: polices.sans,
   },
 });

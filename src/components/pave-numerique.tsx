@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { couleurs, espacements } from '@/theme';
+import { couleurs, espacements, polices } from '@/theme';
 
 type Props = {
   valeur: string;
@@ -18,14 +18,15 @@ const LIGNES: Touche[][] = [
 ];
 
 function diametreTouche(largeurEcran: number): number {
-  return Math.min(84, Math.max(64, Math.round(largeurEcran * 0.21)));
+  return Math.min(72, Math.max(64, Math.round(largeurEcran * 0.185)));
 }
 
 export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
   const { width } = useWindowDimensions();
   const diametre = diametreTouche(width);
-  const ecart = Math.round(diametre / 4);
-  const taillePoint = diametre >= 76 ? 14 : 12;
+  const ecart = Math.round(diametre / 3.5);
+  const taillePoint = 10;
+  const codeComplet = valeur.length >= longueur;
 
   function ajouter(chiffre: string) {
     if (valeur.length >= longueur) return;
@@ -34,26 +35,35 @@ export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
 
   return (
     <View style={[styles.bloc, { gap: ecart + espacements.s }]}>
-      <View style={[styles.points, { gap: espacements.m }]}>
-        {Array.from({ length: longueur }, (_, index) => (
-          <View
-            key={index}
-            style={[
-              {
-                width: taillePoint,
-                height: taillePoint,
-                borderRadius: taillePoint / 2,
-                borderWidth: StyleSheet.hairlineWidth,
-                borderColor: couleurs.principal,
-              },
-              index < valeur.length ? styles.pointRempli : null,
-            ]}
-          />
-        ))}
+      <View style={[styles.points, { gap: 16 }]}>
+        {Array.from({ length: longueur }, (_, index) => {
+          const rempli = index < valeur.length;
+          return (
+            <View
+              key={index}
+              style={[
+                {
+                  width: taillePoint,
+                  height: taillePoint,
+                  borderRadius: taillePoint / 2,
+                },
+                rempli
+                  ? {
+                      backgroundColor: codeComplet ? couleurs.succes : couleurs.principal,
+                    }
+                  : {
+                      borderWidth: 1,
+                      borderColor: couleurs.texteMuet,
+                      backgroundColor: 'transparent',
+                    },
+              ]}
+            />
+          );
+        })}
       </View>
       <View style={[styles.grille, { gap: ecart }]}>
         {LIGNES.map((ligne, indexLigne) => (
-          <View key={indexLigne} style={[styles.ligne, { gap: ecart }]}>
+          <View key={indexLigne} style={[styles.ligne, { gap: 28 }]}>
             {ligne.map((touche) => {
               if (touche === '') {
                 return <View key={`vide-${indexLigne}`} style={{ width: diametre }} />;
@@ -70,14 +80,28 @@ export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
                       width: diametre,
                       height: diametre,
                       borderRadius: diametre / 2,
-                      backgroundColor: couleurs.fondPuce,
+                      backgroundColor: effacer
+                        ? 'transparent'
+                        : pressed
+                          ? couleurs.principal
+                          : couleurs.fondPuce,
                       alignItems: 'center',
                       justifyContent: 'center',
+                      transform: pressed ? [{ scale: 0.94 }] : undefined,
                     },
-                    pressed && styles.appuye,
                   ]}
                 >
-                  <Text style={styles.texteTouche}>{effacer ? '⌫' : touche}</Text>
+                  {({ pressed }) => (
+                    <Text
+                      style={[
+                        styles.texteTouche,
+                        effacer && styles.effacer,
+                        !effacer && pressed && styles.toucheAppuyee,
+                      ]}
+                    >
+                      {effacer ? '⌫' : touche}
+                    </Text>
+                  )}
                 </Pressable>
               );
             })}
@@ -93,21 +117,26 @@ const styles = StyleSheet.create({
   points: {
     flexDirection: 'row',
     justifyContent: 'center',
-  },
-  pointRempli: {
-    backgroundColor: couleurs.principal,
+    height: 10,
+    alignItems: 'center',
   },
   grille: {},
   ligne: {
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  appuye: {
-    backgroundColor: couleurs.desactive,
-  },
   texteTouche: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '300',
     color: couleurs.texte,
+    fontFamily: polices.sans,
+    fontVariant: ['tabular-nums'],
+  },
+  toucheAppuyee: {
+    color: couleurs.texteSurPrincipal,
+  },
+  effacer: {
+    color: couleurs.texteSecondaire,
+    fontSize: 22,
   },
 });

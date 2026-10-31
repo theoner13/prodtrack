@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { couleurs, rayon, tailles } from '@/theme';
+import { couleurs, polices, tailles } from '@/theme';
 
 type Option<T extends string> = {
   valeur: T;
@@ -54,12 +54,11 @@ export function ChoixSegmente<T extends string>({
 const styles = StyleSheet.create({
   cadre: {
     flexDirection: 'row',
-    height: 40,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
-    borderRadius: rayon,
+    height: 38,
+    padding: 2,
+    borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: couleurs.surface,
+    backgroundColor: couleurs.fondSegment,
   },
   cadreDesactive: {
     opacity: 0.7,
@@ -69,20 +68,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 8,
-    backgroundColor: couleurs.surface,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
   },
   optionChoisie: {
     backgroundColor: couleurs.principal,
   },
   texte: {
     fontSize: tailles.petit,
-    fontWeight: '600',
-    color: couleurs.texte,
+    fontWeight: '400',
+    color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   texteChoisi: {
     color: couleurs.texteSurPrincipal,
+    fontWeight: '500',
   },
   texteDesactive: {
-    color: couleurs.texteSecondaire,
+    color: couleurs.texteMuet,
   },
 });

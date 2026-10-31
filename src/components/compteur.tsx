@@ -1,41 +1,58 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { couleurs, tailles } from '@/theme';
+import { couleurs, polices, tailles } from '@/theme';
 
 const DIAMETRE = 32;
-const HIT_SLOP = 6; // 32 + 6×2 = 44
+const HIT_SLOP = 6;
 
 type Props = {
   valeur: number;
   onChange: (valeur: number) => void;
-  libelle?: string; // lu par les lecteurs d'écran
-  compact?: boolean; // boutons et champ plus petits (≥ 44 px)
+  libelle?: string;
+  compact?: boolean;
+  /** Fond rouge quand valeur > 0 (ex. jeté). */
+  danger?: boolean;
 };
 
-// Compteur − / + discret (ronds gris) avec champ numérique au centre. Valeur entière ≥ 0.
-export function Compteur({ valeur, onChange, libelle = 'Quantité', compact = false }: Props) {
+// Compteur − / + en pilule beige / marron (maquettes Production / Fin de journée).
+export function Compteur({
+  valeur,
+  onChange,
+  libelle = 'Quantité',
+  compact = false,
+  danger = false,
+}: Props) {
   function saisir(texte: string) {
     const chiffres = texte.replace(/[^0-9]/g, '');
     onChange(chiffres === '' ? 0 : parseInt(chiffres, 10));
   }
 
-  const desactiveMoins = valeur <= 0;
+  const actif = valeur > 0;
+  const fondPilule = actif
+    ? danger
+      ? couleurs.erreur
+      : couleurs.principal
+    : couleurs.fondPuce;
+  const couleurValeur = actif ? couleurs.texteSurPrincipal : couleurs.texteMuet;
+  const couleurMoins = actif ? couleurs.texteSurPrincipal : couleurs.texte;
+  const fondPlus = actif ? couleurs.texteSurPrincipal : couleurs.principal;
+  const couleurPlus = actif ? couleurs.principal : couleurs.texteSurPrincipal;
 
   return (
-    <View style={styles.ligne}>
+    <View style={[styles.pilule, compact && styles.piluleCompact, { backgroundColor: fondPilule }]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${libelle} : moins un`}
-        disabled={desactiveMoins}
+        disabled={valeur <= 0}
         onPress={() => onChange(Math.max(0, valeur - 1))}
         hitSlop={HIT_SLOP}
         style={({ pressed }) => [
           styles.bouton,
-          desactiveMoins && styles.inactif,
+          { opacity: actif ? 1 : 0.3 },
           pressed && styles.appuye,
         ]}
       >
-        <Text style={[styles.signe, desactiveMoins && styles.signeInactif]}>−</Text>
+        <Text style={[styles.signe, { color: couleurMoins }]}>−</Text>
       </Pressable>
       <TextInput
         accessibilityLabel={libelle}
@@ -43,64 +60,72 @@ export function Compteur({ valeur, onChange, libelle = 'Quantité', compact = fa
         onChangeText={saisir}
         keyboardType="number-pad"
         selectTextOnFocus
-        style={[styles.champ, compact && styles.champCompact]}
+        style={[
+          styles.champ,
+          compact && styles.champCompact,
+          {
+            color: couleurValeur,
+            fontWeight: actif ? '500' : '400',
+          },
+        ]}
       />
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${libelle} : plus un`}
         onPress={() => onChange(valeur + 1)}
         hitSlop={HIT_SLOP}
-        style={({ pressed }) => [styles.bouton, pressed && styles.appuye]}
+        style={({ pressed }) => [
+          styles.bouton,
+          { backgroundColor: fondPlus },
+          pressed && styles.appuye,
+        ]}
       >
-        <Text style={styles.signe}>+</Text>
+        <Text style={[styles.signe, { color: couleurPlus }]}>+</Text>
       </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  ligne: {
+  pilule: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    height: 40,
+    paddingHorizontal: 4,
+    borderRadius: 20,
+  },
+  piluleCompact: {
+    height: 36,
+    borderRadius: 18,
   },
   bouton: {
     width: DIAMETRE,
     height: DIAMETRE,
     borderRadius: DIAMETRE / 2,
-    backgroundColor: couleurs.fondPuce,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  inactif: {
-    backgroundColor: couleurs.fondPuce,
-  },
   appuye: {
-    opacity: 0.7,
+    opacity: 0.75,
+    transform: [{ scale: 0.92 }],
   },
   signe: {
     fontSize: 18,
     fontWeight: '500',
-    color: couleurs.texte,
     lineHeight: 20,
-  },
-  signeInactif: {
-    color: couleurs.desactive,
+    fontFamily: polices.sans,
   },
   champ: {
-    width: 44,
+    width: 34,
     height: DIAMETRE,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: couleurs.bordure,
-    borderRadius: 8,
+    borderWidth: 0,
     backgroundColor: 'transparent',
     textAlign: 'center',
     fontSize: tailles.normal,
-    fontWeight: '600',
-    color: couleurs.texte,
+    fontFamily: polices.sans,
     padding: 0,
   },
   champCompact: {
-    width: 40,
+    width: 30,
   },
 });
