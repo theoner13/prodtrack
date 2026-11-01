@@ -13,7 +13,7 @@ import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { FormulaireImposer } from '@/components/formulaire-imposer';
 import { etiquetteProvenanceAdmin } from '@/lib/production-exterieure';
-import { couleurs, espacements, polices, styleTitreEcran, styleTitreSection, tailles } from '@/theme';
+import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/theme';
 
 type FiltreProduits = 'vente' | 'intermediaire';
 
@@ -52,7 +52,7 @@ export default function EcranProduits() {
 
   if (imposer && choisi) {
     return (
-      <Ecran titre="Produits" defilement>
+      <Ecran defilement>
         <FormulaireImposer
           boutiqueInitialeId={choisi}
           onTermine={() => setImposer(false)}
@@ -70,9 +70,8 @@ export default function EcranProduits() {
 
   return (
     <Ecran defilement>
-      <View style={styles.entete}>
-        <Text style={styles.titre}>Produits</Text>
-        {boutiques.data && boutiques.data.length > 0 ? (
+      {boutiques.data && boutiques.data.length > 0 ? (
+        <View style={styles.entete}>
           <Pressable
             onPress={() => setImposer(true)}
             style={styles.boutonImposer}
@@ -82,8 +81,8 @@ export default function EcranProduits() {
             <Ionicons name="add" size={18} color={couleurs.principal} />
             <Text style={styles.boutonImposerTexte}>Imposer un produit</Text>
           </Pressable>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
 
       {boutiques.data && boutiques.data.length > 0 ? (
         <>
@@ -165,21 +164,12 @@ export default function EcranProduits() {
 const styles = StyleSheet.create({
   entete: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: espacements.s,
-    marginBottom: espacements.xs,
-  },
-  titre: {
-    ...styleTitreEcran,
-    fontFamily: polices.sans,
+    justifyContent: 'flex-end',
   },
   boutonImposer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginLeft: 'auto',
     paddingVertical: espacements.xs,
   },
   boutonImposerTexte: {

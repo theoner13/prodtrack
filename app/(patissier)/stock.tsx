@@ -81,7 +81,6 @@ export default function EcranStock() {
 
   return (
     <Ecran
-      titre="Stock"
       defilement
       enRafraichissement={mes.isRefetching || stock.isRefetching}
       onRafraichir={() => void rafraichir()}

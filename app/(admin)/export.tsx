@@ -220,7 +220,7 @@ export default function EcranExport() {
 
   if (boutiques.isLoading) {
     return (
-      <Ecran titre="Export">
+      <Ecran>
         <EtatChargement />
       </Ecran>
     );
@@ -228,7 +228,7 @@ export default function EcranExport() {
 
   if (boutiques.isError) {
     return (
-      <Ecran titre="Export">
+      <Ecran>
         <EtatErreur
           message="Impossible de charger les boutiques."
           onReessayer={() => {
@@ -242,7 +242,7 @@ export default function EcranExport() {
   const desactive = Boolean(erreurPeriode) || exportEnCours !== null;
 
   return (
-    <Ecran titre="Export" defilement>
+    <Ecran defilement>
       <Banniere
         message={message}
         type={typeMessage}

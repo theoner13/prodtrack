@@ -229,7 +229,6 @@ export default function EcranTableauDeBord() {
 
   return (
     <Ecran
-      titre="Tableau de bord"
       defilement
       enRafraichissement={ca.isRefetching || patissiers.isRefetching || pertes.isRefetching}
       onRafraichir={() => {

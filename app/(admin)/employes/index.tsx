@@ -59,7 +59,7 @@ export default function EcranEmployes() {
   const erreurChargement = boutiques.error ?? employes.error;
 
   return (
-    <Ecran titre="Employés" defilement>
+    <Ecran defilement>
       <Bouton
         titre={avecArchives ? 'Masquer les comptes archivés' : 'Afficher les comptes archivés'}
         variante="secondaire"

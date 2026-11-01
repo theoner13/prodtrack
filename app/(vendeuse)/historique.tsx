@@ -52,7 +52,6 @@ export default function EcranHistorique() {
 
   return (
     <Ecran
-      titre="Historique"
       defilement
       enRafraichissement={historique.isRefetching}
       onRafraichir={() => void rafraichir()}

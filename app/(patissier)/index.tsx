@@ -193,7 +193,6 @@ export default function EcranPlanning() {
   if (produits.length === 0) {
     return (
       <Ecran
-        titre="Planning"
         defilement
         enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
         onRafraichir={() => void rafraichir()}
@@ -208,7 +207,6 @@ export default function EcranPlanning() {
   if (surgeles.length === 0) {
     return (
       <Ecran
-        titre="Planning"
         defilement
         enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
         onRafraichir={() => void rafraichir()}
@@ -270,7 +268,6 @@ export default function EcranPlanning() {
 
   return (
     <Ecran
-      titre="Planning"
       defilement
       enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
       onRafraichir={() => void rafraichir()}

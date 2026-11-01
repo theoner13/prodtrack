@@ -73,7 +73,7 @@ export default function EcranBoutiques() {
   }
 
   return (
-    <Ecran titre="Boutiques" defilement>
+    <Ecran defilement>
       <Banniere message={confirmation} onFermer={fermerConfirmation} />
       <Banniere message={messagePartage} duree={60000} onFermer={fermerPartage} />
       <Text style={styles.sousTitre}>Nouvelle boutique</Text>

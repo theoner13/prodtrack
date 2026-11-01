@@ -474,7 +474,6 @@ export function SaisieStock({ type }: Props) {
     );
   }
 
-  const titre = type === 'production' ? 'Production' : 'Sorties';
   const titreBouton =
     type === 'production'
       ? ongletProduction === 'frais'
@@ -567,7 +566,6 @@ export function SaisieStock({ type }: Props) {
 
   return (
     <Ecran
-      titre={titre}
       defilement
       enRafraichissement={
         produits.isRefetching ||
