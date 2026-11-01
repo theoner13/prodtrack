@@ -7,7 +7,7 @@ import { useCaJournalier } from '@/api/ca';
 import { useEmploye } from '@/api/employes';
 import { useUrlSignee } from '@/api/photos';
 import { messageErreur } from '@/auth/erreurs';
-import { Bouton } from '@/components/bouton';
+import { BoutonRetour } from '@/components/bouton-retour';
 import { Champ } from '@/components/champ';
 import { DetailCaEmploye } from '@/components/detail-ca-employe';
 import { Ecran } from '@/components/ecran';
@@ -133,8 +133,8 @@ export default function EcranFicheEmploye() {
 
   if (employe.isLoading || boutiques.isLoading) {
     return (
-      <Ecran titre="Fiche employé" defilement>
-        <Bouton titre="Retour" variante="secondaire" onPress={retour} />
+      <Ecran defilement>
+        <BoutonRetour onPress={retour} />
         <EtatChargement />
       </Ecran>
     );
@@ -142,8 +142,8 @@ export default function EcranFicheEmploye() {
 
   if (employe.isError || boutiques.isError) {
     return (
-      <Ecran titre="Fiche employé" defilement>
-        <Bouton titre="Retour" variante="secondaire" onPress={retour} />
+      <Ecran defilement>
+        <BoutonRetour onPress={retour} />
         <EtatErreur
           message={messageErreur(employe.error ?? boutiques.error)}
           onReessayer={() => {
@@ -158,8 +158,8 @@ export default function EcranFicheEmploye() {
   const profil = employe.data;
   if (!profil) {
     return (
-      <Ecran titre="Fiche employé" defilement>
-        <Bouton titre="Retour" variante="secondaire" onPress={retour} />
+      <Ecran defilement>
+        <BoutonRetour onPress={retour} />
         <EtatVide message="Employé introuvable." />
       </Ecran>
     );
@@ -171,8 +171,8 @@ export default function EcranFicheEmploye() {
   const estPatissier = profil.role === 'patissier';
 
   return (
-    <Ecran titre="Fiche employé" defilement>
-      <Bouton titre="Retour" variante="secondaire" onPress={retour} />
+    <Ecran defilement>
+      <BoutonRetour onPress={retour} />
 
       <View style={styles.entete}>
         {photo.data ? (

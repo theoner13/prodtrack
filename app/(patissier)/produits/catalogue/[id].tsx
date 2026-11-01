@@ -1,4 +1,4 @@
-import { router, Stack, useLocalSearchParams, type Href } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
@@ -110,21 +110,21 @@ export default function EcranCatalogueProduit() {
   const conservationLibelle = produit.conservation === 'surgele' ? 'Surgelé' : 'Frais';
 
   return (
-    <Ecran titre={produit.nom} defilement>
-      <Stack.Screen options={{ title: produit.nom }} />
-      {produit.photo_url && photo.data ? (
-        <Image
-          source={{ uri: photo.data }}
-          style={styles.photo}
-          accessibilityIgnoresInvertColors
-        />
-      ) : (
-        <View style={[styles.photo, styles.initiale]}>
-          <Text style={styles.lettre}>{produit.nom.trim().charAt(0).toUpperCase()}</Text>
-        </View>
-      )}
-
-      <Text style={styles.nom}>{produit.nom}</Text>
+    <Ecran defilement>
+      <View style={styles.entete}>
+        {produit.photo_url && photo.data ? (
+          <Image
+            source={{ uri: photo.data }}
+            style={styles.photo}
+            accessibilityIgnoresInvertColors
+          />
+        ) : (
+          <View style={[styles.photo, styles.initiale]}>
+            <Text style={styles.lettre}>{produit.nom.trim().charAt(0).toUpperCase()}</Text>
+          </View>
+        )}
+        <Text style={styles.nom}>{produit.nom}</Text>
+      </View>
       {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
       <Text style={styles.detail}>Boutique : {boutique ?? '—'}</Text>
       {!produit.intermediaire ? (
@@ -165,6 +165,9 @@ export default function EcranCatalogueProduit() {
 }
 
 const styles = StyleSheet.create({
+  entete: {
+    gap: espacements.s,
+  },
   photo: {
     width: '100%',
     aspectRatio: 1,

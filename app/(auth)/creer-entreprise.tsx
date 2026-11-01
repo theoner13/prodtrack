@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
+import { BoutonRetour } from '@/components/bouton-retour';
 import { Champ } from '@/components/champ';
 import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
@@ -47,7 +48,10 @@ export default function EcranCreerEntreprise() {
   }
 
   return (
-    <EcranAuth titre="Créer l'entreprise">
+    <EcranAuth
+      titre="Créer l'entreprise"
+      hautGauche={<BoutonRetour onPress={() => router.back()} />}
+    >
       <Controller
         control={control}
         name="entreprise"
@@ -108,7 +112,6 @@ export default function EcranCreerEntreprise() {
         chargement={formState.isSubmitting}
         onPress={handleSubmit(creer)}
       />
-      <Bouton titre="Retour" variante="secondaire" onPress={() => router.back()} />
     </EcranAuth>
   );
 }

@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
+import { BoutonRetour } from '@/components/bouton-retour';
 import { Champ } from '@/components/champ';
 import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
@@ -56,7 +57,10 @@ export default function EcranRejoindre() {
   }
 
   return (
-    <EcranAuth titre="Rejoindre une boutique">
+    <EcranAuth
+      titre="Rejoindre une boutique"
+      hautGauche={<BoutonRetour onPress={() => router.back()} />}
+    >
       <Controller
         control={control}
         name="code"
@@ -142,7 +146,6 @@ export default function EcranRejoindre() {
         chargement={formState.isSubmitting}
         onPress={handleSubmit(rejoindre)}
       />
-      <Bouton titre="Retour" variante="secondaire" onPress={() => router.back()} />
     </EcranAuth>
   );
 }

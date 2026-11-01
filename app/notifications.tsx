@@ -1,11 +1,11 @@
-import { router, type Href } from 'expo-router';
+import { router, Stack, type Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useMarquerToutesLues, useNotifications } from '@/api/notifications';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
-import { Bouton } from '@/components/bouton';
+import { BoutonRetour } from '@/components/bouton-retour';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { couleurs, espacements, tailles } from '@/theme';
@@ -56,9 +56,22 @@ export default function EcranNotifications() {
     router.replace(accueil);
   }
 
+  const enteteRetour = (
+    <Stack.Screen
+      options={{
+        headerLeft: () => (
+          <View style={styles.enteteRetour}>
+            <BoutonRetour onPress={retour} />
+          </View>
+        ),
+      }}
+    />
+  );
+
   if (liste.isLoading) {
     return (
       <Ecran>
+        {enteteRetour}
         <EtatChargement />
       </Ecran>
     );
@@ -67,7 +80,7 @@ export default function EcranNotifications() {
   if (liste.isError) {
     return (
       <Ecran>
-        <Bouton titre="Retour" variante="secondaire" onPress={retour} />
+        {enteteRetour}
         <EtatErreur message={messageErreur(liste.error)} onReessayer={() => void liste.refetch()} />
       </Ecran>
     );
@@ -81,7 +94,7 @@ export default function EcranNotifications() {
       enRafraichissement={liste.isRefetching}
       onRafraichir={() => void liste.refetch()}
     >
-      <Bouton titre="Retour" variante="secondaire" onPress={retour} />
+      {enteteRetour}
       {erreurMarquage ? <Text style={styles.erreur}>{erreurMarquage}</Text> : null}
       {notifications.length === 0 ? (
         <EtatVide message="Aucune notification pour l'instant." />
@@ -102,6 +115,9 @@ export default function EcranNotifications() {
 }
 
 const styles = StyleSheet.create({
+  enteteRetour: {
+    marginLeft: 4,
+  },
   carte: {
     gap: espacements.xs,
     paddingVertical: 12,

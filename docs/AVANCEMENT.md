@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-11-01 : bouton Retour unique, gros, en haut à gauche sur tous les écrans ; plus de titre en double sur les fiches (Cursor)
 - 2026-11-01 : admin : fiche produit redisposée, recette consultable (Cursor)
 - 2026-11-01 : admin, Produits : choix Produits en vente / Intermédiaires, puces boutique et bouton Imposer réorganisés (Cursor)
 - 2026-11-01 : admin : tuiles CA de la fiche employé corrigées (semaine à cheval sur deux mois), liste simple des produits avec fiche, plus de correction de stock ; graphique beige plus lisible (Cursor)

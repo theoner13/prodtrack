@@ -78,7 +78,7 @@ export default function EcranMesProduits() {
     produits.length === 0 && aPrendreListe.length === 0 && !mes.data?.dejaEuUnProduit;
 
   return (
-    <Ecran titre="Mes produits" defilement>
+    <Ecran defilement>
       <Banniere message={banniere} type="succes" onFermer={() => setBanniere(null)} duree={6000} />
       {erreurPrise ? <Text style={styles.erreur}>{erreurPrise}</Text> : null}
 

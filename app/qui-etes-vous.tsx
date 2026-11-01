@@ -13,6 +13,7 @@ import { useUrlsSignees } from '@/api/photos';
 import { useAuth } from '@/auth/AuthProvider';
 import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
+import { BoutonRetour } from '@/components/bouton-retour';
 import { Ecran } from '@/components/ecran';
 import { PaveNumerique } from '@/components/pave-numerique';
 import type { CompteAppareil } from '@/lib/comptes-appareil';
@@ -79,6 +80,13 @@ export default function EcranQuiEtesVous() {
     const initiale = compteChoisi.prenom.trim().charAt(0).toUpperCase() || '?';
     return (
       <Ecran>
+        <BoutonRetour
+          onPress={() => {
+            setCompteChoisi(null);
+            setSaisie('');
+            setErreur(null);
+          }}
+        />
         <Banniere
           message={annonce}
           type="erreur"
@@ -96,15 +104,6 @@ export default function EcranQuiEtesVous() {
           <Text style={styles.consigne}>Saisissez votre code à 4 chiffres.</Text>
           <PaveNumerique valeur={saisie} onChange={(valeur) => void onSaisie(valeur)} />
           {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
-          <Bouton
-            titre="Retour"
-            variante="secondaire"
-            onPress={() => {
-              setCompteChoisi(null);
-              setSaisie('');
-              setErreur(null);
-            }}
-          />
         </ScrollView>
       </Ecran>
     );

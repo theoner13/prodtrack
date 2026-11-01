@@ -69,7 +69,7 @@ export default function EcranAutresBoutiques() {
   const listeBoutiques = boutiques.data ?? [];
   if (listeBoutiques.length === 0) {
     return (
-      <Ecran titre="Autres boutiques" defilement>
+      <Ecran defilement>
         <EtatVide message="Votre entreprise n'a pas d'autre boutique." />
       </Ecran>
     );
@@ -79,7 +79,6 @@ export default function EcranAutresBoutiques() {
 
   return (
     <Ecran
-      titre="Autres boutiques"
       defilement
       enRafraichissement={boutiques.isRefetching || produits.isRefetching}
       onRafraichir={() => void rafraichir()}

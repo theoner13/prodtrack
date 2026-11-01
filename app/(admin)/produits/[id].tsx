@@ -8,6 +8,7 @@ import { useUrlSignee } from '@/api/photos';
 import { useFicheProduit, useModifierProduit } from '@/api/produits';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
+import { BoutonRetour } from '@/components/bouton-retour';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
@@ -87,8 +88,8 @@ export default function EcranFicheProduitAdmin() {
 
   if (fiche.isLoading || boutiques.isLoading) {
     return (
-      <Ecran titre="Produit" defilement>
-        <Bouton titre="Retour" variante="secondaire" onPress={retour} />
+      <Ecran defilement>
+        <BoutonRetour onPress={retour} />
         <EtatChargement />
       </Ecran>
     );
@@ -96,8 +97,8 @@ export default function EcranFicheProduitAdmin() {
 
   if (fiche.isError || boutiques.isError) {
     return (
-      <Ecran titre="Produit" defilement>
-        <Bouton titre="Retour" variante="secondaire" onPress={retour} />
+      <Ecran defilement>
+        <BoutonRetour onPress={retour} />
         <EtatErreur
           message={messageErreur(fiche.error ?? boutiques.error)}
           onReessayer={() => {
@@ -111,8 +112,8 @@ export default function EcranFicheProduitAdmin() {
 
   if (!produit) {
     return (
-      <Ecran titre="Produit" defilement>
-        <Bouton titre="Retour" variante="secondaire" onPress={retour} />
+      <Ecran defilement>
+        <BoutonRetour onPress={retour} />
         <EtatVide message="Produit introuvable." />
       </Ecran>
     );
@@ -126,8 +127,8 @@ export default function EcranFicheProduitAdmin() {
   const aUneRecette = lignes.length > 0;
 
   return (
-    <Ecran titre="Produit" defilement>
-      <Bouton titre="Retour" variante="secondaire" onPress={retour} />
+    <Ecran defilement>
+      <BoutonRetour onPress={retour} />
 
       <View style={styles.entete}>
         {produit.photo_url && photo.data ? (

@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
+import { BoutonRetour } from '@/components/bouton-retour';
 import { Champ } from '@/components/champ';
 import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
@@ -86,15 +87,18 @@ export default function EcranConnexion() {
   const retourChoixCompte = comptesAppareil.length > 0 || modeAjoutCompte;
 
   return (
-    <EcranAuth titre="Connexion">
+    <EcranAuth
+      titre="Connexion"
+      hautGauche={
+        retourChoixCompte ? (
+          <BoutonRetour
+            titre="Retour au choix du compte"
+            onPress={() => annulerAjoutCompte()}
+          />
+        ) : null
+      }
+    >
       {annonce ? <Text style={styles.erreur}>{annonce}</Text> : null}
-      {retourChoixCompte ? (
-        <Bouton
-          titre="Retour au choix du compte"
-          variante="secondaire"
-          onPress={() => annulerAjoutCompte()}
-        />
-      ) : null}
       <Controller
         control={control}
         name="email"

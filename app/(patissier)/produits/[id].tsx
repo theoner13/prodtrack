@@ -322,7 +322,7 @@ export default function EcranFicheProduit() {
 
   if (!creation && produit && !estMien) {
     return (
-      <Ecran titre={produit.nom} defilement>
+      <Ecran defilement>
         <Stack.Screen options={{ title: produit.nom }} />
         {zoneStock}
       </Ecran>

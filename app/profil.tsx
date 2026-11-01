@@ -1,4 +1,4 @@
-import { router, type Href } from 'expo-router';
+import { router, Stack, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -6,6 +6,7 @@ import { useDefinirPhotoProfil } from '@/api/produits';
 import { useAuth } from '@/auth/AuthProvider';
 import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
+import { BoutonRetour } from '@/components/bouton-retour';
 import { ChoixPhoto } from '@/components/choix-photo';
 import { Ecran } from '@/components/ecran';
 import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
@@ -76,7 +77,15 @@ export default function EcranProfil() {
 
   return (
     <Ecran defilement>
-      <Bouton titre="Retour" variante="secondaire" onPress={retour} />
+      <Stack.Screen
+        options={{
+          headerLeft: () => (
+            <View style={styles.enteteRetour}>
+              <BoutonRetour onPress={retour} />
+            </View>
+          ),
+        }}
+      />
       <Banniere message={confirmation} onFermer={fermer} />
       <ChoixPhoto
         chemin={moi.photo_url}
@@ -155,6 +164,9 @@ export default function EcranProfil() {
 }
 
 const styles = StyleSheet.create({
+  enteteRetour: {
+    marginLeft: 4,
+  },
   ligne: {
     fontSize: tailles.normal,
     color: couleurs.texte,

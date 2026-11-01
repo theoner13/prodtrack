@@ -1,8 +1,26 @@
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
+import { View } from 'react-native';
 
 import { ActionsEntete } from '@/components/actions-entete';
+import { BoutonRetour } from '@/components/bouton-retour';
 import { LogoEntete } from '@/components/logo';
 import { couleurs, polices } from '@/theme';
+
+function EnteteRetour() {
+  return (
+    <View style={{ marginLeft: 4 }}>
+      <BoutonRetour
+        onPress={() => {
+          if (router.canGoBack()) {
+            router.back();
+            return;
+          }
+          router.replace('/(patissier)/produits');
+        }}
+      />
+    </View>
+  );
+}
 
 export default function LayoutMesProduits() {
   return (
@@ -30,9 +48,30 @@ export default function LayoutMesProduits() {
           headerRight: () => <ActionsEntete />,
         }}
       />
-      <Stack.Screen name="autres-boutiques" options={{ title: 'Autres boutiques' }} />
-      <Stack.Screen name="catalogue/[id]" options={{ title: 'Produit' }} />
-      <Stack.Screen name="[id]" options={{ title: 'Produit' }} />
+      <Stack.Screen
+        name="autres-boutiques"
+        options={{
+          title: 'Autres boutiques',
+          headerLeft: () => <EnteteRetour />,
+          headerBackVisible: false,
+        }}
+      />
+      <Stack.Screen
+        name="catalogue/[id]"
+        options={{
+          title: 'Produit',
+          headerLeft: () => <EnteteRetour />,
+          headerBackVisible: false,
+        }}
+      />
+      <Stack.Screen
+        name="[id]"
+        options={{
+          title: 'Produit',
+          headerLeft: () => <EnteteRetour />,
+          headerBackVisible: false,
+        }}
+      />
     </Stack>
   );
 }

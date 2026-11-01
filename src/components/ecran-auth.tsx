@@ -21,6 +21,8 @@ type Props = {
   centrerVerticalement?: boolean;
   /** Afficher le logo ProdTrack au-dessus du titre (défaut true). */
   avecLogo?: boolean;
+  /** Bouton retour (ou autre) collé en haut à gauche, hors du bloc centré. */
+  hautGauche?: ReactNode;
 };
 
 /** Cadre des écrans d’auth : logo, titre centré, bloc limité en largeur. */
@@ -30,9 +32,11 @@ export function EcranAuth({
   largeurMax = 400,
   centrerVerticalement = true,
   avecLogo = true,
+  hautGauche,
 }: Props) {
   return (
     <SafeAreaView style={styles.fond} edges={['top', 'left', 'right']}>
+      {hautGauche ? <View style={styles.hautGauche}>{hautGauche}</View> : null}
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -64,6 +68,11 @@ const styles = StyleSheet.create({
   fond: {
     flex: 1,
     backgroundColor: couleurs.fond,
+  },
+  hautGauche: {
+    paddingHorizontal: espacements.l,
+    paddingTop: espacements.xs,
+    alignSelf: 'flex-start',
   },
   flex: {
     flex: 1,
