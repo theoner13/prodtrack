@@ -23,6 +23,7 @@ import { ChoixSegmente } from '@/components/choix-segmente';
 import { Compteur } from '@/components/compteur';
 import { Ecran } from '@/components/ecran';
 import { EditeurRecette, estVide, UNITES, type LigneSaisie, type Unite } from '@/components/editeur-recette';
+import { optionsEnteteRetourTitre } from '@/components/entete-retour-titre';
 import { EtatChargement, EtatErreur } from '@/components/etats';
 import { eurosVersCentimes } from '@/lib/format';
 import { couleurs, espacements, rayon, styleTitreSection, tailles } from '@/theme';
@@ -348,7 +349,9 @@ export default function EcranFicheProduit() {
 
   return (
     <Ecran defilement>
-      <Stack.Screen options={{ title: creation ? 'Nouveau produit' : 'Modifier le produit' }} />
+      <Stack.Screen
+        options={optionsEnteteRetourTitre(creation ? 'Nouveau produit' : 'Modifier le produit')}
+      />
       <View style={styles.formulaire}>
         <Banniere message={confirmation} onFermer={fermerConfirmation} />
 

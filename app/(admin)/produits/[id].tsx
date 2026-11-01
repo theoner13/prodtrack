@@ -1,6 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { useBoutiques } from '@/api/boutiques';
 import { useEmploye, usePatissiers } from '@/api/employes';
@@ -9,14 +17,21 @@ import { useFicheProduit, useModifierProduit } from '@/api/produits';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { BoutonRetour } from '@/components/bouton-retour';
-import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { eurosVersCentimes, formatEuros } from '@/lib/format';
 import { couleurs, espacements, polices, rayonPetit, tailles } from '@/theme';
 
+const PAS_PRIX_CENTIMES = 10;
+const MIN_PRIX_CENTIMES = 10;
+const TOUCHER_MIN = 48;
+
 function quantiteTexte(valeur: number): string {
   return String(valeur).replace('.', ',');
+}
+
+function formatSaisiePrix(centimes: number): string {
+  return (centimes / 100).toFixed(2).replace('.', ',');
 }
 
 export default function EcranFicheProduitAdmin() {
@@ -30,8 +45,6 @@ export default function EcranFicheProduitAdmin() {
   const fabricant = useEmploye(produit?.fabricant_id ?? undefined);
   const patissiers = usePatissiers(produit?.boutique_id ?? null);
   const modifier = useModifierProduit();
-  const { width } = useWindowDimensions();
-  const actionsEmpilees = width < 420;
 
   const [prixOuvert, setPrixOuvert] = useState(false);
   const [saisiePrix, setSaisiePrix] = useState('');
@@ -57,6 +70,21 @@ export default function EcranFicheProduitAdmin() {
       return;
     }
     router.replace('/(admin)/produits');
+  }
+
+  function ouvrirPrix() {
+    if (!produit) return;
+    setErreur(null);
+    setFabricantOuvert(false);
+    setSaisiePrix(formatSaisiePrix(produit.prix_centimes));
+    setPrixOuvert(true);
+  }
+
+  function ajusterPrix(deltaCentimes: number) {
+    const actuel = eurosVersCentimes(saisiePrix);
+    const base = actuel ?? MIN_PRIX_CENTIMES;
+    const suivant = Math.max(MIN_PRIX_CENTIMES, base + deltaCentimes);
+    setSaisiePrix(formatSaisiePrix(suivant));
   }
 
   async function enregistrerPrix() {
@@ -125,6 +153,8 @@ export default function EcranFicheProduitAdmin() {
       ? `${conservationLibelle} · ${produit.duree_conservation_jours} jour${produit.duree_conservation_jours > 1 ? 's' : ''}`
       : conservationLibelle;
   const aUneRecette = lignes.length > 0;
+  const centimesSaisis = eurosVersCentimes(saisiePrix);
+  const peutDiminuer = (centimesSaisis ?? MIN_PRIX_CENTIMES) > MIN_PRIX_CENTIMES;
 
   return (
     <Ecran defilement>
@@ -156,7 +186,80 @@ export default function EcranFicheProduitAdmin() {
       <View style={styles.carte}>
         <LigneInfo libelle="Fabricant" valeur={fabricantNom} />
         {!produit.intermediaire ? (
-          <LigneInfo libelle="Prix" valeur={formatEuros(produit.prix_centimes)} />
+          prixOuvert ? (
+            <View style={[styles.lignePrixEdition, styles.ligneSeparee]}>
+              <Text style={styles.ligneLibelle}>Prix</Text>
+              <View style={styles.editionPrix}>
+                <View style={styles.compteurPrix}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Diminuer le prix de 0,10 euro"
+                    disabled={!peutDiminuer}
+                    onPress={() => ajusterPrix(-PAS_PRIX_CENTIMES)}
+                    style={({ pressed }) => [
+                      styles.boutonPas,
+                      !peutDiminuer && styles.boutonPasInactif,
+                      pressed && styles.appuye,
+                    ]}
+                  >
+                    <Text style={styles.signePas}>−</Text>
+                  </Pressable>
+                  <TextInput
+                    accessibilityLabel="Prix en euros"
+                    value={saisiePrix}
+                    onChangeText={setSaisiePrix}
+                    keyboardType="decimal-pad"
+                    selectTextOnFocus
+                    style={styles.champPrix}
+                  />
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Augmenter le prix de 0,10 euro"
+                    onPress={() => ajusterPrix(PAS_PRIX_CENTIMES)}
+                    style={({ pressed }) => [styles.boutonPas, pressed && styles.appuye]}
+                  >
+                    <Text style={styles.signePas}>+</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.actionsPrix}>
+                  <View style={styles.actionPrixItem}>
+                    <Bouton
+                      titre="Enregistrer"
+                      chargement={modifier.isPending}
+                      onPress={() => void enregistrerPrix()}
+                    />
+                  </View>
+                  <View style={styles.actionPrixItem}>
+                    <Bouton
+                      titre="Annuler"
+                      variante="secondaire"
+                      onPress={() => {
+                        setPrixOuvert(false);
+                        setErreur(null);
+                      }}
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Modifier le prix de ${produit.nom}`}
+              onPress={ouvrirPrix}
+              style={({ pressed }) => [
+                styles.ligneInfo,
+                styles.ligneSeparee,
+                pressed && styles.lignePresse,
+              ]}
+            >
+              <Text style={styles.ligneLibelle}>Prix</Text>
+              <View style={styles.prixValeur}>
+                <Text style={styles.ligneValeur}>{formatEuros(produit.prix_centimes)}</Text>
+                <Ionicons name="create-outline" size={18} color={couleurs.texteMuet} />
+              </View>
+            </Pressable>
+          )
         ) : null}
         <LigneInfo libelle="Conservation" valeur={conservationValeur} />
 
@@ -167,7 +270,7 @@ export default function EcranFicheProduitAdmin() {
               accessibilityRole="button"
               accessibilityState={{ expanded: recetteOuverte }}
               accessibilityLabel={`Voir la recette de ${produit.nom}`}
-              style={({ pressed }) => [styles.ligneRecette, pressed && styles.ligneRecettePresse]}
+              style={({ pressed }) => [styles.ligneRecette, pressed && styles.lignePresse]}
             >
               <Text style={styles.recetteTitre}>Recette</Text>
               <Text style={styles.chevron}>{recetteOuverte ? '˄' : '›'}</Text>
@@ -192,48 +295,16 @@ export default function EcranFicheProduitAdmin() {
 
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
 
-      <View style={[styles.actions, actionsEmpilees && styles.actionsEmpilees]}>
-        {!produit.intermediaire && !prixOuvert ? (
-          <View style={styles.actionItem}>
-            <Bouton
-              titre="Modifier le prix"
-              variante="secondaire"
-              onPress={() => {
-                setPrixOuvert(true);
-                setFabricantOuvert(false);
-                setSaisiePrix((produit.prix_centimes / 100).toFixed(2).replace('.', ','));
-              }}
-            />
-          </View>
-        ) : null}
-        {!fabricantOuvert ? (
-          <View style={styles.actionItem}>
-            <Bouton
-              titre="Réattribuer le fabricant"
-              variante="secondaire"
-              onPress={() => {
-                setFabricantOuvert(true);
-                setPrixOuvert(false);
-              }}
-            />
-          </View>
-        ) : null}
-      </View>
-
-      {!produit.intermediaire && prixOuvert ? (
-        <View style={styles.panneau}>
-          <Champ
-            libelle="Nouveau prix (€)"
-            keyboardType="decimal-pad"
-            value={saisiePrix}
-            onChangeText={setSaisiePrix}
-          />
+      {!fabricantOuvert ? (
+        <View style={styles.actions}>
           <Bouton
-            titre="Enregistrer le prix"
-            chargement={modifier.isPending}
-            onPress={() => void enregistrerPrix()}
+            titre="Réattribuer le fabricant"
+            variante="secondaire"
+            onPress={() => {
+              setFabricantOuvert(true);
+              setPrixOuvert(false);
+            }}
           />
-          <Bouton titre="Annuler" variante="secondaire" onPress={() => setPrixOuvert(false)} />
         </View>
       ) : null}
 
@@ -345,6 +416,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: couleurs.bordure,
   },
+  lignePresse: {
+    opacity: 0.7,
+  },
   ligneLibelle: {
     fontSize: tailles.normal,
     color: couleurs.texteSecondaire,
@@ -358,14 +432,78 @@ const styles = StyleSheet.create({
     color: couleurs.texte,
     fontFamily: polices.sans,
   },
+  prixValeur: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espacements.s,
+  },
+  lignePrixEdition: {
+    paddingVertical: espacements.m,
+    gap: espacements.s,
+  },
+  editionPrix: {
+    gap: espacements.s,
+  },
+  compteurPrix: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: espacements.s,
+  },
+  boutonPas: {
+    minWidth: TOUCHER_MIN,
+    minHeight: TOUCHER_MIN,
+    borderRadius: TOUCHER_MIN / 2,
+    backgroundColor: couleurs.fond,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: couleurs.bordure,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boutonPasInactif: {
+    opacity: 0.35,
+  },
+  signePas: {
+    fontSize: 22,
+    fontWeight: '500',
+    color: couleurs.texte,
+    fontFamily: polices.sans,
+    lineHeight: 26,
+  },
+  champPrix: {
+    minWidth: 88,
+    minHeight: TOUCHER_MIN,
+    paddingHorizontal: espacements.s,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: couleurs.bordure,
+    borderRadius: rayonPetit,
+    backgroundColor: couleurs.fond,
+    textAlign: 'center',
+    fontSize: tailles.grand,
+    fontWeight: '500',
+    color: couleurs.texte,
+    fontFamily: polices.sans,
+  },
+  actionsPrix: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: espacements.s,
+    justifyContent: 'center',
+  },
+  actionPrixItem: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 120,
+  },
+  appuye: {
+    opacity: 0.75,
+    transform: [{ scale: 0.96 }],
+  },
   ligneRecette: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: espacements.m,
-  },
-  ligneRecettePresse: {
-    opacity: 0.7,
   },
   recetteTitre: {
     fontSize: tailles.normal,
@@ -406,17 +544,7 @@ const styles = StyleSheet.create({
     fontFamily: polices.sans,
   },
   actions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: espacements.m,
     alignItems: 'flex-start',
-  },
-  actionsEmpilees: {
-    flexDirection: 'column',
-  },
-  actionItem: {
-    flexGrow: 1,
-    flexShrink: 1,
   },
   panneau: {
     gap: espacements.s,
