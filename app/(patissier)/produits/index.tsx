@@ -1,5 +1,5 @@
 import { router, type Href } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useUrlsSignees } from '@/api/photos';
@@ -15,6 +15,7 @@ import { Bouton } from '@/components/bouton';
 import { CarteProduit } from '@/components/carte-produit';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
+import { etiquetteBoutique } from '@/lib/production-exterieure';
 import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 
 export default function EcranMesProduits() {
@@ -25,8 +26,17 @@ export default function EcranMesProduits() {
   const [banniere, setBanniere] = useState<string | null>(null);
   const [erreurPrise, setErreurPrise] = useState<string | null>(null);
 
+  const produits = mes.data?.produits ?? [];
+  const locaux = useMemo(
+    () => produits.filter((produit) => produit.provenance_boutique_id == null),
+    [produits],
+  );
+  const exterieurs = useMemo(
+    () => produits.filter((produit) => produit.provenance_boutique_id != null),
+    [produits],
+  );
   const chemins = [
-    ...(mes.data?.produits ?? []).map((produit) => produit.photo_url),
+    ...produits.map((produit) => produit.photo_url),
     ...(aPrendre.data ?? []).map((produit) => produit.photo_url),
   ].filter((chemin): chemin is string => Boolean(chemin));
   const photos = useUrlsSignees(chemins);
@@ -72,7 +82,6 @@ export default function EcranMesProduits() {
     );
   }
 
-  const produits = mes.data?.produits ?? [];
   const aPrendreListe = aPrendre.data ?? [];
   const premiereFois =
     produits.length === 0 && aPrendreListe.length === 0 && !mes.data?.dejaEuUnProduit;
@@ -115,10 +124,10 @@ export default function EcranMesProduits() {
         variante="secondaire"
         onPress={() => router.push('/produits/autres-boutiques' as Href)}
       />
-      {produits.length === 0 && !premiereFois ? (
+      {locaux.length === 0 && exterieurs.length === 0 && !premiereFois ? (
         <EtatVide message="Vous n'avez aucun produit en cours. Ajoutez-en un pour le fabriquer." />
       ) : null}
-      {produits.map((produit) => (
+      {locaux.map((produit) => (
         <Pressable key={produit.id} accessibilityRole="button" onPress={() => ouvrir(produit.id)}>
           <CarteProduit
             nom={produit.nom}
@@ -130,6 +139,30 @@ export default function EcranMesProduits() {
           </CarteProduit>
         </Pressable>
       ))}
+
+      {exterieurs.length > 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.titreSection}>Envoyés à d'autres boutiques</Text>
+          {exterieurs.map((produit) => (
+            <Pressable
+              key={produit.id}
+              accessibilityRole="button"
+              onPress={() => ouvrir(produit.id)}
+            >
+              <CarteProduit
+                nom={produit.nom}
+                prixCentimes={produit.prix_centimes}
+                photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
+              >
+                <Text style={styles.badge}>
+                  {etiquetteBoutique(produit.boutiqueNom)}
+                </Text>
+              </CarteProduit>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+
       {premiereFois ? <Bouton titre="Ajouter un produit" onPress={() => ouvrir('nouveau')} /> : null}
     </Ecran>
   );

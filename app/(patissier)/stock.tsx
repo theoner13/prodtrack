@@ -3,14 +3,15 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { useUrlsSignees } from '@/api/photos';
-import { useProduits } from '@/api/produits';
-import { useStock } from '@/api/stock';
+import { useMesProduits } from '@/api/produits';
+import { useStockFabricant } from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { CarteProduit } from '@/components/carte-produit';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
+import { etiquetteBoutique } from '@/lib/production-exterieure';
 import { couleurs, espacements, tailles } from '@/theme';
 
 function sansAccents(texte: string): string {
@@ -19,10 +20,9 @@ function sansAccents(texte: string): string {
 
 export default function EcranStock() {
   const { profil } = useAuth();
-  const boutiqueId = profil?.boutique_id ?? null;
   const userId = profil?.id ?? null;
-  const produits = useProduits(boutiqueId);
-  const stock = useStock(boutiqueId);
+  const mes = useMesProduits(userId);
+  const stock = useStockFabricant(userId);
   const [recherche, setRecherche] = useState('');
 
   const stockParProduit = useMemo(() => {
@@ -38,15 +38,11 @@ export default function EcranStock() {
     return map;
   }, [stock.data]);
 
-  // Uniquement les surgelés dont le pâtissier connecté est le fabricant (les frais
-  // se suivent dans Production › Frais du jour).
+  // Surgelés dont je suis le fabricant (locaux + extérieurs).
   const mesProduits = useMemo(
     () =>
-      (produits.data ?? []).filter(
-        (produit) =>
-          produit.fabricant_id === userId && produit.conservation === 'surgele',
-      ),
-    [produits.data, userId],
+      (mes.data?.produits ?? []).filter((produit) => produit.conservation === 'surgele'),
+    [mes.data?.produits],
   );
 
   const liste = useMemo(() => {
@@ -61,10 +57,10 @@ export default function EcranStock() {
   const photos = useUrlsSignees(chemins);
 
   async function rafraichir() {
-    await Promise.all([produits.refetch(), stock.refetch()]);
+    await Promise.all([mes.refetch(), stock.refetch()]);
   }
 
-  if (produits.isLoading || stock.isLoading) {
+  if (mes.isLoading || stock.isLoading) {
     return (
       <Ecran>
         <EtatChargement />
@@ -72,11 +68,11 @@ export default function EcranStock() {
     );
   }
 
-  if (produits.isError || stock.isError) {
+  if (mes.isError || stock.isError) {
     return (
       <Ecran>
         <EtatErreur
-          message={messageErreur(produits.error ?? stock.error)}
+          message={messageErreur(mes.error ?? stock.error)}
           onReessayer={() => void rafraichir()}
         />
       </Ecran>
@@ -87,7 +83,7 @@ export default function EcranStock() {
     <Ecran
       titre="Stock"
       defilement
-      enRafraichissement={produits.isRefetching || stock.isRefetching}
+      enRafraichissement={mes.isRefetching || stock.isRefetching}
       onRafraichir={() => void rafraichir()}
     >
       {mesProduits.length > 10 ? (
@@ -108,7 +104,6 @@ export default function EcranStock() {
         const info = stockParProduit.get(produit.id);
         const valeur = info?.stock ?? 0;
         const seuil = info?.seuil ?? produit.seuil_min;
-        // Alerte « sous le seuil » réservée aux surgelés (les frais n’ont pas de seuil métier).
         const sousSeuil = valeur < seuil;
         const sousTitre = sousSeuil ? `Sous le seuil (min. ${seuil})` : undefined;
 
@@ -126,6 +121,9 @@ export default function EcranStock() {
               alerte={sousSeuil}
             >
               {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
+              {produit.provenance_boutique_id ? (
+                <Text style={styles.badge}>{etiquetteBoutique(produit.boutiqueNom)}</Text>
+              ) : null}
               <Text
                 accessibilityLabel={`Stock ${produit.nom} : ${valeur}`}
                 style={styles.chiffre}

@@ -92,6 +92,7 @@ Pour les patrons qui n'ont pas le temps de surveiller chacune de leurs boutiques
 10. **Notifications** : le pâtissier est prévenu du jour de fabrication estimé. **[Ajout]** Une cloche dans l'appli regroupe les notifications (marquer comme lu) ; les notifications push sur téléphone sont prêtes et seront actives avec l'application installée.
 11. **[Ajout] Catalogue des autres boutiques** : voir les produits et recettes des autres boutiques de l'entreprise (sans le CA ni le fabricant) et décider de fabriquer aussi un produit chez soi. Les produits intermédiaires peuvent être importés d'une boutique à l'autre.
 12. **[Ajout] Produits à prendre** : les produits imposés sans pâtissier s'affichent en haut de « Mes produits » avec le bouton « Je le fabrique ».
+13. **[Ajout] Production extérieure** : le pâtissier peut fabriquer pour une autre boutique de l'entreprise. Le produit appartient à la boutique destinataire (ligne distincte, avec étiquette de provenance) ; le fabricant saisit la production, voit restes / jetés / pertes / stock, et reçoit les alertes de seuil. Les ventes comptent dans son CA ; le CA « par boutique » reste celui du lieu de vente. Les sorties de surgelés sont faites par les pâtissiers de la boutique destinataire.
 
 ### 3.3 Compte Vente
 

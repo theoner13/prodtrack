@@ -5,6 +5,8 @@ import { couleurs, polices, tailles } from '@/theme';
 type Option<T extends string> = {
   valeur: T;
   libelle: string;
+  /** Libellé d’accessibilité (sinon le libellé visible). */
+  accessibilite?: string;
 };
 
 type Props<T extends string> = {
@@ -29,6 +31,7 @@ export function ChoixSegmente<T extends string>({
           <Pressable
             key={option.valeur}
             accessibilityRole="button"
+            accessibilityLabel={option.accessibilite ?? option.libelle}
             accessibilityState={{ selected: choisi, disabled: desactive }}
             disabled={desactive}
             onPress={() => onChange(option.valeur)}

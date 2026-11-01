@@ -18,6 +18,18 @@ export function useBoutiques() {
   });
 }
 
+/** Noms des boutiques de l’entreprise (sans code d’invitation). */
+export function useNomsBoutiquesEntreprise() {
+  return useQuery({
+    queryKey: ['boutiques', 'noms-entreprise'],
+    queryFn: async (): Promise<{ id: string; nom: string }[]> => {
+      const { data, error } = await db().rpc('noms_boutiques_entreprise');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 export function useCreerBoutique() {
   const queryClient = useQueryClient();
   return useMutation({

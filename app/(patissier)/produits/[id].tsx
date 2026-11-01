@@ -1,18 +1,26 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, Stack, useLocalSearchParams, type Href } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { z } from 'zod';
 
+import { useCatalogueBoutiques } from '@/api/catalogue';
 import { envoyerPhoto, supprimerPhoto } from '@/api/photos';
 import {
   useArchiverMonProduit,
   useDefinirPhotoProduit,
   useEnregistrerMonProduit,
   useFicheProduit,
+  useMesProduits,
 } from '@/api/produits';
-import { useDisponibleFrais, useEnregistrerMouvements, useStock } from '@/api/stock';
+import {
+  useDisponibleFrais,
+  useDisponibleFraisFabricant,
+  useEnregistrerMouvements,
+  useStock,
+  useStockFabricant,
+} from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Banniere } from '@/components/banniere';
@@ -26,7 +34,8 @@ import { EditeurRecette, estVide, UNITES, type LigneSaisie, type Unite } from '@
 import { optionsEnteteRetourTitre } from '@/components/entete-retour-titre';
 import { EtatChargement, EtatErreur } from '@/components/etats';
 import { eurosVersCentimes } from '@/lib/format';
-import { couleurs, espacements, rayon, styleTitreSection, tailles } from '@/theme';
+import { etiquetteBoutique } from '@/lib/production-exterieure';
+import { couleurs, espacements, rayon, rayonPetit, styleTitreSection, tailles } from '@/theme';
 
 const schema = z
   .object({
@@ -74,14 +83,27 @@ function quantiteTexte(valeur: number): string {
 }
 
 export default function EcranFicheProduit() {
-  const { id, ajoute } = useLocalSearchParams<{ id: string; ajoute?: string }>();
+  const { id, ajoute, exterieur } = useLocalSearchParams<{
+    id: string;
+    ajoute?: string;
+    exterieur?: string;
+  }>();
   const creation = id === 'nouveau';
+  const modeExterieurCreation = creation && exterieur === '1';
   const { width } = useWindowDimensions();
   const deuxColonnes = width >= 360;
   const { profil, verrouillerApresSaisie } = useAuth();
   const fiche = useFicheProduit(creation ? null : (id ?? null));
+  const produitExistantExterieur = Boolean(fiche.data?.produit.provenance_boutique_id);
+  const modeExterieur = modeExterieurCreation || produitExistantExterieur;
   const stockBoutique = useStock(profil?.boutique_id ?? null);
+  const stockFabricant = useStockFabricant(modeExterieur ? (profil?.id ?? null) : null);
   const disponibleBoutique = useDisponibleFrais(profil?.boutique_id ?? null);
+  const disponibleFabricant = useDisponibleFraisFabricant(
+    modeExterieur ? (profil?.id ?? null) : null,
+  );
+  const autresBoutiques = useCatalogueBoutiques();
+  const mesProduits = useMesProduits(modeExterieurCreation ? (profil?.id ?? null) : null);
   const enregistrer = useEnregistrerMonProduit();
   const enregistrerProduction = useEnregistrerMouvements();
   const definirPhoto = useDefinirPhotoProduit();
@@ -97,9 +119,29 @@ export default function EcranFicheProduit() {
   const [quantiteProduction, setQuantiteProduction] = useState(0);
   const [uriLocale, setUriLocale] = useState<string | null>(null);
   const [demandeRetrait, setDemandeRetrait] = useState(false);
+  const [boutiqueDestinataireId, setBoutiqueDestinataireId] = useState<string | null>(null);
+  const [copieDepuisId, setCopieDepuisId] = useState<string | null>(null);
   const fermerConfirmation = useCallback(() => setConfirmation(null), []);
   const fermerMessageStock = useCallback(() => setMessageStock(null), []);
   const dejaCharge = useRef(false);
+
+  const produitsLocauxCopiables = useMemo(
+    () =>
+      (mesProduits.data?.produits ?? []).filter(
+        (produit) =>
+          produit.provenance_boutique_id == null &&
+          !produit.intermediaire &&
+          produit.boutique_id === profil?.boutique_id,
+      ),
+    [mesProduits.data?.produits, profil?.boutique_id],
+  );
+
+  useEffect(() => {
+    if (!modeExterieurCreation || !autresBoutiques.data?.length) return;
+    if (!boutiqueDestinataireId) {
+      setBoutiqueDestinataireId(autresBoutiques.data[0]!.id);
+    }
+  }, [modeExterieurCreation, autresBoutiques.data, boutiqueDestinataireId]);
 
   const { control, handleSubmit, reset, setValue, watch, formState } = useForm<Formulaire>({
     resolver: zodResolver(schema),
@@ -154,27 +196,70 @@ export default function EcranFicheProduit() {
     if (chemin) setConfirmation('Photo enregistrée.');
   }
 
+  async function copierProduit(produitId: string) {
+    setCopieDepuisId(produitId);
+    const source = (mesProduits.data?.produits ?? []).find((p) => p.id === produitId);
+    if (!source) return;
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      if (!supabase) throw new Error('Supabase non configuré');
+      const { data: recette, error } = await supabase
+        .from('ingredients_recette')
+        .select('*')
+        .eq('produit_id', produitId)
+        .order('ordre');
+      if (error) throw error;
+      reset({
+        nom: source.nom,
+        prix: (source.prix_centimes / 100).toFixed(2).replace('.', ','),
+        conservation: source.conservation,
+        intermediaire: false,
+        duree: String(source.duree_conservation_jours ?? 2),
+        seuil: String(source.seuil_min),
+        photo: source.photo_url ?? '',
+        lignes: (recette ?? []).map(
+          (ligne): LigneSaisie => ({
+            ingredient: ligne.ingredient,
+            quantite: quantiteTexte(Number(ligne.quantite)),
+            unite: uniteValide(ligne.unite),
+          }),
+        ),
+      });
+      setConfirmation('Champs préremplis depuis votre produit. Vérifiez avant d’enregistrer.');
+    } catch (probleme: unknown) {
+      setErreur(messageErreur(probleme));
+    }
+  }
+
   async function sauver(valeurs: Formulaire) {
     if (!profil?.boutique_id || !profil.id) {
       setErreur('Aucune boutique n’est associée à votre compte.');
       return;
     }
+    if (modeExterieurCreation && !boutiqueDestinataireId) {
+      setErreur('Choisissez la boutique destinataire.');
+      return;
+    }
     setErreur(null);
     const impose = fiche.data?.produit.impose_par_admin ?? false;
-    const estIntermediaire = impose ? false : valeurs.intermediaire;
+    const estIntermediaire = modeExterieur || impose ? false : valeurs.intermediaire;
     const prixCentimes = estIntermediaire ? 0 : eurosVersCentimes(valeurs.prix);
     if (prixCentimes === null) return;
+    const boutiqueCible = modeExterieurCreation
+      ? boutiqueDestinataireId!
+      : (fiche.data?.produit.boutique_id ?? profil.boutique_id);
     let photoUrl = creation ? null : valeurs.photo || null;
     let cheminEnvoye: string | null = null;
     try {
       if (creation && uriLocale) {
-        cheminEnvoye = await envoyerPhoto(uriLocale, 'produits', profil.boutique_id);
+        cheminEnvoye = await envoyerPhoto(uriLocale, 'produits', boutiqueCible);
         photoUrl = cheminEnvoye;
       }
       const produitId = await enregistrer.mutateAsync({
         id: creation ? undefined : id,
-        boutiqueId: profil.boutique_id,
+        boutiqueId: boutiqueCible,
         fabricantId: profil.id,
+        provenanceBoutiqueId: modeExterieurCreation ? profil.boutique_id : undefined,
         nom: valeurs.nom,
         prixCentimes,
         photoUrl,
@@ -240,7 +325,21 @@ export default function EcranFicheProduit() {
     }
   }
 
-  if (!creation && (fiche.isLoading || stockBoutique.isLoading || disponibleBoutique.isLoading)) {
+  if (
+    !creation &&
+    (fiche.isLoading ||
+      stockBoutique.isLoading ||
+      disponibleBoutique.isLoading ||
+      (modeExterieur && (stockFabricant.isLoading || disponibleFabricant.isLoading)))
+  ) {
+    return (
+      <Ecran>
+        <EtatChargement />
+      </Ecran>
+    );
+  }
+
+  if (modeExterieurCreation && autresBoutiques.isLoading) {
     return (
       <Ecran>
         <EtatChargement />
@@ -276,19 +375,27 @@ export default function EcranFicheProduit() {
       produit &&
       !produit.archive_le &&
       profil &&
-      produit.boutique_id === profil.boutique_id &&
-      (produit.fabricant_id === profil.id || produit.intermediaire),
+      (produit.fabricant_id === profil.id ||
+        (produit.intermediaire && produit.boutique_id === profil.boutique_id)),
   );
 
+  const stockSource = produit?.provenance_boutique_id
+    ? stockFabricant.data
+    : stockBoutique.data;
+  const disponibleSource = produit?.provenance_boutique_id
+    ? disponibleFabricant.data
+    : disponibleBoutique.data;
   const stockActuel =
-    (stockBoutique.data ?? []).find((entree) => entree.produit_id === produit?.id)?.stock ?? 0;
+    (stockSource ?? []).find((entree) => entree.produit_id === produit?.id)?.stock ?? 0;
   const disponibleActuel =
-    (disponibleBoutique.data ?? []).find((entree) => entree.produit_id === produit?.id)
-      ?.disponible ?? 0;
+    (disponibleSource ?? []).find((entree) => entree.produit_id === produit?.id)?.disponible ??
+    0;
   const estFrais = produit?.conservation === 'frais';
 
   const impose = produit?.impose_par_admin ?? false;
-  const boutiqueId = profil?.boutique_id;
+  const boutiquePhotoId = modeExterieurCreation
+    ? boutiqueDestinataireId
+    : (produit?.boutique_id ?? profil?.boutique_id);
   const afficherPrix = !intermediaire || impose;
 
   const zoneStock =
@@ -347,20 +454,34 @@ export default function EcranFicheProduit() {
     />
   );
 
+  const destinataireFigee =
+    produitExistantExterieur && produit
+      ? etiquetteBoutique(
+          (autresBoutiques.data ?? []).find((b) => b.id === produit.boutique_id)?.nom ??
+            'Boutique',
+        )
+      : null;
+
   return (
     <Ecran defilement>
       <Stack.Screen
-        options={optionsEnteteRetourTitre(creation ? 'Nouveau produit' : 'Modifier le produit')}
+        options={optionsEnteteRetourTitre(
+          modeExterieurCreation
+            ? 'Nouveau produit extérieur'
+            : creation
+              ? 'Nouveau produit'
+              : 'Modifier le produit',
+        )}
       />
       <View style={styles.formulaire}>
         <Banniere message={confirmation} onFermer={fermerConfirmation} />
 
-        {boutiqueId ? (
+        {boutiquePhotoId ? (
           <ChoixPhoto
             compact
             chemin={creation ? uriLocale : photo || null}
             dossier="produits"
-            proprietaireId={boutiqueId}
+            proprietaireId={boutiquePhotoId}
             envoiDiffere={creation}
             onPhotoLocale={setUriLocale}
             onChange={photoChange}
@@ -377,9 +498,65 @@ export default function EcranFicheProduit() {
           <Text style={styles.aide}>Imposé par l'admin : le nom ne peut pas être modifié.</Text>
         ) : null}
 
+        {modeExterieurCreation ? (
+          <View style={styles.bloc}>
+            <Text style={styles.titreSection}>Boutique destinataire</Text>
+            {(autresBoutiques.data ?? []).length === 0 ? (
+              <Text style={styles.aide}>Aucune autre boutique dans votre entreprise.</Text>
+            ) : (
+              <View style={styles.puces}>
+                {(autresBoutiques.data ?? []).map((boutique) => {
+                  const active = boutiqueDestinataireId === boutique.id;
+                  return (
+                    <Pressable
+                      key={boutique.id}
+                      onPress={() => setBoutiqueDestinataireId(boutique.id)}
+                      style={[styles.puce, active && styles.puceActive]}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                    >
+                      <Text style={[styles.puceTexte, active && styles.puceTexteActive]}>
+                        {boutique.nom}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        ) : null}
+
+        {destinataireFigee ? (
+          <Text style={styles.aide}>Envoyé à {destinataireFigee} (non modifiable).</Text>
+        ) : null}
+
+        {modeExterieurCreation && produitsLocauxCopiables.length > 0 ? (
+          <View style={styles.bloc}>
+            <Text style={styles.titreSection}>Copier un de mes produits · facultatif</Text>
+            <View style={styles.puces}>
+              {produitsLocauxCopiables.map((produitLocal) => {
+                const active = copieDepuisId === produitLocal.id;
+                return (
+                  <Pressable
+                    key={produitLocal.id}
+                    onPress={() => void copierProduit(produitLocal.id)}
+                    style={[styles.puce, active && styles.puceActive]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text style={[styles.puceTexte, active && styles.puceTexteActive]}>
+                      {produitLocal.nom}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+
         {zoneStock}
 
-        {!impose ? (
+        {!impose && !modeExterieur ? (
           <View style={styles.bloc}>
             <Text style={styles.titreSection}>Type</Text>
             <ChoixSegmente
@@ -591,5 +768,28 @@ const styles = StyleSheet.create({
   },
   recette: {
     gap: espacements.s,
+  },
+  puces: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: espacements.s,
+  },
+  puce: {
+    height: 32,
+    paddingHorizontal: espacements.m,
+    borderRadius: rayonPetit,
+    backgroundColor: couleurs.fondPuce,
+    justifyContent: 'center',
+  },
+  puceActive: {
+    backgroundColor: couleurs.principal,
+  },
+  puceTexte: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    fontWeight: '500',
+  },
+  puceTexteActive: {
+    color: couleurs.texteSurPrincipal,
   },
 });

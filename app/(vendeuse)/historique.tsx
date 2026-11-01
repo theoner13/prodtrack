@@ -13,6 +13,7 @@ import {
   formatDate,
   jourPrecedent,
 } from '@/lib/format';
+import { etiquetteBoutique } from '@/lib/production-exterieure';
 import { couleurs, espacements, tailles } from '@/theme';
 
 export default function EcranHistorique() {
@@ -107,7 +108,12 @@ function JourHistoriqueCarte({
           ) : (
             jour.detail.map((ligne) => (
               <View key={ligne.produitId} style={styles.produit}>
-                <Text style={styles.nom}>{ligne.nom}</Text>
+                <Text style={styles.nom}>
+                  {ligne.nom}
+                  {ligne.provenanceBoutiqueNom
+                    ? ` · ${etiquetteBoutique(ligne.provenanceBoutiqueNom)}`
+                    : ''}
+                </Text>
                 <Text style={styles.quantites}>
                   {ligne.misEnVente != null
                     ? `Mis en vente ${ligne.misEnVente} · Vendu ${ligne.vendu} · Jeté ${ligne.jete} · Reste ${ligne.reste}`

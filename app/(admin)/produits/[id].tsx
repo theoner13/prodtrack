@@ -20,6 +20,10 @@ import { BoutonRetour } from '@/components/bouton-retour';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { eurosVersCentimes, formatEuros } from '@/lib/format';
+import {
+  etiquetteBoutique,
+  etiquetteProvenanceAdmin,
+} from '@/lib/production-exterieure';
 import { couleurs, espacements, polices, rayonPetit, tailles } from '@/theme';
 
 const PAS_PRIX_CENTIMES = 10;
@@ -43,7 +47,9 @@ export default function EcranFicheProduitAdmin() {
   const lignes = fiche.data?.lignes ?? [];
   const photo = useUrlSignee(produit?.photo_url ?? null);
   const fabricant = useEmploye(produit?.fabricant_id ?? undefined);
-  const patissiers = usePatissiers(produit?.boutique_id ?? null);
+  const boutiqueFabricantsId =
+    produit?.provenance_boutique_id ?? produit?.boutique_id ?? null;
+  const patissiers = usePatissiers(boutiqueFabricantsId);
   const modifier = useModifierProduit();
 
   const [prixOuvert, setPrixOuvert] = useState(false);
@@ -58,11 +64,20 @@ export default function EcranFicheProduitAdmin() {
     return (boutiques.data ?? []).find((b) => b.id === bid)?.nom ?? '—';
   }, [produit?.boutique_id, boutiques.data]);
 
+  const provenanceNom = useMemo(() => {
+    const pid = produit?.provenance_boutique_id;
+    if (!pid) return null;
+    return (boutiques.data ?? []).find((b) => b.id === pid)?.nom ?? null;
+  }, [produit?.provenance_boutique_id, boutiques.data]);
+
   const fabricantNom = !produit?.fabricant_id
     ? 'Sans pâtissier'
     : fabricant.data
       ? `${fabricant.data.prenom} ${fabricant.data.nom}`.trim()
       : 'Fabricant inconnu';
+  const fabricantLigne = provenanceNom
+    ? `${fabricantNom} · ${etiquetteBoutique(provenanceNom)}`
+    : fabricantNom;
 
   function retour() {
     if (router.canGoBack()) {
@@ -178,13 +193,16 @@ export default function EcranFicheProduitAdmin() {
             {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
             {produit.impose_par_admin ? <Text style={styles.badge}>Imposé</Text> : null}
             {!produit.fabricant_id ? <Text style={styles.badge}>Sans pâtissier</Text> : null}
+            {provenanceNom ? (
+              <Text style={styles.badge}>{etiquetteProvenanceAdmin(provenanceNom)}</Text>
+            ) : null}
           </View>
           <Text style={styles.boutique}>{boutiqueNom}</Text>
         </View>
       </View>
 
       <View style={styles.carte}>
-        <LigneInfo libelle="Fabricant" valeur={fabricantNom} />
+        <LigneInfo libelle="Fabricant" valeur={fabricantLigne} />
         {!produit.intermediaire ? (
           prixOuvert ? (
             <View style={[styles.lignePrixEdition, styles.ligneSeparee]}>

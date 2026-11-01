@@ -1,3 +1,4 @@
+import { router, type Href } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -9,14 +10,17 @@ import {
   type MotifPerte,
 } from '@/api/pertes';
 import { useUrlsSignees } from '@/api/photos';
-import { useProduits, type ProduitListe } from '@/api/produits';
+import { useMesProduits, useProduits, type ProduitListe } from '@/api/produits';
 import {
   sousTitreDisponibleFrais,
   useAnnulerMouvement,
   useDisponibleFrais,
+  useDisponibleFraisFabricant,
   useEnregistrerMouvements,
   useMesMouvementsDuJour,
+  useStatsJourProduits,
   useStock,
+  useStockFabricant,
 } from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
@@ -28,6 +32,12 @@ import { ChoixSegmente } from '@/components/choix-segmente';
 import { Compteur } from '@/components/compteur';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
+import {
+  etiquetteBoutique,
+  grouperParBoutiqueDestinataire,
+  sousTitreExterieurFrais,
+  sousTitreExterieurSurgele,
+} from '@/lib/production-exterieure';
 import {
   couleurs,
   espacements,
@@ -42,6 +52,7 @@ type Props = {
 };
 
 type OngletProduction = 'frais' | 'surgele';
+type CategorieProduction = 'production' | 'intermediaire' | 'exterieure';
 
 type CibleAnnulation =
   | { kind: 'mouvement'; id: string; quantite: number; conservation: 'frais' | 'surgele' }
@@ -71,11 +82,21 @@ export function SaisieStock({ type }: Props) {
   const boutiqueId = profil?.boutique_id ?? null;
   const userId = profil?.id ?? null;
 
+  const [categorie, setCategorie] = useState<CategorieProduction>('production');
+  const modeExterieur = type === 'production' && categorie === 'exterieure';
+
   const produits = useProduits(boutiqueId);
-  const stock = useStock(boutiqueId);
-  const disponible = useDisponibleFrais(type === 'production' ? boutiqueId : null);
+  const mesProduits = useMesProduits(modeExterieur ? userId : null);
+  const stockBoutique = useStock(boutiqueId);
+  const stockFabricant = useStockFabricant(modeExterieur ? userId : null);
+  const disponibleBoutique = useDisponibleFrais(
+    type === 'production' && !modeExterieur ? boutiqueId : null,
+  );
+  const disponibleFabricant = useDisponibleFraisFabricant(modeExterieur ? userId : null);
   const mouvements = useMesMouvementsDuJour(userId, type);
-  const pertes = useMesPertesDuJour(type === 'sortie' ? userId : null);
+  const pertes = useMesPertesDuJour(
+    type === 'sortie' || modeExterieur ? userId : null,
+  );
   const enregistrer = useEnregistrerMouvements();
   const declarerPerte = useDeclarerPerte();
   const annuler = useAnnulerMouvement();
@@ -94,17 +115,41 @@ export function SaisieStock({ type }: Props) {
   const [perteMotif, setPerteMotif] = useState<MotifPerte | null>(null);
   const [perteDansLeStock, setPerteDansLeStock] = useState(false);
 
+  const produitsExterieurs = useMemo(() => {
+    if (!modeExterieur) return [];
+    return (mesProduits.data?.produits ?? []).filter(
+      (produit) =>
+        produit.provenance_boutique_id != null &&
+        produit.provenance_boutique_id === boutiqueId &&
+        produit.fabricant_id === userId,
+    );
+  }, [modeExterieur, mesProduits.data?.produits, boutiqueId, userId]);
+
+  const idsExterieurs = useMemo(
+    () => produitsExterieurs.map((produit) => produit.id),
+    [produitsExterieurs],
+  );
+  const statsExterieurs = useStatsJourProduits(modeExterieur ? idsExterieurs : []);
+
   const tousEligibles = useMemo(() => {
+    if (modeExterieur) return produitsExterieurs;
+
     const tous = (produits.data ?? []).filter((produit) => produit.fabricant_id != null);
     if (type === 'production') {
+      if (categorie === 'intermediaire') {
+        return tous.filter((produit) => produit.intermediaire);
+      }
+      // Production locale : mes produits non intermédiaires, hors extérieurs reçus.
       return tous.filter(
-        (produit) => produit.fabricant_id === userId || produit.intermediaire,
+        (produit) =>
+          !produit.intermediaire &&
+          produit.provenance_boutique_id == null &&
+          produit.fabricant_id === userId,
       );
     }
     return tous;
-  }, [produits.data, type, userId]);
+  }, [modeExterieur, produitsExterieurs, produits.data, type, categorie, userId]);
 
-  // Sorties : uniquement les surgelés. Production : selon l'onglet Frais / Surgelés.
   const listeBase = useMemo(() => {
     if (type === 'production') {
       return tousEligibles.filter((produit) => produit.conservation === ongletProduction);
@@ -112,23 +157,29 @@ export function SaisieStock({ type }: Props) {
     return tousEligibles.filter((produit) => produit.conservation === 'surgele');
   }, [tousEligibles, type, ongletProduction]);
 
-  // Formulaire pertes : frais et surgelés.
-  const listePertes = tousEligibles;
+  const listePertes = modeExterieur
+    ? produitsExterieurs
+    : type === 'sortie'
+      ? tousEligibles
+      : [];
+
+  const stockData = modeExterieur ? stockFabricant.data : stockBoutique.data;
+  const disponibleData = modeExterieur ? disponibleFabricant.data : disponibleBoutique.data;
 
   const stockParProduit = useMemo(() => {
     const map = new Map<string, number>();
-    for (const ligne of stock.data ?? []) {
+    for (const ligne of stockData ?? []) {
       if (ligne.produit_id) map.set(ligne.produit_id, ligne.stock ?? 0);
     }
     return map;
-  }, [stock.data]);
+  }, [stockData]);
 
   const disponibleParProduit = useMemo(() => {
     const map = new Map<
       string,
       { disponible: number; production_jour: number; restes_veille: number }
     >();
-    for (const ligne of disponible.data ?? []) {
+    for (const ligne of disponibleData ?? []) {
       if (ligne.produit_id) {
         map.set(ligne.produit_id, {
           disponible: ligne.disponible ?? 0,
@@ -138,13 +189,31 @@ export function SaisieStock({ type }: Props) {
       }
     }
     return map;
-  }, [disponible.data]);
+  }, [disponibleData]);
+
+  const nomsBoutiques = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const produit of produitsExterieurs) {
+      if (produit.boutiqueNom) map.set(produit.boutique_id, produit.boutiqueNom);
+    }
+    return map;
+  }, [produitsExterieurs]);
+
+  const groupesExterieurs = useMemo(() => {
+    if (!modeExterieur) return [];
+    const terme = sansAccents(recherche.trim());
+    const filtre = terme
+      ? listeBase.filter((produit) => sansAccents(produit.nom).includes(terme))
+      : listeBase;
+    return grouperParBoutiqueDestinataire(filtre, nomsBoutiques);
+  }, [modeExterieur, listeBase, recherche, nomsBoutiques]);
 
   const listeFiltre = useMemo(() => {
+    if (modeExterieur) return listeBase;
     const terme = sansAccents(recherche.trim());
     if (!terme) return listeBase;
     return listeBase.filter((produit) => sansAccents(produit.nom).includes(terme));
-  }, [listeBase, recherche]);
+  }, [listeBase, recherche, modeExterieur]);
 
   const saisiesDuJour = useMemo(() => {
     type Ligne =
@@ -175,7 +244,7 @@ export function SaisieStock({ type }: Props) {
       conservation: saisie.conservation,
     }));
 
-    if (type === 'sortie') {
+    if (type === 'sortie' || modeExterieur) {
       for (const perte of pertes.data ?? []) {
         lignes.push({
           kind: 'perte',
@@ -190,14 +259,15 @@ export function SaisieStock({ type }: Props) {
     }
 
     return lignes.sort((a, b) => b.created_at.localeCompare(a.created_at));
-  }, [mouvements.data, pertes.data, type]);
+  }, [mouvements.data, pertes.data, type, modeExterieur]);
 
   const cheminsPhotos = useMemo(() => {
-    const source = type === 'sortie' ? [...listeBase, ...listePertes] : listeBase;
+    const source =
+      type === 'sortie' || modeExterieur ? [...listeBase, ...listePertes] : listeBase;
     return source
       .map((produit) => produit.photo_url)
       .filter((chemin): chemin is string => Boolean(chemin));
-  }, [listeBase, listePertes, type]);
+  }, [listeBase, listePertes, type, modeExterieur]);
   const photos = useUrlsSignees(cheminsPhotos);
 
   const perteProduit = listePertes.find((p) => p.id === perteProduitId) ?? null;
@@ -218,13 +288,27 @@ export function SaisieStock({ type }: Props) {
     setRecherche('');
   }
 
+  function changerCategorie(valeur: CategorieProduction) {
+    setCategorie(valeur);
+    setQuantites({});
+    setRecherche('');
+    setFormulairePerteOuvert(false);
+    reinitialiserFormulairePerte();
+  }
+
   async function rafraichir() {
     await Promise.all([
       produits.refetch(),
-      stock.refetch(),
+      stockBoutique.refetch(),
       mouvements.refetch(),
-      type === 'production' ? disponible.refetch() : Promise.resolve(),
-      type === 'sortie' ? pertes.refetch() : Promise.resolve(),
+      modeExterieur ? mesProduits.refetch() : Promise.resolve(),
+      modeExterieur ? stockFabricant.refetch() : Promise.resolve(),
+      modeExterieur ? disponibleFabricant.refetch() : Promise.resolve(),
+      modeExterieur ? statsExterieurs.refetch() : Promise.resolve(),
+      type === 'production' && !modeExterieur
+        ? disponibleBoutique.refetch()
+        : Promise.resolve(),
+      type === 'sortie' || modeExterieur ? pertes.refetch() : Promise.resolve(),
     ]);
   }
 
@@ -329,16 +413,27 @@ export function SaisieStock({ type }: Props) {
 
   const chargement =
     produits.isLoading ||
-    stock.isLoading ||
+    stockBoutique.isLoading ||
     mouvements.isLoading ||
-    (type === 'production' && disponible.isLoading) ||
-    (type === 'sortie' && pertes.isLoading);
+    (modeExterieur &&
+      (mesProduits.isLoading ||
+        stockFabricant.isLoading ||
+        disponibleFabricant.isLoading ||
+        statsExterieurs.isLoading)) ||
+    (type === 'production' && !modeExterieur && disponibleBoutique.isLoading) ||
+    ((type === 'sortie' || modeExterieur) && pertes.isLoading);
   const erreur =
     produits.error ??
-    stock.error ??
+    stockBoutique.error ??
     mouvements.error ??
-    (type === 'production' ? disponible.error : null) ??
-    (type === 'sortie' ? pertes.error : null);
+    (modeExterieur
+      ? (mesProduits.error ??
+        stockFabricant.error ??
+        disponibleFabricant.error ??
+        statsExterieurs.error)
+      : null) ??
+    (type === 'production' && !modeExterieur ? disponibleBoutique.error : null) ??
+    (type === 'sortie' || modeExterieur ? pertes.error : null);
 
   if (chargement) {
     return (
@@ -363,14 +458,78 @@ export function SaisieStock({ type }: Props) {
         ? 'Enregistrer la production du jour'
         : 'Enregistrer la production'
       : 'Enregistrer les sorties';
-  const messageVide =
-    type === 'production'
-      ? ongletProduction === 'frais'
-        ? 'Aucun produit frais à produire. Ajoutez-en dans l’onglet Mes produits.'
-        : 'Aucun produit surgelé à produire. Ajoutez-en dans l’onglet Mes produits.'
+  const messageVide = modeExterieur
+    ? 'Aucun produit envoyé à une autre boutique.'
+    : type === 'production'
+      ? categorie === 'intermediaire'
+        ? ongletProduction === 'frais'
+          ? 'Aucun produit intermédiaire frais.'
+          : 'Aucun produit intermédiaire surgelé.'
+        : ongletProduction === 'frais'
+          ? 'Aucun produit frais à produire. Ajoutez-en dans l’onglet Mes produits.'
+          : 'Aucun produit surgelé à produire. Ajoutez-en dans l’onglet Mes produits.'
       : 'Aucun produit surgelé dans cette boutique.';
 
   const annulationEnCours = annuler.isPending || annulerPerte.isPending;
+  const afficherPertes = type === 'sortie' || modeExterieur;
+
+  function renduLigne(produit: ProduitListe) {
+    const dispo = disponibleParProduit.get(produit.id);
+    const stats = statsExterieurs.data?.get(produit.id);
+    let detail: string;
+    if (modeExterieur && ongletProduction === 'frais') {
+      detail = sousTitreExterieurFrais({
+        disponible: dispo?.disponible ?? 0,
+        restesVeille: dispo?.restes_veille ?? 0,
+        jetes: stats?.jetes ?? 0,
+        pertes: stats?.pertes ?? 0,
+      });
+    } else if (modeExterieur) {
+      detail = sousTitreExterieurSurgele({
+        stock: stockParProduit.get(produit.id) ?? 0,
+        jetes: stats?.jetes ?? 0,
+        pertes: stats?.pertes ?? 0,
+      });
+    } else if (type === 'production' && ongletProduction === 'frais') {
+      const texte = sousTitreDisponibleFrais(
+        dispo?.disponible ?? 0,
+        dispo?.production_jour ?? 0,
+        dispo?.restes_veille ?? 0,
+      );
+      detail = produit.intermediaire ? `${produit.fabricantNom} · ${texte}` : texte;
+    } else if (type === 'production') {
+      detail = produit.intermediaire
+        ? `${produit.fabricantNom} · Stock : ${stockParProduit.get(produit.id) ?? 0}`
+        : `Stock : ${stockParProduit.get(produit.id) ?? 0}`;
+    } else {
+      detail = `${produit.fabricantNom} · Stock : ${stockParProduit.get(produit.id) ?? 0}`;
+    }
+
+    const seuil = produit.seuil_min;
+    const stockValeur = stockParProduit.get(produit.id) ?? 0;
+    const sousSeuil =
+      modeExterieur &&
+      ongletProduction === 'surgele' &&
+      produit.conservation === 'surgele' &&
+      stockValeur < seuil;
+
+    return (
+      <LigneSaisie
+        key={produit.id}
+        produit={produit}
+        detail={sousSeuil ? `${detail} · Sous le seuil (min. ${seuil})` : detail}
+        alerte={sousSeuil}
+        photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
+        quantite={quantites[produit.id] ?? 0}
+        onChange={(valeur) => definirQuantite(produit.id, valeur)}
+        badgeProvenance={
+          type === 'sortie' && produit.provenanceBoutiqueNom
+            ? etiquetteBoutique(produit.provenanceBoutiqueNom)
+            : null
+        }
+      />
+    );
+  }
 
   return (
     <Ecran
@@ -378,13 +537,51 @@ export function SaisieStock({ type }: Props) {
       defilement
       enRafraichissement={
         produits.isRefetching ||
-        stock.isRefetching ||
+        stockBoutique.isRefetching ||
         mouvements.isRefetching ||
-        (type === 'production' && disponible.isRefetching) ||
-        (type === 'sortie' && pertes.isRefetching)
+        (modeExterieur &&
+          (mesProduits.isRefetching ||
+            stockFabricant.isRefetching ||
+            disponibleFabricant.isRefetching ||
+            statsExterieurs.isRefetching)) ||
+        (type === 'production' && !modeExterieur && disponibleBoutique.isRefetching) ||
+        ((type === 'sortie' || modeExterieur) && pertes.isRefetching)
       }
       onRafraichir={() => void rafraichir()}
     >
+      {type === 'production' ? (
+        <ChoixSegmente
+          options={[
+            { valeur: 'production', libelle: 'Production', accessibilite: 'Production' },
+            {
+              valeur: 'intermediaire',
+              libelle: 'Intermédiaire',
+              accessibilite: 'Production intermédiaire',
+            },
+            {
+              valeur: 'exterieure',
+              libelle: 'Extérieure',
+              accessibilite: 'Production extérieure',
+            },
+          ]}
+          valeur={categorie}
+          onChange={changerCategorie}
+        />
+      ) : null}
+
+      {modeExterieur ? (
+        <View style={styles.enteteExterieur}>
+          <Pressable
+            onPress={() => router.push('/produits/nouveau?exterieur=1' as Href)}
+            style={styles.lienNouveau}
+            accessibilityRole="button"
+            accessibilityLabel="Nouveau produit extérieur"
+          >
+            <Text style={styles.lienNouveauTexte}>+ Nouveau produit extérieur</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       {type === 'production' ? (
         <ChoixSegmente
           options={[
@@ -414,21 +611,16 @@ export function SaisieStock({ type }: Props) {
 
       {listeBase.length === 0 ? <EtatVide message={messageVide} /> : null}
 
-      {listeFiltre.map((produit) => (
-        <LigneSaisie
-          key={produit.id}
-          produit={produit}
-          stock={stockParProduit.get(produit.id) ?? 0}
-          dispo={disponibleParProduit.get(produit.id)}
-          photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
-          quantite={quantites[produit.id] ?? 0}
-          onChange={(valeur) => definirQuantite(produit.id, valeur)}
-          type={type}
-          modeProduction={type === 'production' ? ongletProduction : undefined}
-        />
-      ))}
+      {modeExterieur
+        ? groupesExterieurs.map((groupe) => (
+            <View key={groupe.boutiqueId} style={styles.groupe}>
+              <Text style={styles.intertitre}>{groupe.nomBoutique}</Text>
+              {groupe.produits.map((produit) => renduLigne(produit))}
+            </View>
+          ))
+        : listeFiltre.map((produit) => renduLigne(produit))}
 
-      {listeBase.length > 0 || (type === 'sortie' && listePertes.length > 0) ? (
+      {listeBase.length > 0 || (afficherPertes && listePertes.length > 0) ? (
         <>
           {!formulairePerteOuvert ? (
             <Banniere message={message} type={typeMessage} onFermer={fermerMessage} duree={5000} />
@@ -441,7 +633,7 @@ export function SaisieStock({ type }: Props) {
               chargement={enregistrer.isPending}
             />
           ) : null}
-          {type === 'sortie' ? (
+          {afficherPertes ? (
             <>
               <Bouton
                 titre="Déclarer une perte"
@@ -634,47 +826,31 @@ export function SaisieStock({ type }: Props) {
 
 function LigneSaisie({
   produit,
-  stock,
-  dispo,
+  detail,
+  alerte,
   photoUrl,
   quantite,
   onChange,
-  type,
-  modeProduction,
+  badgeProvenance,
 }: {
   produit: ProduitListe;
-  stock: number;
-  dispo?: { disponible: number; production_jour: number; restes_veille: number };
+  detail: string;
+  alerte?: boolean;
   photoUrl?: string | null;
   quantite: number;
   onChange: (valeur: number) => void;
-  type: 'production' | 'sortie';
-  modeProduction?: OngletProduction;
+  badgeProvenance?: string | null;
 }) {
-  let detail: string;
-  if (type === 'production' && modeProduction === 'frais') {
-    const texte = sousTitreDisponibleFrais(
-      dispo?.disponible ?? 0,
-      dispo?.production_jour ?? 0,
-      dispo?.restes_veille ?? 0,
-    );
-    detail = produit.intermediaire ? `${produit.fabricantNom} · ${texte}` : texte;
-  } else if (type === 'production') {
-    detail = produit.intermediaire
-      ? `${produit.fabricantNom} · Stock : ${stock}`
-      : `Stock : ${stock}`;
-  } else {
-    detail = `${produit.fabricantNom} · Stock : ${stock}`;
-  }
-
   return (
     <CarteProduit
       nom={produit.nom}
       photoUrl={photoUrl}
       sousTitre={detail}
+      alerte={alerte}
       sousLigne={<Compteur valeur={quantite} onChange={onChange} libelle={produit.nom} />}
     >
       {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
+      {badgeProvenance ? <Text style={styles.badge}>{badgeProvenance}</Text> : null}
     </CarteProduit>
   );
 }
@@ -684,6 +860,26 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     fontFamily: polices.sans,
+  },
+  enteteExterieur: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  lienNouveau: {
+    paddingVertical: espacements.xs,
+  },
+  lienNouveauTexte: {
+    fontSize: tailles.petit,
+    fontWeight: '500',
+    color: couleurs.principal,
+    fontFamily: polices.sans,
+  },
+  groupe: {
+    gap: espacements.xs,
+  },
+  intertitre: {
+    ...styleTitreSection,
+    marginTop: espacements.s,
   },
   section: {
     ...styleTitreSection,

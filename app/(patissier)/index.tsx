@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useMesPrevisions, type PrevisionProduit } from '@/api/previsions';
 import { useMesProduits } from '@/api/produits';
-import { useStock } from '@/api/stock';
+import { useStockFabricant } from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
@@ -16,6 +16,7 @@ import {
   libelleAccessibiliteLigne,
   type LignePlanning,
 } from '@/lib/planning';
+import { etiquetteBoutique } from '@/lib/production-exterieure';
 import {
   couleurs,
   espacements,
@@ -134,6 +135,9 @@ function LigneProduitPlanning({
             </Text>
           </Pressable>
           {ligne.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
+          {ligne.boutiqueDestinataire ? (
+            <Text style={styles.badge}>{ligne.boutiqueDestinataire}</Text>
+          ) : null}
         </View>
         <View style={styles.droite}>
           {ligne.quantite !== null ? (
@@ -156,10 +160,9 @@ function LigneProduitPlanning({
 
 export default function EcranPlanning() {
   const { profil } = useAuth();
-  const boutiqueId = profil?.boutique_id ?? null;
   const mes = useMesProduits(profil?.id ?? null);
   const previsions = useMesPrevisions(profil?.id ?? null);
-  const stock = useStock(boutiqueId);
+  const stock = useStockFabricant(profil?.id ?? null);
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [jourSelectionne, setJourSelectionne] = useState<string | null>(null);
 
@@ -240,6 +243,9 @@ export default function EcranPlanning() {
       produitId: produit.id,
       nom: produit.nom,
       intermediaire: produit.intermediaire,
+      boutiqueDestinataire: produit.provenance_boutique_id
+        ? etiquetteBoutique(produit.boutiqueNom)
+        : null,
       stock: stockValeur,
       seuil,
       jourFabrication: prevision?.jourFabrication ?? null,

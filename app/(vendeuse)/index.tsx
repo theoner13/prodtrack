@@ -36,6 +36,7 @@ import {
   messageDepassementLigne,
   texteMisEnVente,
 } from '@/lib/mis-en-vente';
+import { etiquetteBoutique } from '@/lib/production-exterieure';
 import { couleurs, espacements, ombres, polices, tailles } from '@/theme';
 
 type ValeursProduit = { vendu: number; jete: number; reste: number };
@@ -411,7 +412,13 @@ function LigneVente({
       sousTitre={sousTitre}
       alerte={depassement}
       sousLigne={<View style={styles.sousLignePleine}>{compteurs}</View>}
-    />
+    >
+      {produit.provenanceBoutiqueNom ? (
+        <Text style={styles.badgeProvenance}>
+          {etiquetteBoutique(produit.provenanceBoutiqueNom)}
+        </Text>
+      ) : null}
+    </CarteProduit>
   );
 }
 
@@ -552,6 +559,17 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     color: couleurs.alerte,
     fontWeight: '600',
+    fontFamily: polices.sans,
+  },
+  badgeProvenance: {
+    overflow: 'hidden',
+    backgroundColor: couleurs.fondGroupe,
+    color: couleurs.texteSecondaire,
+    fontSize: 11,
+    fontWeight: '500',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 5,
     fontFamily: polices.sans,
   },
 });

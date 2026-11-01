@@ -12,6 +12,7 @@ import { ChoixSegmente } from '@/components/choix-segmente';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { FormulaireImposer } from '@/components/formulaire-imposer';
+import { etiquetteProvenanceAdmin } from '@/lib/production-exterieure';
 import { couleurs, espacements, polices, styleTitreEcran, styleTitreSection, tailles } from '@/theme';
 
 type FiltreProduits = 'vente' | 'intermediaire';
@@ -149,6 +150,11 @@ export default function EcranProduits() {
           >
             {produit.impose_par_admin ? <Text style={styles.badge}>Imposé</Text> : null}
             {!produit.fabricant_id ? <Text style={styles.badge}>Sans pâtissier</Text> : null}
+            {produit.provenanceBoutiqueNom ? (
+              <Text style={styles.badge}>
+                {etiquetteProvenanceAdmin(produit.provenanceBoutiqueNom)}
+              </Text>
+            ) : null}
           </CarteProduit>
         </Pressable>
       ))}

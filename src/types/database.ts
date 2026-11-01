@@ -348,6 +348,7 @@ export type Database = {
           nom: string
           photo_url: string | null
           prix_centimes: number
+          provenance_boutique_id: string | null
           seuil_min: number
         }
         Insert: {
@@ -363,6 +364,7 @@ export type Database = {
           nom: string
           photo_url?: string | null
           prix_centimes: number
+          provenance_boutique_id?: string | null
           seuil_min?: number
         }
         Update: {
@@ -378,6 +380,7 @@ export type Database = {
           nom?: string
           photo_url?: string | null
           prix_centimes?: number
+          provenance_boutique_id?: string | null
           seuil_min?: number
         }
         Relationships: [
@@ -393,6 +396,13 @@ export type Database = {
             columns: ["fabricant_id"]
             isOneToOne: false
             referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produits_provenance_boutique_id_fkey"
+            columns: ["provenance_boutique_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
             referencedColumns: ["id"]
           },
         ]
@@ -687,6 +697,13 @@ export type Database = {
       }
       calculer_previsions: { Args: never; Returns: undefined }
       catalogue_boutiques: {
+        Args: never
+        Returns: {
+          id: string
+          nom: string
+        }[]
+      }
+      noms_boutiques_entreprise: {
         Args: never
         Returns: {
           id: string

@@ -41,6 +41,7 @@ export type DetailHistorique = {
   jete: number;
   reste: number;
   misEnVente: number | null;
+  provenanceBoutiqueNom: string | null;
 };
 
 export type JourHistorique = {
@@ -141,7 +142,7 @@ export function useHistoriqueVentes(boutiqueId: string | null) {
         vendu: number;
         jete: number;
         reste: number;
-        produits: { nom: string } | null;
+        produits: { nom: string; provenance_boutique_id: string | null } | null;
       };
 
       const data: LigneHistorique[] = [];
@@ -149,7 +150,7 @@ export function useHistoriqueVentes(boutiqueId: string | null) {
         const page = await lireToutesLesLignes<LigneHistorique>(() =>
           db()
             .from('saisies_vente')
-            .select('produit_id, jour, vendu, jete, reste, produits(nom)')
+            .select('produit_id, jour, vendu, jete, reste, produits(nom, provenance_boutique_id)')
             .in('produit_id', paquet)
             .gte('jour', debut)
             .lte('jour', aujourdhui)
@@ -158,6 +159,14 @@ export function useHistoriqueVentes(boutiqueId: string | null) {
         );
         data.push(...page);
       }
+
+      const { data: nomsBoutiques, error: erreurNoms } = await db().rpc(
+        'noms_boutiques_entreprise',
+      );
+      if (erreurNoms) throw erreurNoms;
+      const boutiqueParId = new Map(
+        (nomsBoutiques ?? []).map((boutique) => [boutique.id, boutique.nom]),
+      );
 
       const misParJour = new Map<string, Map<string, number>>();
       for (const jour of jours) {
@@ -173,6 +182,7 @@ export function useHistoriqueVentes(boutiqueId: string | null) {
       for (const ligne of data) {
         const produit = ligne.produits;
         const mis = misParJour.get(ligne.jour)?.get(ligne.produit_id);
+        const provenanceId = produit?.provenance_boutique_id ?? null;
         const detail: DetailHistorique = {
           produitId: ligne.produit_id,
           nom: produit?.nom ?? 'Produit',
@@ -180,6 +190,9 @@ export function useHistoriqueVentes(boutiqueId: string | null) {
           jete: ligne.jete,
           reste: ligne.reste,
           misEnVente: mis ?? null,
+          provenanceBoutiqueNom: provenanceId
+            ? (boutiqueParId.get(provenanceId) ?? null)
+            : null,
         };
         const liste = parJour.get(ligne.jour) ?? [];
         liste.push(detail);

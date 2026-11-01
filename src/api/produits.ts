@@ -9,7 +9,13 @@ function db() {
   return supabase;
 }
 
-export type ProduitListe = Produit & { fabricantNom: string };
+export type ProduitListe = Produit & {
+  fabricantNom: string;
+  /** Nom de la boutique de provenance (produit extérieur), sinon null. */
+  provenanceBoutiqueNom: string | null;
+  /** Nom de la boutique du produit (utile pour les extérieurs du fabricant). */
+  boutiqueNom: string | null;
+};
 
 export type LigneRecette = {
   ingredient: string;
@@ -31,6 +37,33 @@ export type CibleImposee = {
   fabricantId: string | null;
   nomBoutique: string;
 };
+
+async function chargerNomsBoutiques(): Promise<Map<string, string>> {
+  const { data, error } = await db().rpc('noms_boutiques_entreprise');
+  if (error) throw error;
+  const noms = new Map<string, string>();
+  for (const boutique of data ?? []) {
+    noms.set(boutique.id, boutique.nom);
+  }
+  return noms;
+}
+
+function enrichirProduit(
+  produit: Produit,
+  fabricants: Map<string, string>,
+  boutiques: Map<string, string>,
+): ProduitListe {
+  return {
+    ...produit,
+    fabricantNom: produit.fabricant_id
+      ? (fabricants.get(produit.fabricant_id) ?? 'Fabricant inconnu')
+      : 'Sans pâtissier',
+    provenanceBoutiqueNom: produit.provenance_boutique_id
+      ? (boutiques.get(produit.provenance_boutique_id) ?? null)
+      : null,
+    boutiqueNom: boutiques.get(produit.boutique_id) ?? null,
+  };
+}
 
 export function useProduits(boutiqueId: string | null) {
   return useQuery({
@@ -65,12 +98,8 @@ export function useProduits(boutiqueId: string | null) {
         }
       }
 
-      return produits.map((produit) => ({
-        ...produit,
-        fabricantNom: produit.fabricant_id
-          ? (noms.get(produit.fabricant_id) ?? 'Fabricant inconnu')
-          : 'Sans pâtissier',
-      }));
+      const boutiques = await chargerNomsBoutiques();
+      return produits.map((produit) => enrichirProduit(produit, noms, boutiques));
     },
   });
 }
@@ -121,11 +150,13 @@ async function creerCopie(produit: ProduitImpose, cible: CibleImposee): Promise<
   if (erreurRecette) throw erreurRecette;
 }
 
+export type MonProduit = ProduitListe;
+
 export function useMesProduits(userId: string | null) {
   return useQuery({
     queryKey: ['produits', 'moi', userId],
     enabled: Boolean(userId),
-    queryFn: async () => {
+    queryFn: async (): Promise<{ produits: MonProduit[]; dejaEuUnProduit: boolean }> => {
       const base = db();
       const { data, error } = await base
         .from('produits')
@@ -139,7 +170,12 @@ export function useMesProduits(userId: string | null) {
         .select('id', { count: 'exact', head: true })
         .eq('fabricant_id', userId ?? '');
       if (erreurCompte) throw erreurCompte;
-      return { produits: data, dejaEuUnProduit: (count ?? 0) > 0 };
+      const boutiques = await chargerNomsBoutiques();
+      const fabricants = new Map<string, string>();
+      return {
+        produits: data.map((produit) => enrichirProduit(produit, fabricants, boutiques)),
+        dejaEuUnProduit: (count ?? 0) > 0,
+      };
     },
   });
 }
@@ -202,6 +238,8 @@ export type FicheSaisie = {
   id?: string;
   boutiqueId: string;
   fabricantId: string;
+  /** Boutique où le produit est fabriqué (extérieur) ; null = sur place. */
+  provenanceBoutiqueId?: string | null;
   nom: string;
   prixCentimes: number;
   photoUrl: string | null;
@@ -262,11 +300,13 @@ export function useEnregistrerMonProduit() {
         return saisie.id;
       }
 
+      const exterieur = Boolean(saisie.provenanceBoutiqueId);
       const { data, error } = await base
         .from('produits')
         .insert({
           boutique_id: saisie.boutiqueId,
           fabricant_id: saisie.fabricantId,
+          provenance_boutique_id: saisie.provenanceBoutiqueId ?? null,
           nom: saisie.nom.trim(),
           prix_centimes: saisie.intermediaire ? 0 : saisie.prixCentimes,
           photo_url: saisie.photoUrl,
@@ -274,7 +314,7 @@ export function useEnregistrerMonProduit() {
           duree_conservation_jours: saisie.dureeJours,
           seuil_min: saisie.seuilMin,
           impose_par_admin: false,
-          intermediaire: saisie.intermediaire,
+          intermediaire: exterieur ? false : saisie.intermediaire,
         })
         .select('id')
         .single();

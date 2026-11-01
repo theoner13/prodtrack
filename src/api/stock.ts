@@ -62,6 +62,22 @@ export function useStock(boutiqueId: string | null) {
   });
 }
 
+/** Stock des produits dont je suis le fabricant (y compris extérieurs). */
+export function useStockFabricant(fabricantId: string | null) {
+  return useQuery({
+    queryKey: ['stock', 'fabricant', fabricantId],
+    enabled: Boolean(fabricantId),
+    queryFn: async (): Promise<StockActuel[]> => {
+      const { data, error } = await db()
+        .from('stock_actuel')
+        .select('*')
+        .eq('fabricant_id', fabricantId ?? '');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useDisponibleFrais(boutiqueId: string | null) {
   return useQuery({
     queryKey: ['disponible', boutiqueId],
@@ -73,6 +89,69 @@ export function useDisponibleFrais(boutiqueId: string | null) {
         .eq('boutique_id', boutiqueId ?? '');
       if (error) throw error;
       return data;
+    },
+  });
+}
+
+/** Disponible frais des produits dont je suis le fabricant. */
+export function useDisponibleFraisFabricant(fabricantId: string | null) {
+  return useQuery({
+    queryKey: ['disponible', 'fabricant', fabricantId],
+    enabled: Boolean(fabricantId),
+    queryFn: async (): Promise<DisponibleFrais[]> => {
+      const { data, error } = await db()
+        .from('disponible_frais')
+        .select('*')
+        .eq('fabricant_id', fabricantId ?? '');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export type StatsJourProduit = {
+  jetes: number;
+  pertes: number;
+};
+
+/** Jetés (saisie vente) et pertes du jour pour une liste de produits. */
+export function useStatsJourProduits(produitIds: string[]) {
+  const jour = aujourdhuiParis();
+  const cle = [...produitIds].sort().join(',');
+  return useQuery({
+    queryKey: ['stats-jour', jour, cle],
+    enabled: produitIds.length > 0,
+    queryFn: async (): Promise<Map<string, StatsJourProduit>> => {
+      const map = new Map<string, StatsJourProduit>();
+      for (const id of produitIds) {
+        map.set(id, { jetes: 0, pertes: 0 });
+      }
+      if (produitIds.length === 0) return map;
+
+      const { data: ventes, error: erreurVentes } = await db()
+        .from('saisies_vente')
+        .select('produit_id, jete')
+        .eq('jour', jour)
+        .in('produit_id', produitIds);
+      if (erreurVentes) throw erreurVentes;
+      for (const ligne of ventes ?? []) {
+        const actuel = map.get(ligne.produit_id) ?? { jetes: 0, pertes: 0 };
+        actuel.jetes = ligne.jete;
+        map.set(ligne.produit_id, actuel);
+      }
+
+      const { data: pertes, error: erreurPertes } = await db()
+        .from('pertes_production')
+        .select('produit_id, quantite')
+        .eq('jour', jour)
+        .in('produit_id', produitIds);
+      if (erreurPertes) throw erreurPertes;
+      for (const ligne of pertes ?? []) {
+        const actuel = map.get(ligne.produit_id) ?? { jetes: 0, pertes: 0 };
+        actuel.pertes += ligne.quantite;
+        map.set(ligne.produit_id, actuel);
+      }
+      return map;
     },
   });
 }
