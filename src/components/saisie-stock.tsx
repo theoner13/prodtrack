@@ -665,12 +665,6 @@ export function SaisieStock({ type }: Props) {
         </View>
       ) : null}
 
-      {type === 'sortie' ? (
-        <Text style={styles.rappel}>
-          Le chiffre d'affaires reste attribué au fabricant du produit.
-        </Text>
-      ) : null}
-
       {listeBase.length > 10 ? (
         <Champ
           libelle="Rechercher un produit"
@@ -919,7 +913,7 @@ function LigneSaisie({
       photoUrl={photoUrl}
       sousTitre={detail}
       alerte={alerte}
-      sousLigne={<Compteur valeur={quantite} onChange={onChange} libelle={produit.nom} />}
+      droite={<Compteur valeur={quantite} onChange={onChange} libelle={produit.nom} />}
     >
       {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
       {badgeProvenance ? <Text style={styles.badge}>{badgeProvenance}</Text> : null}
@@ -928,11 +922,6 @@ function LigneSaisie({
 }
 
 const styles = StyleSheet.create({
-  rappel: {
-    fontSize: tailles.petit,
-    color: couleurs.texteSecondaire,
-    fontFamily: polices.sans,
-  },
   enteteExterieur: {
     flexDirection: 'row',
     justifyContent: 'flex-end',

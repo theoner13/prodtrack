@@ -11,12 +11,11 @@ import {
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Banniere } from '@/components/banniere';
-import { Bouton } from '@/components/bouton';
 import { CarteProduit } from '@/components/carte-produit';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { etiquetteBoutique } from '@/lib/production-exterieure';
-import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
+import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/theme';
 
 export default function EcranMesProduits() {
   const { profil } = useAuth();
@@ -88,6 +87,17 @@ export default function EcranMesProduits() {
 
   return (
     <Ecran defilement>
+      <View style={styles.entete}>
+        <Pressable
+          onPress={() => ouvrir('nouveau')}
+          style={styles.lien}
+          accessibilityRole="button"
+          accessibilityLabel="Ajouter un produit"
+        >
+          <Text style={styles.lienTexte}>+ Nouveau produit</Text>
+        </Pressable>
+      </View>
+
       <Banniere message={banniere} type="succes" onFermer={() => setBanniere(null)} duree={6000} />
       {erreurPrise ? <Text style={styles.erreur}>{erreurPrise}</Text> : null}
 
@@ -95,35 +105,55 @@ export default function EcranMesProduits() {
         <View style={styles.section}>
           <Text style={styles.titreSection}>À prendre</Text>
           {aPrendreListe.map((produit) => (
-            <View key={produit.id} style={styles.blocPrendre}>
-              <CarteProduit
-                nom={produit.nom}
-                prixCentimes={produit.intermediaire ? undefined : produit.prix_centimes}
-                photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
-              >
-                <Text style={styles.badge}>Imposé par l'admin</Text>
-                {!produit.fabricant_id ? <Text style={styles.badge}>Sans pâtissier</Text> : null}
-              </CarteProduit>
-              <Bouton
-                titre="Je le fabrique"
-                chargement={prendre.isPending}
-                onPress={() => void fabriquer(produit.id, produit.nom)}
-              />
-            </View>
+            <CarteProduit
+              key={produit.id}
+              nom={produit.nom}
+              prixCentimes={produit.intermediaire ? undefined : produit.prix_centimes}
+              photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
+              droite={
+                <Pressable
+                  onPress={() => void fabriquer(produit.id, produit.nom)}
+                  disabled={prendre.isPending}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Je le fabrique"
+                  style={({ pressed }) => [
+                    styles.pastilleFabrique,
+                    pressed && styles.pastilleAppuyee,
+                    prendre.isPending && styles.pastilleInactive,
+                  ]}
+                >
+                  <Text style={styles.pastilleFabriqueTexte}>Je le fabrique</Text>
+                </Pressable>
+              }
+            >
+              <Text style={styles.badge}>Imposé par l'admin</Text>
+              {!produit.fabricant_id ? <Text style={styles.badge}>Sans pâtissier</Text> : null}
+            </CarteProduit>
           ))}
+          <Pressable
+            onPress={() => router.push('/produits/autres-boutiques' as Href)}
+            style={styles.lienGauche}
+            accessibilityRole="button"
+            accessibilityLabel="Voir les autres boutiques"
+          >
+            <Text style={styles.lienTexte}>Voir les autres boutiques</Text>
+          </Pressable>
         </View>
-      ) : null}
+      ) : (
+        <Pressable
+          onPress={() => router.push('/produits/autres-boutiques' as Href)}
+          style={styles.lienGauche}
+          accessibilityRole="button"
+          accessibilityLabel="Voir les autres boutiques"
+        >
+          <Text style={styles.lienTexte}>Voir les autres boutiques</Text>
+        </Pressable>
+      )}
 
       {premiereFois ? (
         <EtatVide message="Ajoutez les produits que vous fabriquez." />
-      ) : (
-        <Bouton titre="Ajouter un produit" onPress={() => ouvrir('nouveau')} />
-      )}
-      <Bouton
-        titre="Voir les autres boutiques"
-        variante="secondaire"
-        onPress={() => router.push('/produits/autres-boutiques' as Href)}
-      />
+      ) : null}
       {locaux.length === 0 && exterieurs.length === 0 && !premiereFois ? (
         <EtatVide message="Vous n'avez aucun produit en cours. Ajoutez-en un pour le fabriquer." />
       ) : null}
@@ -162,21 +192,53 @@ export default function EcranMesProduits() {
           ))}
         </View>
       ) : null}
-
-      {premiereFois ? <Bouton titre="Ajouter un produit" onPress={() => ouvrir('nouveau')} /> : null}
     </Ecran>
   );
 }
 
 const styles = StyleSheet.create({
+  entete: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  lien: {
+    paddingVertical: espacements.xs,
+  },
+  lienGauche: {
+    alignSelf: 'flex-start',
+    paddingVertical: espacements.xs,
+  },
+  lienTexte: {
+    fontSize: tailles.petit,
+    fontWeight: '500',
+    color: couleurs.principal,
+    fontFamily: polices.sans,
+  },
   section: {
     gap: espacements.s,
   },
   titreSection: {
     ...styleTitreSection,
   },
-  blocPrendre: {
-    gap: espacements.s,
+  pastilleFabrique: {
+    height: 36,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: couleurs.principal,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pastilleAppuyee: {
+    opacity: 0.75,
+  },
+  pastilleInactive: {
+    opacity: 0.5,
+  },
+  pastilleFabriqueTexte: {
+    fontSize: tailles.petit,
+    fontWeight: '500',
+    color: couleurs.texteSurPrincipal,
+    fontFamily: polices.sans,
   },
   badge: {
     overflow: 'hidden',

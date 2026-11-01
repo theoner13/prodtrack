@@ -193,6 +193,13 @@ export function DetailCaEmploye({ detail }: Props) {
     caCentimes: m.caCentimes,
   }));
 
+  const aucuneVente =
+    produits.length === 0 && jours.length === 0 && semaines.length === 0 && mois.length === 0;
+
+  if (aucuneVente) {
+    return <Text style={styles.vide}>Aucune vente sur cette période.</Text>;
+  }
+
   return (
     <View style={styles.detail}>
       <Text style={styles.detailTitre}>Par produit</Text>

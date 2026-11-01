@@ -321,7 +321,6 @@ export default function EcranTableauDeBord() {
           </View>
 
           <View style={styles.chiffres}>
-            <ChiffreCle libelle="CA total" valeur={formatEuros(chiffres.caCentimes)} />
             <ChiffreCle libelle="Vendus" valeur={String(chiffres.vendu)} />
             <ChiffreCle
               libelle="Jetés"

@@ -4,9 +4,11 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useBoutiques } from '@/api/boutiques';
 import { useCaJournalier } from '@/api/ca';
-import { useEmploye } from '@/api/employes';
+import { useChangerArchivage, useEmploye } from '@/api/employes';
 import { useUrlSignee } from '@/api/photos';
+import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
+import { Bouton } from '@/components/bouton';
 import { BoutonRetour } from '@/components/bouton-retour';
 import { Champ } from '@/components/champ';
 import { DetailCaEmploye } from '@/components/detail-ca-employe';
@@ -21,7 +23,7 @@ import {
   type TypePeriode,
 } from '@/lib/ca';
 import { aujourdhuiParis, formatEuros } from '@/lib/format';
-import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
+import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/theme';
 import type { RoleEmploye } from '@/types/database';
 
 type PeriodeChoix = TypePeriode | 'perso';
@@ -43,14 +45,18 @@ const ROLES: Record<RoleEmploye, string> = {
 export default function EcranFicheEmploye() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const employeId = typeof id === 'string' ? id : id?.[0];
+  const { profil: moi } = useAuth();
   const employe = useEmploye(employeId);
   const boutiques = useBoutiques();
   const photo = useUrlSignee(employe.data?.photo_url ?? null);
+  const archivage = useChangerArchivage();
 
   const aujourdhui = aujourdhuiParis();
   const [periode, setPeriode] = useState<PeriodeChoix>('aujourdhui');
   const [duTexte, setDuTexte] = useState(formatDateFr(aujourdhui));
   const [auTexte, setAuTexte] = useState(formatDateFr(aujourdhui));
+  const [confirmationArchivage, setConfirmationArchivage] = useState(false);
+  const [erreurArchivage, setErreurArchivage] = useState<string | null>(null);
 
   const boutiqueId = employe.data?.boutique_id ?? null;
   // Couvre le début de semaine même s’il tombe le mois précédent.
@@ -129,6 +135,18 @@ export default function EcranFicheEmploye() {
       return;
     }
     router.replace('/(admin)/employes');
+  }
+
+  async function confirmerArchivage(archiver: boolean) {
+    if (!employeId) return;
+    setErreurArchivage(null);
+    try {
+      await archivage.mutateAsync({ id: employeId, archiver });
+      setConfirmationArchivage(false);
+      router.replace('/(admin)/employes');
+    } catch (probleme: unknown) {
+      setErreurArchivage(messageErreur(probleme));
+    }
   }
 
   if (employe.isLoading || boutiques.isLoading) {
@@ -272,6 +290,45 @@ export default function EcranFicheEmploye() {
           Le chiffre d'affaires est attribué aux pâtissiers.
         </Text>
       )}
+
+      {employeId !== moi?.id ? (
+        <View style={styles.archivage}>
+          {erreurArchivage ? <Text style={styles.erreurArchivage}>{erreurArchivage}</Text> : null}
+          {confirmationArchivage ? (
+            <View style={styles.confirmation}>
+              <Text style={styles.confirmationTexte}>
+                {profil.archive_le
+                  ? 'Réactiver ce compte ? La personne pourra à nouveau se connecter.'
+                  : 'Archiver ce compte ? L’historique de production et de chiffre d’affaires est conservé. La personne ne pourra plus se connecter.'}
+              </Text>
+              <Bouton
+                titre={profil.archive_le ? 'Réactiver ce compte' : 'Archiver ce compte'}
+                variante={profil.archive_le ? 'principal' : 'danger'}
+                chargement={archivage.isPending}
+                onPress={() => void confirmerArchivage(profil.archive_le === null)}
+              />
+              <Bouton
+                titre="Annuler"
+                variante="secondaire"
+                onPress={() => setConfirmationArchivage(false)}
+              />
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => setConfirmationArchivage(true)}
+              accessibilityRole="button"
+              accessibilityLabel={
+                profil.archive_le ? 'Réactiver ce compte' : 'Archiver ce compte'
+              }
+              style={styles.lienArchiver}
+            >
+              <Text style={styles.lienArchiverTexte}>
+                {profil.archive_le ? 'Réactiver ce compte' : 'Archiver ce compte'}
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      ) : null}
     </Ecran>
   );
 }
@@ -402,6 +459,33 @@ const styles = StyleSheet.create({
   },
   erreurFiltre: {
     fontSize: tailles.petit,
+    color: couleurs.erreur,
+  },
+  archivage: {
+    marginTop: espacements.xl,
+    gap: espacements.s,
+  },
+  lienArchiver: {
+    alignSelf: 'flex-start',
+    paddingVertical: espacements.xs,
+  },
+  lienArchiverTexte: {
+    fontSize: tailles.petit,
+    color: couleurs.erreur,
+    fontFamily: polices.sans,
+  },
+  confirmation: {
+    gap: espacements.s,
+    padding: espacements.m,
+    borderRadius: 10,
+    backgroundColor: couleurs.erreurClair,
+  },
+  confirmationTexte: {
+    fontSize: tailles.normal,
+    color: couleurs.texte,
+  },
+  erreurArchivage: {
+    fontSize: tailles.normal,
     color: couleurs.erreur,
   },
 });

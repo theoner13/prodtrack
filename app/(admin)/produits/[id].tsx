@@ -55,6 +55,7 @@ export default function EcranFicheProduitAdmin() {
   const [prixOuvert, setPrixOuvert] = useState(false);
   const [saisiePrix, setSaisiePrix] = useState('');
   const [fabricantOuvert, setFabricantOuvert] = useState(false);
+  const [fabricantChoisiId, setFabricantChoisiId] = useState<string | null>(null);
   const [recetteOuverte, setRecetteOuverte] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -71,7 +72,7 @@ export default function EcranFicheProduitAdmin() {
   }, [produit?.provenance_boutique_id, boutiques.data]);
 
   const fabricantNom = !produit?.fabricant_id
-    ? 'Sans pâtissier'
+    ? 'Aucun'
     : fabricant.data
       ? `${fabricant.data.prenom} ${fabricant.data.nom}`.trim()
       : produit?.provenance_boutique_id
@@ -82,7 +83,7 @@ export default function EcranFicheProduitAdmin() {
     ? fabricantNom
       ? `${fabricantNom} · ${etiquetteProv}`
       : etiquetteProv
-    : fabricantNom || '—';
+    : fabricantNom || 'Aucun';
 
   function retour() {
     if (router.canGoBack()) {
@@ -98,6 +99,14 @@ export default function EcranFicheProduitAdmin() {
     setFabricantOuvert(false);
     setSaisiePrix(formatSaisiePrix(produit.prix_centimes));
     setPrixOuvert(true);
+  }
+
+  function ouvrirFabricant() {
+    if (!produit) return;
+    setErreur(null);
+    setPrixOuvert(false);
+    setFabricantChoisiId(produit.fabricant_id);
+    setFabricantOuvert(true);
   }
 
   function ajusterPrix(deltaCentimes: number) {
@@ -123,11 +132,14 @@ export default function EcranFicheProduitAdmin() {
     }
   }
 
-  async function choisirFabricant(fabricantId: string) {
-    if (!produitId) return;
+  async function enregistrerFabricant() {
+    if (!produitId || !fabricantChoisiId) {
+      setErreur('Choisissez un pâtissier.');
+      return;
+    }
     setErreur(null);
     try {
-      await modifier.mutateAsync({ id: produitId, fabricantId });
+      await modifier.mutateAsync({ id: produitId, fabricantId: fabricantChoisiId });
       setFabricantOuvert(false);
     } catch (probleme: unknown) {
       setErreur(messageErreur(probleme));
@@ -207,7 +219,73 @@ export default function EcranFicheProduitAdmin() {
       </View>
 
       <View style={styles.carte}>
-        <LigneInfo libelle="Fabricant" valeur={fabricantLigne} />
+        {fabricantOuvert ? (
+          <View style={[styles.lignePrixEdition, styles.ligneSeparee]}>
+            <Text style={styles.ligneLibelle}>Fabricant</Text>
+            <View style={styles.editionFabricant}>
+              {(patissiers.data ?? []).length === 0 ? (
+                <Text style={styles.erreurInline}>Aucun pâtissier actif dans cette boutique.</Text>
+              ) : (
+                <View style={styles.puces}>
+                  {patissiers.data?.map((personne) => {
+                    const active = fabricantChoisiId === personne.id;
+                    const libelle = `${personne.prenom} ${personne.nom}`;
+                    return (
+                      <Pressable
+                        key={personne.id}
+                        onPress={() => setFabricantChoisiId(personne.id)}
+                        style={[styles.puce, active && styles.puceActive]}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: active }}
+                        accessibilityLabel={libelle}
+                      >
+                        <Text style={[styles.puceTexte, active && styles.puceTexteActive]}>
+                          {libelle}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+              <View style={styles.actionsPrix}>
+                <View style={styles.actionPrixItem}>
+                  <Bouton
+                    titre="Enregistrer"
+                    chargement={modifier.isPending}
+                    onPress={() => void enregistrerFabricant()}
+                  />
+                </View>
+                <View style={styles.actionPrixItem}>
+                  <Bouton
+                    titre="Annuler"
+                    variante="secondaire"
+                    onPress={() => {
+                      setFabricantOuvert(false);
+                      setErreur(null);
+                    }}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Modifier le fabricant de ${produit.nom}`}
+            onPress={ouvrirFabricant}
+            style={({ pressed }) => [
+              styles.ligneInfo,
+              styles.ligneSeparee,
+              pressed && styles.lignePresse,
+            ]}
+          >
+            <Text style={styles.ligneLibelle}>Fabricant</Text>
+            <View style={styles.prixValeur}>
+              <Text style={styles.ligneValeur}>{fabricantLigne}</Text>
+              <Ionicons name="create-outline" size={18} color={couleurs.texteMuet} />
+            </View>
+          </Pressable>
+        )}
         {!produit.intermediaire ? (
           prixOuvert ? (
             <View style={[styles.lignePrixEdition, styles.ligneSeparee]}>
@@ -317,39 +395,6 @@ export default function EcranFicheProduitAdmin() {
       </View>
 
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
-
-      {!fabricantOuvert ? (
-        <View style={styles.actions}>
-          <Bouton
-            titre="Réattribuer le fabricant"
-            variante="secondaire"
-            onPress={() => {
-              setFabricantOuvert(true);
-              setPrixOuvert(false);
-            }}
-          />
-        </View>
-      ) : null}
-
-      {fabricantOuvert ? (
-        <View style={styles.panneau}>
-          <Text style={styles.libelle}>Nouveau fabricant</Text>
-          {(patissiers.data ?? []).length === 0 ? (
-            <Text style={styles.erreur}>Aucun pâtissier actif dans cette boutique.</Text>
-          ) : (
-            patissiers.data?.map((personne) => (
-              <Bouton
-                key={personne.id}
-                titre={`${personne.prenom} ${personne.nom}`}
-                variante={personne.id === produit.fabricant_id ? 'principal' : 'secondaire'}
-                chargement={modifier.isPending}
-                onPress={() => void choisirFabricant(personne.id)}
-              />
-            ))
-          )}
-          <Bouton titre="Annuler" variante="secondaire" onPress={() => setFabricantOuvert(false)} />
-        </View>
-      ) : null}
     </Ecran>
   );
 }
@@ -467,6 +512,38 @@ const styles = StyleSheet.create({
   editionPrix: {
     gap: espacements.s,
   },
+  editionFabricant: {
+    gap: espacements.s,
+  },
+  puces: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: espacements.s,
+  },
+  puce: {
+    height: 32,
+    paddingHorizontal: espacements.m,
+    borderRadius: 16,
+    backgroundColor: couleurs.fond,
+    justifyContent: 'center',
+  },
+  puceActive: {
+    backgroundColor: couleurs.principal,
+  },
+  puceTexte: {
+    fontSize: tailles.petit,
+    color: couleurs.texte,
+    fontWeight: '500',
+    fontFamily: polices.sans,
+  },
+  puceTexteActive: {
+    color: couleurs.texteSurPrincipal,
+  },
+  erreurInline: {
+    fontSize: tailles.petit,
+    color: couleurs.erreur,
+    fontFamily: polices.sans,
+  },
   compteurPrix: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -564,19 +641,6 @@ const styles = StyleSheet.create({
     fontSize: tailles.normal,
     color: couleurs.texteMuet,
     paddingVertical: espacements.m,
-    fontFamily: polices.sans,
-  },
-  actions: {
-    alignItems: 'flex-start',
-  },
-  panneau: {
-    gap: espacements.s,
-    marginTop: espacements.m,
-  },
-  libelle: {
-    fontSize: tailles.petit,
-    fontWeight: '600',
-    color: couleurs.texte,
     fontFamily: polices.sans,
   },
   erreur: {

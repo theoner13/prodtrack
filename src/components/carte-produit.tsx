@@ -9,28 +9,32 @@ type Props = {
   prixCentimes?: number;
   photoUrl?: string | null;
   sousTitre?: string;
+  /** Étiquettes sous le nom (ligne du prix). */
   children?: ReactNode;
+  /** Contenu à droite sur la même ligne (compteur, stock…). */
+  droite?: ReactNode;
   sousLigne?: ReactNode;
   alerte?: boolean;
   onPressNom?: () => void;
 };
 
-// Ligne produit : photo (ou initiale), nom, prix.
+// Ligne produit : photo (ou initiale), nom, prix / étiquettes, action à droite.
 export function CarteProduit({
   nom,
   prixCentimes,
   photoUrl,
   sousTitre,
   children,
+  droite,
   sousLigne,
   alerte = false,
   onPressNom,
 }: Props) {
   const titre = (
-    <Text style={[styles.nom, onPressNom ? styles.nomLien : null]} numberOfLines={2}>
-      {nom}
-    </Text>
+    <Text style={[styles.nom, onPressNom ? styles.nomLien : null]}>{nom}</Text>
   );
+
+  const aDetail = prixCentimes != null || Boolean(children);
 
   return (
     <View style={[styles.ligneListe, alerte && styles.alerte]}>
@@ -57,10 +61,17 @@ export function CarteProduit({
           ) : (
             titre
           )}
-          {prixCentimes != null ? <Text style={styles.detail}>{formatEuros(prixCentimes)}</Text> : null}
+          {aDetail ? (
+            <View style={styles.ligneDetail}>
+              {prixCentimes != null ? (
+                <Text style={styles.detail}>{formatEuros(prixCentimes)}</Text>
+              ) : null}
+              {children}
+            </View>
+          ) : null}
           {sousTitre ? <Text style={styles.detail}>{sousTitre}</Text> : null}
         </View>
-        {children}
+        {droite ? <View style={styles.droite}>{droite}</View> : null}
       </View>
       {sousLigne ? <View style={styles.sousLigne}>{sousLigne}</View> : null}
     </View>
@@ -118,10 +129,20 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     textDecorationColor: couleurs.soulignement,
   },
+  ligneDetail: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+  },
   detail: {
     fontSize: tailles.legend,
     color: couleurs.texteSecondaire,
     fontFamily: polices.sans,
+  },
+  droite: {
+    alignSelf: 'center',
+    flexShrink: 0,
   },
   sousLigne: {
     alignItems: 'flex-end',

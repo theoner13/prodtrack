@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-11-01 : Design : textes inutiles retirés, archivage dans la fiche employé, boutiques et partage discrets, tableau de bord et fiche employé allégés, compteurs sur la même ligne (Cursor)
 - 2026-11-01 : Un seul titre par écran : grands titres en double supprimés sur les onglets (Cursor)
 - 2026-11-01 : Production extérieure : choix et filtre de la boutique destinataire, ligne simplifiée ; largeur limitée sur ordinateur (Cursor)
 - 2026-11-01 : Production extérieure : plus de « Fabricant inconnu », photos écrites seulement dans sa boutique (Cursor)

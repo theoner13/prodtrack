@@ -1,7 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Platform, Share, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { z } from 'zod';
 
 import { useAuth } from '@/auth/AuthProvider';
@@ -12,7 +13,7 @@ import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
+import { couleurs, espacements, polices, rayonPetit, tailles } from '@/theme';
 
 const schema = z.object({
   nom: z.string().trim().min(1, 'Indiquez le nom de la boutique.'),
@@ -29,6 +30,7 @@ export default function EcranBoutiques() {
   const { profil } = useAuth();
   const boutiques = useBoutiques();
   const creer = useCreerBoutique();
+  const [formulaireOuvert, setFormulaireOuvert] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [messagePartage, setMessagePartage] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
@@ -56,6 +58,12 @@ export default function EcranBoutiques() {
     }
   }
 
+  function fermerFormulaire() {
+    setFormulaireOuvert(false);
+    setErreur(null);
+    reset();
+  }
+
   async function enregistrer(valeurs: Formulaire) {
     if (!profil) return;
     setErreur(null);
@@ -66,6 +74,7 @@ export default function EcranBoutiques() {
         adresse: valeurs.adresse,
       });
       reset();
+      setFormulaireOuvert(false);
       setConfirmation('Boutique créée.');
     } catch (probleme: unknown) {
       setErreur(messageErreur(probleme));
@@ -76,46 +85,72 @@ export default function EcranBoutiques() {
     <Ecran defilement>
       <Banniere message={confirmation} onFermer={fermerConfirmation} />
       <Banniere message={messagePartage} duree={60000} onFermer={fermerPartage} />
-      <Text style={styles.sousTitre}>Nouvelle boutique</Text>
-      <Controller
-        control={control}
-        name="nom"
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Nom"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            erreur={fieldState.error?.message}
+
+      <View style={styles.entete}>
+        <Pressable
+          onPress={() => {
+            setFormulaireOuvert(true);
+            setErreur(null);
+          }}
+          style={styles.lien}
+          accessibilityRole="button"
+          accessibilityLabel="Nouvelle boutique"
+        >
+          <Text style={styles.lienTexte}>+ Nouvelle boutique</Text>
+        </Pressable>
+      </View>
+
+      {formulaireOuvert ? (
+        <View style={styles.formulaire}>
+          <Controller
+            control={control}
+            name="nom"
+            render={({ field, fieldState }) => (
+              <Champ
+                libelle="Nom"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                erreur={fieldState.error?.message}
+              />
+            )}
           />
-        )}
-      />
-      <Controller
-        control={control}
-        name="adresse"
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Adresse (facultative)"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            erreur={fieldState.error?.message}
+          <Controller
+            control={control}
+            name="adresse"
+            render={({ field, fieldState }) => (
+              <Champ
+                libelle="Adresse (facultative)"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                erreur={fieldState.error?.message}
+              />
+            )}
           />
-        )}
-      />
-      {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
-      <Bouton
-        titre="Créer la boutique"
-        chargement={formState.isSubmitting}
-        onPress={handleSubmit(enregistrer)}
-      />
+          {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
+          <Bouton
+            titre="Créer la boutique"
+            chargement={formState.isSubmitting}
+            onPress={handleSubmit(enregistrer)}
+          />
+          <Pressable
+            onPress={fermerFormulaire}
+            accessibilityRole="button"
+            accessibilityLabel="Annuler"
+            style={styles.lienAnnuler}
+          >
+            <Text style={styles.lienAnnulerTexte}>Annuler</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {boutiques.isLoading ? <EtatChargement /> : null}
       {boutiques.isError ? (
         <EtatErreur message={messageErreur(boutiques.error)} onReessayer={() => void boutiques.refetch()} />
       ) : null}
       {boutiques.data && boutiques.data.length === 0 ? (
-        <EtatVide message="Aucune boutique pour l’instant. Créez-en une avec le formulaire ci-dessus." />
+        <EtatVide message="Aucune boutique pour l’instant. Créez-en une avec + Nouvelle boutique." />
       ) : null}
       {boutiques.data?.map((boutique) => (
         <View key={boutique.id} style={styles.carte}>
@@ -124,11 +159,16 @@ export default function EcranBoutiques() {
           <Text style={styles.code} selectable>
             {boutique.code_invitation}
           </Text>
-          <Bouton
-            titre="Partager le code"
-            variante="secondaire"
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Partager le code"
             onPress={() => void partager(boutique.nom, boutique.code_invitation)}
-          />
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            style={({ pressed }) => [styles.pastille, pressed && styles.pastilleAppuyee]}
+          >
+            <Ionicons name="share-outline" size={14} color={couleurs.texteSecondaire} />
+            <Text style={styles.pastilleTexte}>Partager le code</Text>
+          </Pressable>
         </View>
       ))}
     </Ecran>
@@ -136,8 +176,31 @@ export default function EcranBoutiques() {
 }
 
 const styles = StyleSheet.create({
-  sousTitre: {
-    ...styleTitreSection,
+  entete: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  lien: {
+    paddingVertical: espacements.xs,
+  },
+  lienTexte: {
+    fontSize: tailles.petit,
+    fontWeight: '500',
+    color: couleurs.principal,
+    fontFamily: polices.sans,
+  },
+  formulaire: {
+    gap: espacements.m,
+    marginBottom: espacements.m,
+  },
+  lienAnnuler: {
+    alignSelf: 'flex-start',
+    paddingVertical: espacements.xs,
+  },
+  lienAnnulerTexte: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   erreur: {
     fontSize: tailles.normal,
@@ -148,15 +211,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: couleurs.bordure,
+    alignItems: 'center',
   },
   nom: {
     fontSize: tailles.normal,
     fontWeight: '600',
     color: couleurs.texte,
+    alignSelf: 'stretch',
   },
   adresse: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    alignSelf: 'stretch',
   },
   code: {
     fontSize: tailles.titre,
@@ -164,5 +230,28 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
     color: couleurs.principalFonce,
     textAlign: 'center',
+  },
+  pastille: {
+    height: 32,
+    minWidth: 44,
+    paddingHorizontal: 10,
+    borderRadius: rayonPetit,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: couleurs.bordure,
+    backgroundColor: couleurs.principalClair,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    alignSelf: 'center',
+  },
+  pastilleAppuyee: {
+    opacity: 0.7,
+  },
+  pastilleTexte: {
+    fontSize: tailles.petit,
+    fontWeight: '500',
+    color: couleurs.texte,
+    fontFamily: polices.sans,
   },
 });

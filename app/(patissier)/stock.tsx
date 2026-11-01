@@ -118,17 +118,19 @@ export default function EcranStock() {
               photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
               sousTitre={sousTitre}
               alerte={sousSeuil}
+              droite={
+                <Text
+                  accessibilityLabel={`Stock ${produit.nom} : ${valeur}`}
+                  style={styles.chiffre}
+                >
+                  {valeur}
+                </Text>
+              }
             >
               {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
               {produit.provenance_boutique_id ? (
                 <Text style={styles.badge}>{etiquetteBoutique(produit.boutiqueNom)}</Text>
               ) : null}
-              <Text
-                accessibilityLabel={`Stock ${produit.nom} : ${valeur}`}
-                style={styles.chiffre}
-              >
-                {valeur}
-              </Text>
             </CarteProduit>
           </Pressable>
         );

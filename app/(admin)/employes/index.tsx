@@ -3,15 +3,13 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useBoutiques } from '@/api/boutiques';
-import { useChangerArchivage, useEmployes } from '@/api/employes';
+import { useEmployes } from '@/api/employes';
 import { useUrlsSignees } from '@/api/photos';
-import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
-import { Bouton } from '@/components/bouton';
 import { CarteProduit } from '@/components/carte-produit';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
+import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/theme';
 import type { Profil } from '@/types/database';
 
 function description(employe: Profil): string {
@@ -23,13 +21,9 @@ function description(employe: Profil): string {
 }
 
 export default function EcranEmployes() {
-  const { profil } = useAuth();
   const [avecArchives, setAvecArchives] = useState(false);
-  const [confirmation, setConfirmation] = useState<{ id: string; archiver: boolean } | null>(null);
-  const [erreur, setErreur] = useState<string | null>(null);
   const boutiques = useBoutiques();
   const employes = useEmployes(avecArchives);
-  const archivage = useChangerArchivage();
   const chemins = useMemo(
     () =>
       (employes.data ?? [])
@@ -38,17 +32,6 @@ export default function EcranEmployes() {
     [employes.data],
   );
   const photos = useUrlsSignees(chemins);
-
-  async function confirmer() {
-    if (!confirmation) return;
-    setErreur(null);
-    try {
-      await archivage.mutateAsync(confirmation);
-      setConfirmation(null);
-    } catch (probleme: unknown) {
-      setErreur(messageErreur(probleme));
-    }
-  }
 
   function reessayer() {
     void boutiques.refetch();
@@ -60,12 +43,20 @@ export default function EcranEmployes() {
 
   return (
     <Ecran defilement>
-      <Bouton
-        titre={avecArchives ? 'Masquer les comptes archivés' : 'Afficher les comptes archivés'}
-        variante="secondaire"
-        onPress={() => setAvecArchives((valeur) => !valeur)}
-      />
-      {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
+      <View style={styles.entete}>
+        <Pressable
+          onPress={() => setAvecArchives((valeur) => !valeur)}
+          style={styles.lien}
+          accessibilityRole="button"
+          accessibilityLabel={
+            avecArchives ? 'Masquer les comptes archivés' : 'Afficher les comptes archivés'
+          }
+        >
+          <Text style={styles.lienTexte}>
+            {avecArchives ? 'Masquer les comptes archivés' : 'Afficher les comptes archivés'}
+          </Text>
+        </Pressable>
+      </View>
       {chargement ? <EtatChargement /> : null}
       {erreurChargement ? (
         <EtatErreur message={messageErreur(erreurChargement)} onReessayer={reessayer} />
@@ -84,53 +75,24 @@ export default function EcranEmployes() {
               </Text>
             ) : (
               liste.map((employe) => (
-                <View key={employe.id} style={styles.bloc}>
-                  <Pressable
-                    onPress={() =>
-                      router.push({ pathname: '/employes/[id]', params: { id: employe.id } })
+                <Pressable
+                  key={employe.id}
+                  onPress={() =>
+                    router.push({ pathname: '/employes/[id]', params: { id: employe.id } })
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ouvrir la fiche de ${employe.prenom} ${employe.nom}`}
+                >
+                  <CarteProduit
+                    nom={`${employe.prenom} ${employe.nom}`}
+                    photoUrl={
+                      employe.photo_url
+                        ? (photos.data?.[employe.photo_url] ?? undefined)
+                        : undefined
                     }
-                    accessibilityRole="button"
-                    accessibilityLabel={`Ouvrir la fiche de ${employe.prenom} ${employe.nom}`}
-                  >
-                    <CarteProduit
-                      nom={`${employe.prenom} ${employe.nom}`}
-                      photoUrl={
-                        employe.photo_url
-                          ? (photos.data?.[employe.photo_url] ?? undefined)
-                          : undefined
-                      }
-                      sousTitre={description(employe)}
-                    />
-                  </Pressable>
-                  {employe.id === profil?.id ? null : confirmation?.id === employe.id ? (
-                    <View style={styles.confirmation}>
-                      <Text style={styles.texte}>
-                        {confirmation.archiver
-                          ? 'Archiver ce compte ? L’historique de production et de chiffre d’affaires est conservé. La personne ne pourra plus se connecter.'
-                          : 'Réactiver ce compte ? La personne pourra à nouveau se connecter.'}
-                      </Text>
-                      <Bouton
-                        titre={confirmation.archiver ? 'Archiver ce compte' : 'Réactiver ce compte'}
-                        variante={confirmation.archiver ? 'danger' : 'principal'}
-                        chargement={archivage.isPending}
-                        onPress={() => void confirmer()}
-                      />
-                      <Bouton
-                        titre="Annuler"
-                        variante="secondaire"
-                        onPress={() => setConfirmation(null)}
-                      />
-                    </View>
-                  ) : (
-                    <Bouton
-                      titre={employe.archive_le ? 'Réactiver ce compte' : 'Archiver ce compte'}
-                      variante={employe.archive_le ? 'secondaire' : 'danger'}
-                      onPress={() =>
-                        setConfirmation({ id: employe.id, archiver: employe.archive_le === null })
-                      }
-                    />
-                  )}
-                </View>
+                    sousTitre={description(employe)}
+                  />
+                </Pressable>
               ))
             )}
           </View>
@@ -141,6 +103,19 @@ export default function EcranEmployes() {
 }
 
 const styles = StyleSheet.create({
+  entete: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  lien: {
+    paddingVertical: espacements.xs,
+  },
+  lienTexte: {
+    fontSize: tailles.petit,
+    fontWeight: '500',
+    color: couleurs.principal,
+    fontFamily: polices.sans,
+  },
   section: {
     gap: espacements.s,
   },
@@ -151,22 +126,5 @@ const styles = StyleSheet.create({
   vide: {
     fontSize: tailles.normal,
     color: couleurs.texteSecondaire,
-  },
-  bloc: {
-    gap: espacements.s,
-  },
-  confirmation: {
-    gap: espacements.s,
-    padding: espacements.m,
-    borderRadius: 10,
-    backgroundColor: couleurs.erreurClair,
-  },
-  texte: {
-    fontSize: tailles.normal,
-    color: couleurs.texte,
-  },
-  erreur: {
-    fontSize: tailles.normal,
-    color: couleurs.erreur,
   },
 });

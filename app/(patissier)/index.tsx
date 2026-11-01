@@ -211,9 +211,6 @@ export default function EcranPlanning() {
         enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
         onRafraichir={() => void rafraichir()}
       >
-        <Text style={styles.intro}>
-          Planning des produits surgelés. Les produits frais se fabriquent chaque jour.
-        </Text>
         <EtatVide message="Aucun produit surgelé à planifier." />
       </Ecran>
     );
@@ -272,9 +269,6 @@ export default function EcranPlanning() {
       enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
       onRafraichir={() => void rafraichir()}
     >
-      <Text style={styles.intro}>
-        Planning des produits surgelés. Les produits frais se fabriquent chaque jour.
-      </Text>
       {aIndicative ? (
         <Text style={styles.indicative}>
           Prévisions indicatives : moins de 8 semaines de données.
@@ -367,12 +361,6 @@ export default function EcranPlanning() {
 }
 
 const styles = StyleSheet.create({
-  intro: {
-    fontSize: tailles.petit,
-    color: couleurs.texteSecondaire,
-    marginBottom: espacements.s,
-    fontFamily: polices.sans,
-  },
   indicative: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,

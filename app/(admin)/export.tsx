@@ -307,10 +307,6 @@ export default function EcranExport() {
         </View>
       ) : null}
 
-      <Text style={styles.aide}>
-        Chaque export est disponible en Excel (.xlsx) et en PDF, lisibles sur téléphone et ordinateur.
-      </Text>
-
       {EXPORTS.map((item) => (
         <View key={item.id} style={styles.blocExport}>
           <Text style={styles.titreExport}>{item.titre}</Text>
@@ -439,11 +435,6 @@ const styles = StyleSheet.create({
   erreurFiltre: {
     fontSize: tailles.petit,
     color: couleurs.erreur,
-  },
-  aide: {
-    fontSize: tailles.petit,
-    color: couleurs.texteSecondaire,
-    marginBottom: espacements.s,
   },
   blocExport: {
     gap: espacements.s,
