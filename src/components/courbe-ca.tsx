@@ -17,7 +17,8 @@ import { couleurs, polices, tailles } from '@/theme';
 
 const HAUTEUR = 180;
 const HAUTEUR_TRACE = 120;
-const MARGE_GAUCHE = 58;
+/** Largeur pour « 99 999 € » (euros entiers) sans tronquer. */
+const MARGE_GAUCHE = 66;
 const MARGE_DROITE = 12;
 const MARGE_HAUT = 12;
 const TAILLE_POINT = 8;

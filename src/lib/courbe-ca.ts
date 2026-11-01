@@ -124,14 +124,32 @@ export function maxRepereCourbe(maxCentimes: number): number {
   return Math.round(nice * magnitude * 100);
 }
 
+const formateurEurosEntiers = new Intl.NumberFormat('fr-FR', {
+  style: 'currency',
+  currency: 'EUR',
+  maximumFractionDigits: 0,
+  minimumFractionDigits: 0,
+});
+
+/**
+ * Libellé d'un repère d'axe : euros entiers, sans décimales.
+ * Ex. 500_000 → « 5 000 € » (espaces insécables).
+ */
+export function libelleRepereCourbe(centimes: number): string {
+  // Intl fr-FR met une espace fine (U+202F) : on la remplace par une espace insécable.
+  return formateurEurosEntiers
+    .format(Math.round(centimes / 100))
+    .replace(/\u202F/g, '\u00A0');
+}
+
 /** Trois repères : 0, moitié, max. */
 export function reperesCourbe(maxCentimes: number): { valeur: number; libelle: string }[] {
   const max = maxRepereCourbe(maxCentimes);
   const moitie = Math.round(max / 2);
   return [
-    { valeur: max, libelle: formatEuros(max) },
-    { valeur: moitie, libelle: formatEuros(moitie) },
-    { valeur: 0, libelle: formatEuros(0) },
+    { valeur: max, libelle: libelleRepereCourbe(max) },
+    { valeur: moitie, libelle: libelleRepereCourbe(moitie) },
+    { valeur: 0, libelle: libelleRepereCourbe(0) },
   ];
 }
 

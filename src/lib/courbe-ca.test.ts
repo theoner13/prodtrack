@@ -7,6 +7,7 @@ import {
   joursDeLaPlage,
   libelleBulleCourbe,
   libelleJourCourbe,
+  libelleRepereCourbe,
   maxRepereCourbe,
   plageCourbe,
   plageCourbeSeptJours,
@@ -137,6 +138,17 @@ describe('courbe-ca — repères et libellés', () => {
     assert.equal(r[2]!.valeur, 0);
     assert.equal(r[0]!.valeur, maxRepereCourbe(12_000));
     assert.equal(r[1]!.valeur, Math.round(r[0]!.valeur / 2));
+  });
+
+  it('libellés de repère en euros entiers avec espaces insécables', () => {
+    assert.equal(libelleRepereCourbe(500_000), '5\u00A0000\u00A0€');
+    assert.equal(libelleRepereCourbe(250_000), '2\u00A0500\u00A0€');
+    assert.equal(libelleRepereCourbe(0), '0\u00A0€');
+    assert.equal(libelleRepereCourbe(9_999_900), '99\u00A0999\u00A0€');
+    const r = reperesCourbe(450_000);
+    assert.equal(r[0]!.libelle, '5\u00A0000\u00A0€');
+    assert.equal(r[1]!.libelle, '2\u00A0500\u00A0€');
+    assert.equal(r[2]!.libelle, '0\u00A0€');
   });
 
   it('libellé semaine et mois', () => {
