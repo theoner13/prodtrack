@@ -136,13 +136,6 @@ export default function EcranFicheProduit() {
     [mesProduits.data?.produits, profil?.boutique_id],
   );
 
-  useEffect(() => {
-    if (!modeExterieurCreation || !autresBoutiques.data?.length) return;
-    if (!boutiqueDestinataireId) {
-      setBoutiqueDestinataireId(autresBoutiques.data[0]!.id);
-    }
-  }, [modeExterieurCreation, autresBoutiques.data, boutiqueDestinataireId]);
-
   const { control, handleSubmit, reset, setValue, watch, formState } = useForm<Formulaire>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -237,7 +230,7 @@ export default function EcranFicheProduit() {
       return;
     }
     if (modeExterieurCreation && !boutiqueDestinataireId) {
-      setErreur('Choisissez la boutique destinataire.');
+      setErreur('Choisissez la boutique qui reçoit le produit.');
       return;
     }
     setErreur(null);
@@ -508,7 +501,7 @@ export default function EcranFicheProduit() {
 
         {modeExterieurCreation ? (
           <View style={styles.bloc}>
-            <Text style={styles.titreSection}>Boutique destinataire</Text>
+            <Text style={styles.titreSection}>Envoyer à</Text>
             {(autresBoutiques.data ?? []).length === 0 ? (
               <Text style={styles.aide}>Aucune autre boutique dans votre entreprise.</Text>
             ) : (
@@ -522,6 +515,7 @@ export default function EcranFicheProduit() {
                       style={[styles.puce, active && styles.puceActive]}
                       accessibilityRole="button"
                       accessibilityState={{ selected: active }}
+                      accessibilityLabel={`Envoyer à ${boutique.nom}`}
                     >
                       <Text style={[styles.puceTexte, active && styles.puceTexteActive]}>
                         {boutique.nom}

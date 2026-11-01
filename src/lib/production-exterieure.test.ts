@@ -44,19 +44,36 @@ describe('etiquetteProvenanceAdmin', () => {
 });
 
 describe('sousTitreExterieur', () => {
-  it('formate frais et surgelé', () => {
+  it('formate frais avec saisie vendeuse (Jetés = vendeuse + pertes)', () => {
     assert.equal(
       sousTitreExterieurFrais({
-        disponible: 8,
-        restesVeille: 2,
+        produits: 6,
+        vendus: 3,
         jetes: 1,
-        pertes: 0,
+        reste: 2,
+        aSaisieVendeuse: true,
       }),
-      "Disponible : 8 · Restes d'hier : 2 · Jetés : 1 · Pertes : 0",
+      'Produits : 6 · Vendus : 3 · Jetés : 1 · Reste : 2',
     );
+  });
+
+  it('signale l’absence de saisie vendeuse pour un frais', () => {
     assert.equal(
-      sousTitreExterieurSurgele({ stock: 12, jetes: 0, pertes: 3 }),
-      'Stock : 12 · Jetés : 0 · Pertes : 3',
+      sousTitreExterieurFrais({
+        produits: 6,
+        vendus: 0,
+        jetes: 0,
+        reste: 0,
+        aSaisieVendeuse: false,
+      }),
+      'Produits : 6 · pas encore de saisie de la vendeuse',
+    );
+  });
+
+  it('formate surgelé', () => {
+    assert.equal(
+      sousTitreExterieurSurgele({ stock: 12, vendus: 4, jetes: 3 }),
+      'Stock : 12 · Vendus : 4 · Jetés : 3',
     );
   });
 });

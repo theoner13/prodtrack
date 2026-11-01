@@ -110,11 +110,14 @@ export function useDisponibleFraisFabricant(fabricantId: string | null) {
 }
 
 export type StatsJourProduit = {
+  vendus: number;
   jetes: number;
+  reste: number;
   pertes: number;
+  aSaisieVendeuse: boolean;
 };
 
-/** Jetés (saisie vente) et pertes du jour pour une liste de produits. */
+/** Saisie vendeuse et pertes du jour pour une liste de produits. */
 export function useStatsJourProduits(produitIds: string[]) {
   const jour = aujourdhuiParis();
   const cle = [...produitIds].sort().join(',');
@@ -122,21 +125,31 @@ export function useStatsJourProduits(produitIds: string[]) {
     queryKey: ['stats-jour', jour, cle],
     enabled: produitIds.length > 0,
     queryFn: async (): Promise<Map<string, StatsJourProduit>> => {
+      const vide = (): StatsJourProduit => ({
+        vendus: 0,
+        jetes: 0,
+        reste: 0,
+        pertes: 0,
+        aSaisieVendeuse: false,
+      });
       const map = new Map<string, StatsJourProduit>();
       for (const id of produitIds) {
-        map.set(id, { jetes: 0, pertes: 0 });
+        map.set(id, vide());
       }
       if (produitIds.length === 0) return map;
 
       const { data: ventes, error: erreurVentes } = await db()
         .from('saisies_vente')
-        .select('produit_id, jete')
+        .select('produit_id, vendu, jete, reste')
         .eq('jour', jour)
         .in('produit_id', produitIds);
       if (erreurVentes) throw erreurVentes;
       for (const ligne of ventes ?? []) {
-        const actuel = map.get(ligne.produit_id) ?? { jetes: 0, pertes: 0 };
+        const actuel = map.get(ligne.produit_id) ?? vide();
+        actuel.vendus = ligne.vendu;
         actuel.jetes = ligne.jete;
+        actuel.reste = ligne.reste;
+        actuel.aSaisieVendeuse = true;
         map.set(ligne.produit_id, actuel);
       }
 
@@ -147,7 +160,7 @@ export function useStatsJourProduits(produitIds: string[]) {
         .in('produit_id', produitIds);
       if (erreurPertes) throw erreurPertes;
       for (const ligne of pertes ?? []) {
-        const actuel = map.get(ligne.produit_id) ?? { jetes: 0, pertes: 0 };
+        const actuel = map.get(ligne.produit_id) ?? vide();
         actuel.pertes += ligne.quantite;
         map.set(ligne.produit_id, actuel);
       }

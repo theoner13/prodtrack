@@ -1,8 +1,13 @@
 import type { ReactNode } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { couleurs, espacements, polices, styleTitreEcran } from '@/theme';
+
+/** Largeur max du contenu sur ordinateur (l’en-tête reste pleine largeur). */
+const LARGEUR_MAX_CONTENU = 720;
+/** En dessous, le contenu reste pleine largeur (téléphone / tablette). */
+const SEUIL_ECRAN_LARGE = 1000;
 
 type Props = {
   titre?: string;
@@ -23,6 +28,12 @@ export function Ecran({
   onRafraichir,
   pied,
 }: Props) {
+  const { width } = useWindowDimensions();
+  const styleLargeur =
+    width > SEUIL_ECRAN_LARGE
+      ? { maxWidth: LARGEUR_MAX_CONTENU, width: '100%' as const, alignSelf: 'center' as const }
+      : null;
+
   const contenu = (
     <>
       {titre ? <Text style={styles.titre}>{titre}</Text> : null}
@@ -45,7 +56,7 @@ export function Ecran({
       edges={pied ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}
     >
       {defilement ? (
-        <View style={styles.colonne}>
+        <View style={[styles.colonne, styleLargeur]}>
           <ScrollView
             style={styles.flex}
             contentContainerStyle={styles.contenu}
@@ -57,7 +68,7 @@ export function Ecran({
           {pied ? <View style={styles.pied}>{pied}</View> : null}
         </View>
       ) : (
-        <View style={[styles.contenu, styles.plein]}>
+        <View style={[styles.contenu, styles.plein, styleLargeur]}>
           {contenu}
           {pied ? <View style={styles.pied}>{pied}</View> : null}
         </View>

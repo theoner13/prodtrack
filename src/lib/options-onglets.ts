@@ -17,6 +17,8 @@ export const optionsOngletsCommunes = {
   },
   tabBarActiveTintColor: couleurs.texte,
   tabBarInactiveTintColor: couleurs.ongletInactifTexte,
+  // Toujours icône au-dessus du texte (évite le décalage de la pastille sur écran large).
+  tabBarLabelPosition: 'below-icon' as const,
   tabBarStyle: {
     backgroundColor: 'rgba(255,255,255,0.96)',
     borderTopWidth: 1,

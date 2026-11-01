@@ -37,28 +37,39 @@ export function avecPrefixeFabricant(fabricantNom: string, detail: string): stri
   return `${nom} · ${detail}`;
 }
 
-/** Sous-titre frais pour un produit extérieur. */
+/**
+ * Sous-titre frais pour un produit extérieur.
+ * Produits = mis en vente (production du jour + restes saisis la veille).
+ * Jetés = jetés vendeuse + pertes en production (un seul chiffre).
+ */
 export function sousTitreExterieurFrais(params: {
-  disponible: number;
-  restesVeille: number;
+  produits: number;
+  vendus: number;
   jetes: number;
-  pertes: number;
+  reste: number;
+  aSaisieVendeuse: boolean;
 }): string {
+  if (!params.aSaisieVendeuse) {
+    return `Produits : ${params.produits} · pas encore de saisie de la vendeuse`;
+  }
   return (
-    `Disponible : ${params.disponible}` +
-    ` · Restes d'hier : ${params.restesVeille}` +
+    `Produits : ${params.produits}` +
+    ` · Vendus : ${params.vendus}` +
     ` · Jetés : ${params.jetes}` +
-    ` · Pertes : ${params.pertes}`
+    ` · Reste : ${params.reste}`
   );
 }
 
-/** Sous-titre surgelé pour un produit extérieur. */
+/**
+ * Sous-titre surgelé pour un produit extérieur.
+ * Jetés = jetés vendeuse + pertes en production (un seul chiffre).
+ */
 export function sousTitreExterieurSurgele(params: {
   stock: number;
+  vendus: number;
   jetes: number;
-  pertes: number;
 }): string {
-  return `Stock : ${params.stock} · Jetés : ${params.jetes} · Pertes : ${params.pertes}`;
+  return `Stock : ${params.stock} · Vendus : ${params.vendus} · Jetés : ${params.jetes}`;
 }
 
 export type GroupeBoutique<T extends ProduitAvecBoutiques> = {

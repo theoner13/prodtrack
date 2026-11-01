@@ -104,6 +104,7 @@ export function SaisieStock({ type }: Props) {
   const annulerPerte = useAnnulerPerte();
 
   const [ongletProduction, setOngletProduction] = useState<OngletProduction>('frais');
+  const [filtreBoutiqueId, setFiltreBoutiqueId] = useState<string | null>(null);
   const [quantites, setQuantites] = useState<Record<string, number>>({});
   const [recherche, setRecherche] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -200,14 +201,33 @@ export function SaisieStock({ type }: Props) {
     return map;
   }, [produitsExterieurs]);
 
+  const boutiquesDestinataires = useMemo(() => {
+    if (!modeExterieur) return [];
+    const vus = new Map<string, string>();
+    for (const produit of listeBase) {
+      if (!vus.has(produit.boutique_id)) {
+        vus.set(
+          produit.boutique_id,
+          etiquetteBoutique(nomsBoutiques.get(produit.boutique_id) ?? produit.boutiqueNom),
+        );
+      }
+    }
+    return [...vus.entries()]
+      .map(([id, nom]) => ({ id, nom }))
+      .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+  }, [modeExterieur, listeBase, nomsBoutiques]);
+
   const groupesExterieurs = useMemo(() => {
     if (!modeExterieur) return [];
     const terme = sansAccents(recherche.trim());
-    const filtre = terme
+    let filtre = terme
       ? listeBase.filter((produit) => sansAccents(produit.nom).includes(terme))
       : listeBase;
+    if (filtreBoutiqueId) {
+      filtre = filtre.filter((produit) => produit.boutique_id === filtreBoutiqueId);
+    }
     return grouperParBoutiqueDestinataire(filtre, nomsBoutiques);
-  }, [modeExterieur, listeBase, recherche, nomsBoutiques]);
+  }, [modeExterieur, listeBase, recherche, nomsBoutiques, filtreBoutiqueId]);
 
   const listeFiltre = useMemo(() => {
     if (modeExterieur) return listeBase;
@@ -285,12 +305,14 @@ export function SaisieStock({ type }: Props) {
 
   function changerOngletProduction(valeur: OngletProduction) {
     setOngletProduction(valeur);
+    setFiltreBoutiqueId(null);
     setQuantites({});
     setRecherche('');
   }
 
   function changerCategorie(valeur: CategorieProduction) {
     setCategorie(valeur);
+    setFiltreBoutiqueId(null);
     setQuantites({});
     setRecherche('');
     setFormulairePerteOuvert(false);
@@ -477,19 +499,22 @@ export function SaisieStock({ type }: Props) {
   function renduLigne(produit: ProduitListe) {
     const dispo = disponibleParProduit.get(produit.id);
     const stats = statsExterieurs.data?.get(produit.id);
+    const jetesCombines = (stats?.jetes ?? 0) + (stats?.pertes ?? 0);
     let detail: string;
     if (modeExterieur && ongletProduction === 'frais') {
+      // Produits = mis en vente (production du jour + restes saisis la veille).
       detail = sousTitreExterieurFrais({
-        disponible: dispo?.disponible ?? 0,
-        restesVeille: dispo?.restes_veille ?? 0,
-        jetes: stats?.jetes ?? 0,
-        pertes: stats?.pertes ?? 0,
+        produits: (dispo?.production_jour ?? 0) + (dispo?.restes_veille ?? 0),
+        vendus: stats?.vendus ?? 0,
+        jetes: jetesCombines,
+        reste: stats?.reste ?? 0,
+        aSaisieVendeuse: stats?.aSaisieVendeuse ?? false,
       });
     } else if (modeExterieur) {
       detail = sousTitreExterieurSurgele({
         stock: stockParProduit.get(produit.id) ?? 0,
-        jetes: stats?.jetes ?? 0,
-        pertes: stats?.pertes ?? 0,
+        vendus: stats?.vendus ?? 0,
+        jetes: jetesCombines,
       });
     } else if (type === 'production' && ongletProduction === 'frais') {
       const texte = sousTitreDisponibleFrais(
@@ -600,6 +625,46 @@ export function SaisieStock({ type }: Props) {
           valeur={ongletProduction}
           onChange={changerOngletProduction}
         />
+      ) : null}
+
+      {modeExterieur && boutiquesDestinataires.length > 1 ? (
+        <View style={styles.pucesFiltre}>
+          <Pressable
+            onPress={() => setFiltreBoutiqueId(null)}
+            style={[styles.puceFiltre, filtreBoutiqueId === null && styles.puceFiltreActive]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: filtreBoutiqueId === null }}
+            accessibilityLabel="Toutes les boutiques destinataires"
+          >
+            <Text
+              style={[
+                styles.puceFiltreTexte,
+                filtreBoutiqueId === null && styles.puceFiltreTexteActive,
+              ]}
+            >
+              Toutes
+            </Text>
+          </Pressable>
+          {boutiquesDestinataires.map((boutique) => {
+            const active = filtreBoutiqueId === boutique.id;
+            return (
+              <Pressable
+                key={boutique.id}
+                onPress={() => setFiltreBoutiqueId(boutique.id)}
+                style={[styles.puceFiltre, active && styles.puceFiltreActive]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={boutique.nom}
+              >
+                <Text
+                  style={[styles.puceFiltreTexte, active && styles.puceFiltreTexteActive]}
+                >
+                  {boutique.nom}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       ) : null}
 
       {type === 'sortie' ? (
@@ -882,6 +947,30 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: couleurs.principal,
     fontFamily: polices.sans,
+  },
+  pucesFiltre: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: espacements.s,
+  },
+  puceFiltre: {
+    height: 32,
+    paddingHorizontal: espacements.m,
+    borderRadius: rayonPetit,
+    backgroundColor: couleurs.fondPuce,
+    justifyContent: 'center',
+  },
+  puceFiltreActive: {
+    backgroundColor: couleurs.principal,
+  },
+  puceFiltreTexte: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    fontWeight: '500',
+    fontFamily: polices.sans,
+  },
+  puceFiltreTexteActive: {
+    color: couleurs.texteSurPrincipal,
   },
   groupe: {
     gap: espacements.xs,
