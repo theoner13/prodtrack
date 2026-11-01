@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-11-01 : Production extérieure : plus de « Fabricant inconnu », photos écrites seulement dans sa boutique (Cursor)
 - 2026-11-01 : Production extérieure : produits fabriqués pour une autre boutique, CA au fabricant, restes/pertes visibles, alertes de seuil (Cursor)
 - 2026-11-01 : admin, Export : boutons Excel / PDF plus petits et discrets (Cursor)
 - 2026-11-01 : en-tête pâtissier : titre centré et entier, sans trait séparateur (Cursor)

@@ -53,11 +53,23 @@ function enrichirProduit(
   fabricants: Map<string, string>,
   boutiques: Map<string, string>,
 ): ProduitListe {
+  let fabricantNom: string;
+  if (!produit.fabricant_id) {
+    fabricantNom = 'Sans pâtissier';
+  } else {
+    const nom = fabricants.get(produit.fabricant_id);
+    if (nom) {
+      fabricantNom = nom;
+    } else if (produit.provenance_boutique_id) {
+      // Profil d'une autre boutique : non lisible (RLS) — l'étiquette boutique suffit.
+      fabricantNom = '';
+    } else {
+      fabricantNom = 'Fabricant inconnu';
+    }
+  }
   return {
     ...produit,
-    fabricantNom: produit.fabricant_id
-      ? (fabricants.get(produit.fabricant_id) ?? 'Fabricant inconnu')
-      : 'Sans pâtissier',
+    fabricantNom,
     provenanceBoutiqueNom: produit.provenance_boutique_id
       ? (boutiques.get(produit.provenance_boutique_id) ?? null)
       : null,

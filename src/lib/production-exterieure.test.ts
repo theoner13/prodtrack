@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+  avecPrefixeFabricant,
   estProduitExterieur,
   etiquetteBoutique,
   etiquetteProvenanceAdmin,
@@ -9,6 +10,17 @@ import {
   sousTitreExterieurFrais,
   sousTitreExterieurSurgele,
 } from './production-exterieure.ts';
+
+describe('avecPrefixeFabricant', () => {
+  it('omet le préfixe si le nom est vide (extérieur non lisible)', () => {
+    assert.equal(avecPrefixeFabricant('', 'Stock : 8'), 'Stock : 8');
+    assert.equal(avecPrefixeFabricant('   ', 'Stock : 8'), 'Stock : 8');
+  });
+
+  it('préfixe le nom quand il est connu', () => {
+    assert.equal(avecPrefixeFabricant('Alice Martin', 'Stock : 8'), 'Alice Martin · Stock : 8');
+  });
+});
 
 describe('estProduitExterieur', () => {
   it('détecte une provenance renseignée', () => {

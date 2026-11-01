@@ -74,10 +74,15 @@ export default function EcranFicheProduitAdmin() {
     ? 'Sans pâtissier'
     : fabricant.data
       ? `${fabricant.data.prenom} ${fabricant.data.nom}`.trim()
-      : 'Fabricant inconnu';
-  const fabricantLigne = provenanceNom
-    ? `${fabricantNom} · ${etiquetteBoutique(provenanceNom)}`
-    : fabricantNom;
+      : produit?.provenance_boutique_id
+        ? ''
+        : 'Fabricant inconnu';
+  const etiquetteProv = provenanceNom ? etiquetteBoutique(provenanceNom) : null;
+  const fabricantLigne = etiquetteProv
+    ? fabricantNom
+      ? `${fabricantNom} · ${etiquetteProv}`
+      : etiquetteProv
+    : fabricantNom || '—';
 
   function retour() {
     if (router.canGoBack()) {

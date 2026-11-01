@@ -33,6 +33,7 @@ import { Compteur } from '@/components/compteur';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import {
+  avecPrefixeFabricant,
   etiquetteBoutique,
   grouperParBoutiqueDestinataire,
   sousTitreExterieurFrais,
@@ -496,13 +497,21 @@ export function SaisieStock({ type }: Props) {
         dispo?.production_jour ?? 0,
         dispo?.restes_veille ?? 0,
       );
-      detail = produit.intermediaire ? `${produit.fabricantNom} · ${texte}` : texte;
+      detail = produit.intermediaire
+        ? avecPrefixeFabricant(produit.fabricantNom, texte)
+        : texte;
     } else if (type === 'production') {
       detail = produit.intermediaire
-        ? `${produit.fabricantNom} · Stock : ${stockParProduit.get(produit.id) ?? 0}`
+        ? avecPrefixeFabricant(
+            produit.fabricantNom,
+            `Stock : ${stockParProduit.get(produit.id) ?? 0}`,
+          )
         : `Stock : ${stockParProduit.get(produit.id) ?? 0}`;
     } else {
-      detail = `${produit.fabricantNom} · Stock : ${stockParProduit.get(produit.id) ?? 0}`;
+      detail = avecPrefixeFabricant(
+        produit.fabricantNom,
+        `Stock : ${stockParProduit.get(produit.id) ?? 0}`,
+      );
     }
 
     const seuil = produit.seuil_min;

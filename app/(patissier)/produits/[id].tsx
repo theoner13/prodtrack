@@ -248,11 +248,18 @@ export default function EcranFicheProduit() {
     const boutiqueCible = modeExterieurCreation
       ? boutiqueDestinataireId!
       : (fiche.data?.produit.boutique_id ?? profil.boutique_id);
+    // Photo toujours dans le dossier de la boutique de fabrication (ma boutique
+    // pour un produit extérieur), pas celui du destinataire.
+    const dossierPhoto = modeExterieurCreation
+      ? profil.boutique_id
+      : (fiche.data?.produit.provenance_boutique_id ??
+        fiche.data?.produit.boutique_id ??
+        profil.boutique_id);
     let photoUrl = creation ? null : valeurs.photo || null;
     let cheminEnvoye: string | null = null;
     try {
       if (creation && uriLocale) {
-        cheminEnvoye = await envoyerPhoto(uriLocale, 'produits', boutiqueCible);
+        cheminEnvoye = await envoyerPhoto(uriLocale, 'produits', dossierPhoto);
         photoUrl = cheminEnvoye;
       }
       const produitId = await enregistrer.mutateAsync({
@@ -393,9 +400,10 @@ export default function EcranFicheProduit() {
   const estFrais = produit?.conservation === 'frais';
 
   const impose = produit?.impose_par_admin ?? false;
-  const boutiquePhotoId = modeExterieurCreation
-    ? boutiqueDestinataireId
-    : (produit?.boutique_id ?? profil?.boutique_id);
+  // Dossier photo = boutique de provenance (fabrication), jamais le destinataire.
+  const boutiquePhotoId = modeExterieur
+    ? (profil?.boutique_id ?? null)
+    : (produit?.boutique_id ?? profil?.boutique_id ?? null);
   const afficherPrix = !intermediaire || impose;
 
   const zoneStock =

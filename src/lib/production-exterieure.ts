@@ -26,6 +26,17 @@ export function etiquetteProvenanceAdmin(nomBoutique: string | null | undefined)
   return `De ${etiquetteBoutique(nomBoutique)}`;
 }
 
+/**
+ * Préfixe « Nom · détail » seulement si le fabricant est connu.
+ * Pour un produit extérieur dont le profil n'est pas lisible, le nom est vide :
+ * on affiche alors le détail seul (ex. « Stock : 8 »).
+ */
+export function avecPrefixeFabricant(fabricantNom: string, detail: string): string {
+  const nom = fabricantNom.trim();
+  if (!nom) return detail;
+  return `${nom} · ${detail}`;
+}
+
 /** Sous-titre frais pour un produit extérieur. */
 export function sousTitreExterieurFrais(params: {
   disponible: number;
