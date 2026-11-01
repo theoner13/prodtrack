@@ -1,5 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import { useBoutiques } from '@/api/boutiques';
 import {
@@ -12,7 +19,6 @@ import {
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Banniere } from '@/components/banniere';
-import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur } from '@/components/etats';
@@ -33,7 +39,14 @@ import {
   type TableauExport,
 } from '@/lib/exports';
 import { aujourdhuiParis } from '@/lib/format';
-import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  polices,
+  rayonPetit,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 
 type PeriodeChoix = TypePeriode | 'perso';
 type TypeExport = 'ventes' | 'mouvements' | 'ca-employes' | 'pertes';
@@ -303,32 +316,71 @@ export default function EcranExport() {
           <Text style={styles.titreExport}>{item.titre}</Text>
           <Text style={styles.descExport}>{item.description}</Text>
           <View style={styles.rangBoutons}>
-            <View style={styles.boutonFlex}>
-              <Bouton
-                titre="Excel"
-                pleineLargeur
-                onPress={() => {
-                  void exporter(item.id, 'xlsx');
-                }}
-                chargement={exportEnCours === `${item.id}-xlsx`}
-                desactive={desactive}
-              />
-            </View>
-            <View style={styles.boutonFlex}>
-              <Bouton
-                titre="PDF"
-                pleineLargeur
-                onPress={() => {
-                  void exporter(item.id, 'pdf');
-                }}
-                chargement={exportEnCours === `${item.id}-pdf`}
-                desactive={desactive}
-              />
-            </View>
+            <PastilleExport
+              titre="Excel"
+              icone="document-outline"
+              onPress={() => {
+                void exporter(item.id, 'xlsx');
+              }}
+              chargement={exportEnCours === `${item.id}-xlsx`}
+              desactive={desactive}
+            />
+            <PastilleExport
+              titre="PDF"
+              icone="document-text-outline"
+              onPress={() => {
+                void exporter(item.id, 'pdf');
+              }}
+              chargement={exportEnCours === `${item.id}-pdf`}
+              desactive={desactive}
+            />
           </View>
         </View>
       ))}
     </Ecran>
+  );
+}
+
+function PastilleExport({
+  titre,
+  icone,
+  onPress,
+  chargement,
+  desactive,
+}: {
+  titre: string;
+  icone: 'document-outline' | 'document-text-outline';
+  onPress: () => void;
+  chargement: boolean;
+  desactive: boolean;
+}) {
+  const inactif = desactive || chargement;
+  const couleurIcone = inactif ? couleurs.texteMuet : couleurs.texteSecondaire;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: inactif, busy: chargement }}
+      disabled={inactif}
+      onPress={onPress}
+      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+      style={({ pressed }) => [
+        styles.pastille,
+        inactif && styles.pastilleInactive,
+        pressed && !inactif && styles.pastilleAppuyee,
+      ]}
+    >
+      {chargement ? (
+        <ActivityIndicator size="small" color={couleurIcone} />
+      ) : (
+        <>
+          <Ionicons name={icone} size={14} color={couleurIcone} />
+          <Text style={[styles.pastilleTexte, inactif && styles.pastilleTexteInactif]}>
+            {titre}
+          </Text>
+        </>
+      )}
+    </Pressable>
   );
 }
 
@@ -410,9 +462,37 @@ const styles = StyleSheet.create({
   },
   rangBoutons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: espacements.s,
+    alignSelf: 'flex-end',
   },
-  boutonFlex: {
-    flex: 1,
+  pastille: {
+    height: 32,
+    minWidth: 44,
+    paddingHorizontal: 10,
+    borderRadius: rayonPetit,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: couleurs.bordure,
+    backgroundColor: couleurs.principalClair,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  pastilleInactive: {
+    backgroundColor: couleurs.desactive,
+    borderColor: couleurs.desactive,
+  },
+  pastilleAppuyee: {
+    opacity: 0.7,
+  },
+  pastilleTexte: {
+    fontSize: tailles.petit,
+    fontWeight: '500',
+    color: couleurs.texte,
+    fontFamily: polices.sans,
+  },
+  pastilleTexteInactif: {
+    color: couleurs.texteMuet,
   },
 });
