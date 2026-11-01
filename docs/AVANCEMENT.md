@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-11-01 : admin, Produits : choix Produits en vente / Intermédiaires, puces boutique et bouton Imposer réorganisés (Cursor)
 - 2026-11-01 : admin : tuiles CA de la fiche employé corrigées (semaine à cheval sur deux mois), liste simple des produits avec fiche, plus de correction de stock ; graphique beige plus lisible (Cursor)
 - 2026-10-31 : essai de design « Beige et marron » sur la branche design-beige (Cursor)
 - 2026-10-31 : vente : quantité mise en vente par produit (sorties ou production + restes d'hier) et contrôle vendu + jeté + reste (Cursor)
