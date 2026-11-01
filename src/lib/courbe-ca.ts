@@ -55,6 +55,40 @@ export function plageCourbeSeptJours(jourFin: string): { debut: string; fin: str
   return { debut: ajouterJours(jourFin, -6), fin: jourFin };
 }
 
+export type TypePeriodeCourbe = 'aujourdhui' | 'hier' | 'semaine' | 'mois' | 'perso';
+
+/**
+ * Plage affichée sur la courbe selon le filtre.
+ * Aujourd'hui / Hier : toujours 7 jours.
+ * Semaine / Mois : 7 derniers jours si la période a moins de 7 jours, sinon la période.
+ * Personnalisée : un point par jour de la période.
+ */
+export function plageCourbe(
+  type: TypePeriodeCourbe,
+  debut: string,
+  fin: string,
+): { debut: string; fin: string } {
+  if (type === 'aujourdhui' || type === 'hier') {
+    return plageCourbeSeptJours(fin);
+  }
+  if (type === 'semaine' || type === 'mois') {
+    if (joursDeLaPlage(debut, fin).length < 7) {
+      return plageCourbeSeptJours(fin);
+    }
+    return { debut, fin };
+  }
+  return { debut, fin };
+}
+
+/** Vrai s'il existe au moins un jour avec un CA > 0 sur la plage de la courbe. */
+export function courbeADesVentes(
+  lignes: LigneCaJour[],
+  debut: string,
+  fin: string,
+): boolean {
+  return pointsCourbeCa(lignes, debut, fin).some((p) => p.caCentimes > 0);
+}
+
 /** Regroupe le CA par jour ; jours sans vente = 0. */
 export function pointsCourbeCa(
   lignes: LigneCaJour[],

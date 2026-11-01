@@ -26,7 +26,7 @@ import {
   type TriClassementProduit,
   type TypePeriode,
 } from '@/lib/ca';
-import { plageCourbeSeptJours } from '@/lib/courbe-ca';
+import { courbeADesVentes, plageCourbe } from '@/lib/courbe-ca';
 import { aujourdhuiParis, formatEuros } from '@/lib/format';
 import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 
@@ -90,13 +90,10 @@ export default function EcranTableauDeBord() {
   const patissiers = usePatissiersPourCa(boutiqueId);
   const pertes = usePertesPeriode(dates?.debut ?? null, dates?.fin ?? null, boutiqueId);
 
-  // Aujourd'hui / Hier : courbe sur 7 jours (totaux inchangés, requête dédiée).
+  // Courbe : 7 jours pour Aujourd'hui/Hier ; aussi pour Semaine/Mois si < 7 jours.
   const datesCourbe = useMemo(() => {
     if (!dates) return null;
-    if (periode === 'aujourdhui' || periode === 'hier') {
-      return plageCourbeSeptJours(dates.fin);
-    }
-    return dates;
+    return plageCourbe(periode, dates.debut, dates.fin);
   }, [dates, periode]);
 
   const caCourbe = useCaJournalier(
@@ -108,6 +105,10 @@ export default function EcranTableauDeBord() {
   const lignes = ca.data ?? [];
   const lignesCourbe = caCourbe.data ?? [];
   const chiffres = useMemo(() => totaux(lignes), [lignes]);
+  const courbeVisible = useMemo(() => {
+    if (!datesCourbe) return false;
+    return courbeADesVentes(lignesCourbe, datesCourbe.debut, datesCourbe.fin);
+  }, [lignesCourbe, datesCourbe]);
 
   const totalPertes = useMemo(
     () => (pertes.data ?? []).reduce((somme, p) => somme + p.quantite, 0),
@@ -223,8 +224,10 @@ export default function EcranTableauDeBord() {
 
   const enChargement =
     boutiques.isLoading ||
-    (Boolean(dates) && (ca.isLoading || patissiers.isLoading || pertes.isLoading));
-  const enErreur = boutiques.isError || ca.isError || patissiers.isError || pertes.isError;
+    (Boolean(dates) &&
+      (ca.isLoading || caCourbe.isLoading || patissiers.isLoading || pertes.isLoading));
+  const enErreur =
+    boutiques.isError || ca.isError || caCourbe.isError || patissiers.isError || pertes.isError;
   const aucuneDonnee =
     !enChargement &&
     !enErreur &&
@@ -328,7 +331,28 @@ export default function EcranTableauDeBord() {
           }}
         />
       ) : aucuneDonnee ? (
-        <EtatVide message="Aucune vente enregistrée sur cette période." />
+        courbeVisible && datesCourbe ? (
+          <>
+            <View style={styles.blocCa}>
+              <Text style={styles.caLibelle}>Chiffre d'affaires</Text>
+              <Text
+                style={styles.caValeur}
+                accessibilityLabel={`CA total ${formatEuros(0)}`}
+              >
+                {formatEuros(0)}
+              </Text>
+              <CourbeCa
+                lignes={lignesCourbe}
+                debut={datesCourbe.debut}
+                fin={datesCourbe.fin}
+                jourMisEnAvant={dates?.fin ?? datesCourbe.fin}
+              />
+            </View>
+            <EtatVide message="Aucune vente enregistrée sur cette période." />
+          </>
+        ) : (
+          <EtatVide message="Aucune vente enregistrée sur cette période." />
+        )
       ) : (
         <>
           <View style={styles.blocCa}>
@@ -336,12 +360,12 @@ export default function EcranTableauDeBord() {
             <Text style={styles.caValeur} accessibilityLabel={`CA total ${formatEuros(chiffres.caCentimes)}`}>
               {formatEuros(chiffres.caCentimes)}
             </Text>
-            {datesCourbe ? (
+            {courbeVisible && datesCourbe ? (
               <CourbeCa
                 lignes={lignesCourbe}
                 debut={datesCourbe.debut}
                 fin={datesCourbe.fin}
-                jourMisEnAvant={datesCourbe.fin}
+                jourMisEnAvant={dates?.fin ?? datesCourbe.fin}
               />
             ) : null}
           </View>

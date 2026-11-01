@@ -2,11 +2,13 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+  courbeADesVentes,
   indicesLibellesVisibles,
   joursDeLaPlage,
   libelleBulleCourbe,
   libelleJourCourbe,
   maxRepereCourbe,
+  plageCourbe,
   plageCourbeSeptJours,
   pointsCourbeCa,
   reperesCourbe,
@@ -27,6 +29,48 @@ describe('courbe-ca — plages', () => {
     assert.deepEqual(plageCourbeSeptJours('2026-11-01'), {
       debut: '2026-10-26',
       fin: '2026-11-01',
+    });
+  });
+
+  it('aujourd\'hui et hier : toujours 7 jours', () => {
+    assert.deepEqual(plageCourbe('aujourdhui', '2026-11-02', '2026-11-02'), {
+      debut: '2026-10-27',
+      fin: '2026-11-02',
+    });
+    assert.deepEqual(plageCourbe('hier', '2026-11-01', '2026-11-01'), {
+      debut: '2026-10-26',
+      fin: '2026-11-01',
+    });
+  });
+
+  it('semaine / mois : 7 jours si moins de 7 jours écoulés', () => {
+    // Lundi seul → 7 derniers jours
+    assert.deepEqual(plageCourbe('semaine', '2026-11-02', '2026-11-02'), {
+      debut: '2026-10-27',
+      fin: '2026-11-02',
+    });
+    // 1er au 3 du mois → 7 derniers jours
+    assert.deepEqual(plageCourbe('mois', '2026-11-01', '2026-11-03'), {
+      debut: '2026-10-28',
+      fin: '2026-11-03',
+    });
+  });
+
+  it('semaine / mois : période telle quelle dès 7 jours', () => {
+    assert.deepEqual(plageCourbe('semaine', '2026-10-26', '2026-11-01'), {
+      debut: '2026-10-26',
+      fin: '2026-11-01',
+    });
+    assert.deepEqual(plageCourbe('mois', '2026-11-01', '2026-11-07'), {
+      debut: '2026-11-01',
+      fin: '2026-11-07',
+    });
+  });
+
+  it('personnalisée : un point par jour de la période', () => {
+    assert.deepEqual(plageCourbe('perso', '2026-10-20', '2026-10-22'), {
+      debut: '2026-10-20',
+      fin: '2026-10-22',
     });
   });
 });
@@ -56,6 +100,26 @@ describe('courbe-ca — points', () => {
       '2026-10-28',
     );
     assert.deepEqual(points, [{ jour: '2026-10-28', caCentimes: 0, index: 0 }]);
+  });
+
+  it('détecte si la courbe a au moins un jour avec CA > 0', () => {
+    assert.equal(
+      courbeADesVentes(
+        [{ jour: '2026-10-28', ca_centimes: 100 }],
+        '2026-10-27',
+        '2026-10-29',
+      ),
+      true,
+    );
+    assert.equal(
+      courbeADesVentes(
+        [{ jour: '2026-10-28', ca_centimes: 0 }],
+        '2026-10-27',
+        '2026-10-29',
+      ),
+      false,
+    );
+    assert.equal(courbeADesVentes([], '2026-10-27', '2026-10-29'), false);
   });
 });
 
