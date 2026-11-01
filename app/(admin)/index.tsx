@@ -6,6 +6,7 @@ import { useCaJournalier, usePatissiersPourCa, usePertesPeriode } from '@/api/ca
 import { Champ } from '@/components/champ';
 import { ClassementPertes } from '@/components/classement-pertes';
 import { ClassementProduits } from '@/components/classement-produits';
+import { CourbeCa } from '@/components/courbe-ca';
 import { DetailCaEmploye } from '@/components/detail-ca-employe';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
@@ -25,6 +26,7 @@ import {
   type TriClassementProduit,
   type TypePeriode,
 } from '@/lib/ca';
+import { plageCourbeSeptJours } from '@/lib/courbe-ca';
 import { aujourdhuiParis, formatEuros } from '@/lib/format';
 import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 
@@ -88,7 +90,23 @@ export default function EcranTableauDeBord() {
   const patissiers = usePatissiersPourCa(boutiqueId);
   const pertes = usePertesPeriode(dates?.debut ?? null, dates?.fin ?? null, boutiqueId);
 
+  // Aujourd'hui / Hier : courbe sur 7 jours (totaux inchangés, requête dédiée).
+  const datesCourbe = useMemo(() => {
+    if (!dates) return null;
+    if (periode === 'aujourdhui' || periode === 'hier') {
+      return plageCourbeSeptJours(dates.fin);
+    }
+    return dates;
+  }, [dates, periode]);
+
+  const caCourbe = useCaJournalier(
+    datesCourbe?.debut ?? null,
+    datesCourbe?.fin ?? null,
+    boutiqueId,
+  );
+
   const lignes = ca.data ?? [];
+  const lignesCourbe = caCourbe.data ?? [];
   const chiffres = useMemo(() => totaux(lignes), [lignes]);
 
   const totalPertes = useMemo(
@@ -222,6 +240,7 @@ export default function EcranTableauDeBord() {
     await Promise.all([
       boutiques.refetch(),
       ca.refetch(),
+      caCourbe.refetch(),
       patissiers.refetch(),
       pertes.refetch(),
     ]);
@@ -317,7 +336,14 @@ export default function EcranTableauDeBord() {
             <Text style={styles.caValeur} accessibilityLabel={`CA total ${formatEuros(chiffres.caCentimes)}`}>
               {formatEuros(chiffres.caCentimes)}
             </Text>
-            <GraphiqueCaJours lignes={lignes} />
+            {datesCourbe ? (
+              <CourbeCa
+                lignes={lignesCourbe}
+                debut={datesCourbe.debut}
+                fin={datesCourbe.fin}
+                jourMisEnAvant={datesCourbe.fin}
+              />
+            ) : null}
           </View>
 
           <View style={styles.chiffres}>
@@ -488,64 +514,6 @@ function ChiffreCle({
   return <View style={styles.chiffre}>{contenu}</View>;
 }
 
-/** Mini-graphique du CA par jour à partir des lignes déjà chargées. */
-function GraphiqueCaJours({
-  lignes,
-}: {
-  lignes: { jour: string | null; ca_centimes: number | null }[];
-}) {
-  const parJour = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const l of lignes) {
-      if (!l.jour) continue;
-      const ca = l.ca_centimes ?? 0;
-      map.set(l.jour, (map.get(l.jour) ?? 0) + ca);
-    }
-    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [lignes]);
-
-  if (parJour.length < 2) return null;
-
-  const max = Math.max(...parJour.map(([, v]) => v), 1);
-  const premier = parJour[0]?.[0] ?? '';
-  const milieu = parJour[Math.floor(parJour.length / 2)]?.[0] ?? '';
-  const dernier = parJour[parJour.length - 1]?.[0] ?? '';
-
-  return (
-    <View
-      accessible
-      accessibilityLabel="Chiffre d'affaires par jour"
-      style={styles.graphique}
-    >
-      <View style={styles.graphiqueBarres}>
-        {parJour.map(([jour, ca], index) => {
-          const h = Math.max(4, Math.round((ca / max) * 80));
-          const dernierJour = index === parJour.length - 1;
-          return (
-            <View
-              key={jour}
-              style={[
-                styles.barreJour,
-                {
-                  height: h,
-                  backgroundColor: dernierJour
-                    ? couleurs.croute
-                    : 'rgba(210,153,105,0.45)',
-                },
-              ]}
-            />
-          );
-        })}
-      </View>
-      <View style={styles.graphiqueLabels}>
-        <Text style={styles.graphiqueLabel}>{formatDateFr(premier)}</Text>
-        <Text style={styles.graphiqueLabel}>{formatDateFr(milieu)}</Text>
-        <Text style={styles.graphiqueLabel}>{formatDateFr(dernier)}</Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   section: {
     ...styleTitreSection,
@@ -600,33 +568,6 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     color: couleurs.texte,
     fontVariant: ['tabular-nums'],
-  },
-  graphique: {
-    marginTop: 16,
-    gap: 8,
-  },
-  graphiqueBarres: {
-    height: 84,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: couleurs.bordure,
-    gap: 2,
-  },
-  barreJour: {
-    flex: 1,
-    maxWidth: 8,
-    borderTopLeftRadius: 3,
-    borderTopRightRadius: 3,
-  },
-  graphiqueLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  graphiqueLabel: {
-    fontSize: 11,
-    color: couleurs.texteSecondaire,
   },
   chiffres: {
     flexDirection: 'row',
