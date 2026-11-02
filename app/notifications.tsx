@@ -1,6 +1,6 @@
 import { router, Stack, type Href } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useMarquerToutesLues, useNotifications } from '@/api/notifications';
 import { useAuth } from '@/auth/AuthProvider';
@@ -29,6 +29,12 @@ function formatMoment(iso: string): string {
   return `${jour} à ${hh}:${mm}`;
 }
 
+function estNotificationCommande(titre: string): boolean {
+  return (
+    titre.startsWith('Nouvelle commande') || titre.startsWith('Commande non reçue')
+  );
+}
+
 export default function EcranNotifications() {
   const { profil } = useAuth();
   const liste = useNotifications(profil?.id ?? null);
@@ -54,6 +60,14 @@ export default function EcranNotifications() {
     const accueil: Href =
       profil?.role === 'admin' ? '/(admin)' : profil?.role === 'vendeuse' ? '/(vendeuse)' : '/(patissier)';
     router.replace(accueil);
+  }
+
+  function ouvrirCommandes() {
+    if (profil?.role === 'patissier') {
+      router.push('/(patissier)/commandes' as Href);
+    } else if (profil?.role === 'vendeuse') {
+      router.push('/(vendeuse)/commandes' as Href);
+    }
   }
 
   const enteteRetour = (
@@ -101,11 +115,30 @@ export default function EcranNotifications() {
       ) : (
         notifications.map((notification) => {
           const nonLue = nonLues.has(notification.id) || !notification.lu;
-          return (
-            <View key={notification.id} style={styles.carte}>
+          const versCommandes = estNotificationCommande(notification.titre);
+          const contenu = (
+            <>
               <Text style={[styles.titre, nonLue && styles.nonLue]}>{notification.titre}</Text>
               <Text style={styles.message}>{notification.message}</Text>
               <Text style={styles.date}>{formatMoment(notification.created_at)}</Text>
+            </>
+          );
+          if (versCommandes && (profil?.role === 'patissier' || profil?.role === 'vendeuse')) {
+            return (
+              <Pressable
+                key={notification.id}
+                onPress={ouvrirCommandes}
+                style={({ pressed }) => [styles.carte, pressed && { opacity: 0.7 }]}
+                accessibilityRole="button"
+                accessibilityLabel={`Ouvrir les commandes : ${notification.titre}`}
+              >
+                {contenu}
+              </Pressable>
+            );
+          }
+          return (
+            <View key={notification.id} style={styles.carte}>
+              {contenu}
             </View>
           );
         })

@@ -32,6 +32,16 @@ export default function LayoutVendeuse() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="commandes"
+        options={{
+          title: 'Commandes',
+          headerShown: false,
+          tabBarIcon: ({ focused }) => (
+            <OngletIcone nom="receipt-outline" nomActif="receipt" focused={focused} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

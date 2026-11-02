@@ -56,6 +56,153 @@ export type Database = {
           },
         ]
       }
+      commandes: {
+        Row: {
+          acompte_centimes: number | null
+          annulee_le: string | null
+          boutique_fabrication_id: string
+          boutique_retrait_id: string
+          client_email: string | null
+          client_nom: string
+          client_telephone: string
+          cree_le: string
+          cree_par: string
+          demandes: string | null
+          entreprise_id: string
+          fabricant_id: string | null
+          gateau: string
+          id: string
+          inscription: string | null
+          modifie_le: string
+          nb_parts: number
+          non_recue_signalee_le: string | null
+          non_recue_signalee_par: string | null
+          prete_le: string | null
+          prix_centimes: number | null
+          recue_le: string | null
+          recue_par: string | null
+          recuperee_le: string | null
+          recuperee_par: string | null
+          retrait_le: string
+          statut: Database["public"]["Enums"]["statut_commande"]
+        }
+        Insert: {
+          acompte_centimes?: number | null
+          annulee_le?: string | null
+          boutique_fabrication_id: string
+          boutique_retrait_id: string
+          client_email?: string | null
+          client_nom: string
+          client_telephone: string
+          cree_le?: string
+          cree_par?: string
+          demandes?: string | null
+          entreprise_id?: string
+          fabricant_id?: string | null
+          gateau: string
+          id?: string
+          inscription?: string | null
+          modifie_le?: string
+          nb_parts: number
+          non_recue_signalee_le?: string | null
+          non_recue_signalee_par?: string | null
+          prete_le?: string | null
+          prix_centimes?: number | null
+          recue_le?: string | null
+          recue_par?: string | null
+          recuperee_le?: string | null
+          recuperee_par?: string | null
+          retrait_le: string
+          statut?: Database["public"]["Enums"]["statut_commande"]
+        }
+        Update: {
+          acompte_centimes?: number | null
+          annulee_le?: string | null
+          boutique_fabrication_id?: string
+          boutique_retrait_id?: string
+          client_email?: string | null
+          client_nom?: string
+          client_telephone?: string
+          cree_le?: string
+          cree_par?: string
+          demandes?: string | null
+          entreprise_id?: string
+          fabricant_id?: string | null
+          gateau?: string
+          id?: string
+          inscription?: string | null
+          modifie_le?: string
+          nb_parts?: number
+          non_recue_signalee_le?: string | null
+          non_recue_signalee_par?: string | null
+          prete_le?: string | null
+          prix_centimes?: number | null
+          recue_le?: string | null
+          recue_par?: string | null
+          recuperee_le?: string | null
+          recuperee_par?: string | null
+          retrait_le?: string
+          statut?: Database["public"]["Enums"]["statut_commande"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commandes_boutique_fabrication_id_fkey"
+            columns: ["boutique_fabrication_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commandes_boutique_retrait_id_fkey"
+            columns: ["boutique_retrait_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commandes_cree_par_fkey"
+            columns: ["cree_par"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commandes_entreprise_id_fkey"
+            columns: ["entreprise_id"]
+            isOneToOne: false
+            referencedRelation: "entreprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commandes_fabricant_id_fkey"
+            columns: ["fabricant_id"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commandes_non_recue_signalee_par_fkey"
+            columns: ["non_recue_signalee_par"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commandes_recue_par_fkey"
+            columns: ["recue_par"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commandes_recuperee_par_fkey"
+            columns: ["recuperee_par"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entreprises: {
         Row: {
           created_at: string
@@ -580,6 +727,7 @@ export type Database = {
         Row: {
           boutique_id: string | null
           ca_centimes: number | null
+          commande_id: string | null
           fabricant_id: string | null
           jete: number | null
           jour: string | null
@@ -589,43 +737,7 @@ export type Database = {
           reste: number | null
           vendu: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "produits_boutique_id_fkey"
-            columns: ["boutique_id"]
-            isOneToOne: false
-            referencedRelation: "boutiques"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "saisies_vente_fabricant_id_fkey"
-            columns: ["fabricant_id"]
-            isOneToOne: false
-            referencedRelation: "profils"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "saisies_vente_produit_id_fkey"
-            columns: ["produit_id"]
-            isOneToOne: false
-            referencedRelation: "disponible_frais"
-            referencedColumns: ["produit_id"]
-          },
-          {
-            foreignKeyName: "saisies_vente_produit_id_fkey"
-            columns: ["produit_id"]
-            isOneToOne: false
-            referencedRelation: "produits"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "saisies_vente_produit_id_fkey"
-            columns: ["produit_id"]
-            isOneToOne: false
-            referencedRelation: "stock_actuel"
-            referencedColumns: ["produit_id"]
-          },
-        ]
+        Relationships: []
       }
       disponible_frais: {
         Row: {
@@ -690,6 +802,15 @@ export type Database = {
         Args: { p_motif?: string; p_produit: string; p_stock_reel: number }
         Returns: number
       }
+      annuler_commande: { Args: { p_commande: string }; Returns: undefined }
+      annuler_commande_prete: {
+        Args: { p_commande: string }
+        Returns: undefined
+      }
+      annuler_commande_recue: {
+        Args: { p_commande: string }
+        Returns: undefined
+      }
       aujourdhui: { Args: never; Returns: string }
       boutique_de_mon_entreprise: {
         Args: { p_boutique: string }
@@ -697,13 +818,6 @@ export type Database = {
       }
       calculer_previsions: { Args: never; Returns: undefined }
       catalogue_boutiques: {
-        Args: never
-        Returns: {
-          id: string
-          nom: string
-        }[]
-      }
-      noms_boutiques_entreprise: {
         Args: never
         Returns: {
           id: string
@@ -750,6 +864,22 @@ export type Database = {
       }
       est_admin: { Args: never; Returns: boolean }
       ma_boutique: { Args: never; Returns: string }
+      marquer_commande_prete: {
+        Args: { p_commande: string }
+        Returns: undefined
+      }
+      marquer_commande_recue: {
+        Args: { p_commande: string }
+        Returns: undefined
+      }
+      marquer_commande_recuperee: {
+        Args: { p_commande: string }
+        Returns: undefined
+      }
+      signaler_commande_non_recue: {
+        Args: { p_commande: string }
+        Returns: undefined
+      }
       mis_en_vente: {
         Args: { p_boutique: string; p_jour: string }
         Returns: {
@@ -763,6 +893,13 @@ export type Database = {
       mon_role: {
         Args: never
         Returns: Database["public"]["Enums"]["role_employe"]
+      }
+      noms_boutiques_entreprise: {
+        Args: never
+        Returns: {
+          id: string
+          nom: string
+        }[]
       }
       peut_ecrire_photo_produit: {
         Args: { p_boutique: string }
@@ -788,6 +925,7 @@ export type Database = {
     }
     Enums: {
       role_employe: "admin" | "patissier" | "vendeuse"
+      statut_commande: "a_faire" | "prete" | "recue" | "recuperee" | "annulee"
       type_conservation: "frais" | "surgele"
       type_mouvement: "production" | "sortie" | "ajustement"
     }
@@ -918,11 +1056,13 @@ export const Constants = {
   public: {
     Enums: {
       role_employe: ["admin", "patissier", "vendeuse"],
+      statut_commande: ["a_faire", "prete", "recue", "recuperee", "annulee"],
       type_conservation: ["frais", "surgele"],
       type_mouvement: ["production", "sortie", "ajustement"],
     },
   },
 } as const
+
 
 // ---------- Alias pratiques ----------
 export type Produit = Tables<'produits'>;
@@ -936,4 +1076,6 @@ export type StockActuel = Tables<'stock_actuel'>;
 export type DisponibleFrais = Tables<'disponible_frais'>;
 export type CaJournalier = Tables<'ca_journalier'>;
 export type PerteProduction = Tables<'pertes_production'>;
+export type Commande = Tables<'commandes'>;
 export type RoleEmploye = Enums<'role_employe'>;
+export type StatutCommande = Enums<'statut_commande'>;

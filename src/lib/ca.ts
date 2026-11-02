@@ -12,6 +12,8 @@ export type LigneCa = {
   reste?: number | null;
   prix_unitaire_centimes?: number | null;
   ca_centimes: number | null;
+  /** Présent pour les lignes issues d’une commande de gâteau. */
+  commande_id?: string | null;
 };
 
 export type TotauxCa = {
@@ -68,6 +70,8 @@ export function totaux(lignes: LigneCa[]): TotauxCa {
   let jete = 0;
   for (const ligne of lignes) {
     caCentimes += n(ligne.ca_centimes);
+    // Les commandes comptent dans le CA, pas dans « Vendus » / jetés du tableau de bord.
+    if (ligne.commande_id) continue;
     vendu += n(ligne.vendu);
     jete += n(ligne.jete);
   }
@@ -127,7 +131,7 @@ export function detailFabricant(lignes: LigneCa[], fabricantId: string): DetailC
   const duFabricant = lignes.filter((l) => l.fabricant_id === fabricantId);
   const produits = parProduit(duFabricant).map((g) => ({
     ...g,
-    nom: duFabricant.find((l) => l.produit_id === g.cle)?.produit_nom ?? g.cle,
+    nom: nomProduit(duFabricant, g.cle),
   }));
   return {
     produits,

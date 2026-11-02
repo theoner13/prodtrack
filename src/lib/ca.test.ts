@@ -152,6 +152,32 @@ describe('ca — semaine, mois, taux de perte', () => {
     assert.equal(totaux([]).tauxPerte, 0);
   });
 
+  it('une commande compte dans le CA mais pas dans Vendus', () => {
+    const lignes: LigneCa[] = [
+      {
+        jour: '2026-11-02',
+        fabricant_id: 'A',
+        produit_id: 'muffin',
+        vendu: 5,
+        jete: 0,
+        ca_centimes: 1500,
+      },
+      {
+        jour: '2026-11-02',
+        fabricant_id: 'A',
+        produit_id: null,
+        produit_nom: 'Commande : Fraisier',
+        vendu: 1,
+        jete: 0,
+        ca_centimes: 3500,
+        commande_id: 'cmd-1',
+      },
+    ];
+    const t = totaux(lignes);
+    assert.equal(t.caCentimes, 5000);
+    assert.equal(t.vendu, 5);
+  });
+
   it('par jour trie par date croissante', () => {
     const lignes: LigneCa[] = [
       {

@@ -93,6 +93,7 @@ Pour les patrons qui n'ont pas le temps de surveiller chacune de leurs boutiques
 11. **[Ajout] Catalogue des autres boutiques** : voir les produits et recettes des autres boutiques de l'entreprise (sans le CA ni le fabricant) et décider de fabriquer aussi un produit chez soi. Les produits intermédiaires peuvent être importés d'une boutique à l'autre.
 12. **[Ajout] Produits à prendre** : les produits imposés sans pâtissier s'affichent en haut de « Mes produits » avec le bouton « Je le fabrique ».
 13. **[Ajout] Production extérieure** : le pâtissier peut fabriquer pour une autre boutique de l'entreprise. Le produit appartient à la boutique destinataire (ligne distincte, avec étiquette de provenance) ; le fabricant saisit la production, voit restes / jetés / pertes / stock, et reçoit les alertes de seuil. Les ventes comptent dans son CA ; le CA « par boutique » reste celui du lieu de vente. Les sorties de surgelés sont faites par les pâtissiers de la boutique destinataire.
+14. **[Ajout] Commandes de gâteaux** : voir toutes les commandes de l'entreprise (filtre par boutique de fabrication). Marquer « Prête » une commande fabriquée dans sa boutique (il en devient le fabricant). Voir ensuite les étapes Reçue / Récupérée et les signalements « non reçue ».
 
 ### 3.3 Compte Vente
 
@@ -100,6 +101,7 @@ Pour les patrons qui n'ont pas le temps de surveiller chacune de leurs boutiques
 2. **Saisie en 3 champs par produit**, en fin de journée : **Vendu**, **Jeté**, **Reste** (gardé pour le lendemain).
 3. **[Ajout]** Saisie pour aujourd'hui ou pour hier (en cas d'oubli), modifiable ; historique des 14 derniers jours.
 4. Ces saisies alimentent le CA par employé et par boutique, et les statistiques de pertes.
+5. **[Ajout] Commandes de gâteaux** : prendre une commande client (nom, téléphone, gâteau, parts, demandes, inscription, boutique qui fabrique, date/heure de retrait, prix et acompte facultatifs). La boutique de retrait est toujours celle où la commande est prise. Suivi : À faire → Prête → Reçue → Récupérée (ou Annulée). Marquer reçue / récupérée, signaler un gâteau non reçu à partir d'une heure avant le retrait. Le prix entre dans le CA du pâtissier fabricant le jour de la récupération.
 
 ## 4. Règles de calcul
 
@@ -140,6 +142,8 @@ Exemple, prix de vente du muffin 3 €, fabriqué par le pâtissier A :
 | Fin de journée | Reste pour le lendemain | Vente C | 2 |
 
 Résultat : pâtissier A = 5 × 3 € = **15 € de CA** (1 muffin jeté) ; pâtissier B = 0 €.
+
+**[Ajout] Commandes de gâteaux** : le prix de la commande (si renseigné) entre dans le CA du pâtissier qui a marqué « Prête », le jour où la commande est marquée « Récupérée ». Ce montant apparaît dans le tableau de bord, la courbe, la fiche employé et l'export CA ; il n'est pas compté dans le nombre de « Vendus » du tableau de bord.
 
 ### 4.3 Prévision, planning de fabrication et seuil de stock
 
@@ -198,5 +202,6 @@ Section du cahier d'origine, inchangée : chiffrage par bloc, deux montants pour
 | Pâtissier | Planning en agenda 7 jours, alerte immédiate sous le seuil |
 | Pâtissier | Stock limité à ses produits, ajout de stock depuis la fiche, annulation le jour même |
 | Vente | Saisie aujourd'hui ou hier, historique 14 jours |
+| Vente / Pâtissier | Commandes de gâteaux : saisie, suivi À faire / Prête / Reçue / Récupérée, signalement non reçu, CA au fabricant |
 | Règles | Prévision sur les sorties ; seuil et planning réservés aux surgelés ; quantité suggérée ; prix figé à la vente |
 | Présentation | Style épuré, logo, animation d'accueil, icônes fines, version web installable |
