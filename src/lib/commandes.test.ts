@@ -4,7 +4,9 @@ import { describe, it } from 'node:test';
 import {
   formatHeureRetrait,
   formatRetraitComplet,
+  libelleDansCombien,
   libelleGroupeJour,
+  libelleJourFiche,
   peutSignalerNonRecue,
   regrouperParJour,
   resteAPayerCentimes,
@@ -57,6 +59,52 @@ describe('commandes — format retrait', () => {
     assert.equal(libelleGroupeJour('2026-11-02T10:00:00.000Z', '2026-11-02'), "Aujourd'hui");
     assert.equal(libelleGroupeJour('2026-11-03T10:00:00.000Z', '2026-11-02'), 'Demain');
     assert.match(libelleGroupeJour('2026-11-05T10:00:00.000Z', '2026-11-02'), /05\/11/);
+  });
+  it('libellé jour fiche : Aujourd’hui / Demain · … / jour', () => {
+    assert.equal(libelleJourFiche('2026-11-02T10:00:00.000Z', '2026-11-02'), "Aujourd'hui");
+    assert.match(libelleJourFiche('2026-11-03T10:00:00.000Z', '2026-11-02'), /^Demain · .+ 03\/11$/);
+    assert.match(libelleJourFiche('2026-11-05T10:00:00.000Z', '2026-11-02'), /05\/11/);
+  });
+});
+
+describe('commandes — délai avant retrait', () => {
+  it('affiche les minutes si moins d’une heure', () => {
+    assert.equal(
+      libelleDansCombien(
+        '2026-11-02T15:40:00.000Z',
+        new Date('2026-11-02T15:00:00.000Z'),
+        '2026-11-02',
+      ),
+      'dans 40 min',
+    );
+  });
+  it('affiche heures et minutes', () => {
+    assert.equal(
+      libelleDansCombien(
+        '2026-11-02T17:15:00.000Z',
+        new Date('2026-11-02T15:00:00.000Z'),
+        '2026-11-02',
+      ),
+      'dans 2 h 15',
+    );
+  });
+  it('retourne null si autre jour ou déjà passé', () => {
+    assert.equal(
+      libelleDansCombien(
+        '2026-11-03T15:00:00.000Z',
+        new Date('2026-11-02T15:00:00.000Z'),
+        '2026-11-02',
+      ),
+      null,
+    );
+    assert.equal(
+      libelleDansCombien(
+        '2026-11-02T14:00:00.000Z',
+        new Date('2026-11-02T15:00:00.000Z'),
+        '2026-11-02',
+      ),
+      null,
+    );
   });
 });
 

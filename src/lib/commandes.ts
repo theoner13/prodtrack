@@ -72,6 +72,44 @@ export function libelleGroupeJour(iso: string, aujourdhui: string = aujourdhuiPa
   return `${maj} ${jj}/${mm}`;
 }
 
+/**
+ * Libellé jour pour la fiche détail :
+ * « Aujourd'hui » / « Demain · mardi 03/11 » / « Mercredi 05/11 ».
+ */
+export function libelleJourFiche(iso: string, aujourdhui: string = aujourdhuiParis()): string {
+  const jour = jourRetraitParis(iso);
+  const d = new Date(`${jour}T12:00:00Z`);
+  const weekday = d.toLocaleDateString('fr-FR', { weekday: 'long', timeZone: 'UTC' });
+  const jj = String(d.getUTCDate()).padStart(2, '0');
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const date = `${jj}/${mm}`;
+  if (jour === aujourdhui) return "Aujourd'hui";
+  const demain = ajouterJours(aujourdhui, 1);
+  if (jour === demain) return `Demain · ${weekday} ${date}`;
+  const maj = weekday.charAt(0).toLocaleUpperCase('fr-FR') + weekday.slice(1);
+  return `${maj} ${date}`;
+}
+
+/**
+ * Délai avant retrait si c'est aujourd'hui et pas encore passé :
+ * « dans 40 min » / « dans 2 h 15 » / « dans 2 h ». Sinon null.
+ */
+export function libelleDansCombien(
+  iso: string,
+  maintenant: Date = new Date(),
+  aujourdhui: string = aujourdhuiParis(),
+): string | null {
+  if (jourRetraitParis(iso) !== aujourdhui) return null;
+  const diffMs = new Date(iso).getTime() - maintenant.getTime();
+  if (diffMs <= 0) return null;
+  const totalMin = Math.max(1, Math.round(diffMs / 60_000));
+  if (totalMin < 60) return `dans ${totalMin} min`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (m === 0) return `dans ${h} h`;
+  return `dans ${h} h ${m}`;
+}
+
 function ajouterJours(jour: string, n: number): string {
   const d = new Date(`${jour}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);

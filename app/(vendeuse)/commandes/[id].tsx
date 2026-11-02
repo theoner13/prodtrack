@@ -73,6 +73,32 @@ export default function EcranDetailCommandeVendeuse() {
     }
   }
 
+  const actionPrincipale =
+    c.statut === 'prete' ? (
+      <Bouton
+        titre="Marquer reçue"
+        onPress={() =>
+          void action(() => marquerRecue.mutateAsync(c.id), 'Commande marquée reçue.')
+        }
+        chargement={marquerRecue.isPending}
+        desactive={enCours}
+        pleineLargeur
+      />
+    ) : c.statut === 'recue' ? (
+      <Bouton
+        titre="Marquer récupérée"
+        onPress={() =>
+          void action(
+            () => marquerRecuperee.mutateAsync(c.id),
+            'Commande marquée récupérée.',
+          )
+        }
+        chargement={marquerRecuperee.isPending}
+        desactive={enCours}
+        pleineLargeur
+      />
+    ) : null;
+
   return (
     <Ecran
       defilement
@@ -82,36 +108,9 @@ export default function EcranDetailCommandeVendeuse() {
       {ok ? <Banniere message={ok} onFermer={() => setOk(null)} /> : null}
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
 
-      <ContenuFicheCommande commande={c} />
+      <ContenuFicheCommande commande={c} actionPrincipale={actionPrincipale} />
 
       <View style={styles.actions}>
-        {c.statut === 'prete' ? (
-          <Bouton
-            titre="Marquer reçue"
-            onPress={() =>
-              void action(() => marquerRecue.mutateAsync(c.id), 'Commande marquée reçue.')
-            }
-            chargement={marquerRecue.isPending}
-            desactive={enCours}
-            pleineLargeur
-          />
-        ) : null}
-
-        {c.statut === 'recue' ? (
-          <Bouton
-            titre="Marquer récupérée"
-            onPress={() =>
-              void action(
-                () => marquerRecuperee.mutateAsync(c.id),
-                'Commande marquée récupérée.',
-              )
-            }
-            chargement={marquerRecuperee.isPending}
-            desactive={enCours}
-            pleineLargeur
-          />
-        ) : null}
-
         {c.statut === 'a_faire' ? (
           <Bouton
             titre="Modifier"
@@ -194,7 +193,7 @@ const styles = StyleSheet.create({
     marginBottom: espacements.m,
   },
   actions: {
-    marginTop: espacements.xl,
+    marginTop: espacements.l,
     gap: espacements.m,
     paddingBottom: espacements.xxl,
   },

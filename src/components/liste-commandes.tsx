@@ -196,7 +196,7 @@ export function LigneCommande({
   );
 }
 
-function PastilleStatut({ statut }: { statut: StatutCommande }) {
+export function PastilleStatut({ statut }: { statut: StatutCommande }) {
   const couleur =
     statut === 'prete'
       ? couleurs.succes

@@ -62,6 +62,18 @@ export default function EcranDetailCommandePatissier() {
     }
   }
 
+  const actionPrincipale =
+    fabriqueeChezMoi && c.statut === 'a_faire' ? (
+      <Bouton
+        titre="Marquer prête"
+        onPress={() =>
+          void action(() => marquerPrete.mutateAsync(c.id), 'Commande marquée prête.')
+        }
+        chargement={marquerPrete.isPending}
+        pleineLargeur
+      />
+    ) : null;
+
   return (
     <Ecran
       defilement
@@ -71,20 +83,13 @@ export default function EcranDetailCommandePatissier() {
       {ok ? <Banniere message={ok} onFermer={() => setOk(null)} /> : null}
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
 
-      <ContenuFicheCommande commande={c} afficherBoutiqueRetrait />
+      <ContenuFicheCommande
+        commande={c}
+        afficherBoutiqueRetrait
+        actionPrincipale={actionPrincipale}
+      />
 
       <View style={styles.actions}>
-        {fabriqueeChezMoi && c.statut === 'a_faire' ? (
-          <Bouton
-            titre="Marquer prête"
-            onPress={() =>
-              void action(() => marquerPrete.mutateAsync(c.id), 'Commande marquée prête.')
-            }
-            chargement={marquerPrete.isPending}
-            pleineLargeur
-          />
-        ) : null}
-
         {jeSuisFabricant && c.statut === 'prete' ? (
           <LienSecondaire
             titre="Annuler « prête »"
@@ -107,7 +112,7 @@ const styles = StyleSheet.create({
     marginBottom: espacements.m,
   },
   actions: {
-    marginTop: espacements.xl,
+    marginTop: espacements.l,
     gap: espacements.m,
     paddingBottom: espacements.xxl,
   },
