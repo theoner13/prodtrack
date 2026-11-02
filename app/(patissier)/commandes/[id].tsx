@@ -71,7 +71,7 @@ export default function EcranDetailCommandePatissier() {
       {ok ? <Banniere message={ok} onFermer={() => setOk(null)} /> : null}
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
 
-      <ContenuFicheCommande commande={c} />
+      <ContenuFicheCommande commande={c} afficherBoutiqueRetrait />
 
       <View style={styles.actions}>
         {fabriqueeChezMoi && c.statut === 'a_faire' ? (

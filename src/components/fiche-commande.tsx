@@ -13,9 +13,14 @@ import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/th
 
 type Props = {
   commande: CommandeEnrichie;
+  /** Pâtissier : affiche aussi la boutique de prise. */
+  afficherBoutiqueRetrait?: boolean;
 };
 
-export function ContenuFicheCommande({ commande }: Props) {
+export function ContenuFicheCommande({
+  commande,
+  afficherBoutiqueRetrait = false,
+}: Props) {
   const reste = resteAPayerCentimes(commande.prix_centimes, commande.acompte_centimes);
   return (
     <View style={styles.bloc}>
@@ -39,6 +44,9 @@ export function ContenuFicheCommande({ commande }: Props) {
         valeur={commande.inscription?.trim() ? commande.inscription : '—'}
       />
       <Ligne libelle="Fabriquée à" valeur={commande.boutique_fabrication_nom} />
+      {afficherBoutiqueRetrait ? (
+        <Ligne libelle="Retrait à" valeur={commande.boutique_retrait_nom} />
+      ) : null}
       <Ligne libelle="Retrait" valeur={formatRetraitComplet(commande.retrait_le)} />
       <Ligne
         libelle="Prix"

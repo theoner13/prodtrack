@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { couleurs, polices, tailles } from '@/theme';
 
 const DIAMETRE = 32;
-const HIT_SLOP = 6;
+/** hitSlop pour atteindre ≥ 48 px de zone tactile (32 + 8 × 2). */
+const HIT_SLOP = 8;
 
 type Props = {
   valeur: number;
@@ -88,6 +89,7 @@ export function Compteur({
 
 const styles = StyleSheet.create({
   pilule: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     height: 40,

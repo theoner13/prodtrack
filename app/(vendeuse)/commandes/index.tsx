@@ -58,7 +58,6 @@ export default function EcranCommandesVendeuse() {
         <ListeCommandesGroupees
           commandes={commandes}
           onOuvrir={(id) => router.push(`/(vendeuse)/commandes/${id}` as Href)}
-          etiquetteBoutique="fabrication"
         />
       )}
     </Ecran>

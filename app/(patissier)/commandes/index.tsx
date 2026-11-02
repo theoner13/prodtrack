@@ -65,7 +65,7 @@ export default function EcranCommandesPatissier() {
         <ListeCommandesGroupees
           commandes={commandes}
           onOuvrir={(id) => router.push(`/(patissier)/commandes/${id}` as Href)}
-          etiquetteBoutique="retrait"
+          afficherRetraitBoutique
         />
       )}
     </Ecran>

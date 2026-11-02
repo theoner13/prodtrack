@@ -5,6 +5,7 @@ import { libelleStatut } from '@/api/commandes';
 import {
   FILTRES_STATUT,
   formatHeureRetrait,
+  libelleGroupeJour,
   libelleNonRecueSignalee,
   regrouperParJour,
   type FiltreStatutCommandes,
@@ -98,11 +99,15 @@ export function FiltresCommandes({
 type PropsListe = {
   commandes: CommandeEnrichie[];
   onOuvrir: (id: string) => void;
-  /** Affiche la boutique de fabrication (vendeuse) ou de retrait (pâtissier hors sa boutique). */
-  etiquetteBoutique: 'fabrication' | 'retrait';
+  /** Pâtissier : affiche aussi « Retrait à … ». Vendeuse : fabrication seulement. */
+  afficherRetraitBoutique?: boolean;
 };
 
-export function ListeCommandesGroupees({ commandes, onOuvrir, etiquetteBoutique }: PropsListe) {
+export function ListeCommandesGroupees({
+  commandes,
+  onOuvrir,
+  afficherRetraitBoutique = false,
+}: PropsListe) {
   const groupes = regrouperParJour(commandes, aujourdhuiParis());
   return (
     <View style={styles.liste}>
@@ -114,7 +119,7 @@ export function ListeCommandesGroupees({ commandes, onOuvrir, etiquetteBoutique 
               key={c.id}
               commande={c}
               onPress={() => onOuvrir(c.id)}
-              etiquetteBoutique={etiquetteBoutique}
+              afficherRetraitBoutique={afficherRetraitBoutique}
             />
           ))}
         </View>
@@ -126,25 +131,28 @@ export function ListeCommandesGroupees({ commandes, onOuvrir, etiquetteBoutique 
 function LigneCommande({
   commande,
   onPress,
-  etiquetteBoutique,
+  afficherRetraitBoutique,
 }: {
   commande: CommandeEnrichie;
   onPress: () => void;
-  etiquetteBoutique: 'fabrication' | 'retrait';
+  afficherRetraitBoutique: boolean;
 }) {
-  const boutique =
-    etiquetteBoutique === 'fabrication'
-      ? commande.boutique_fabrication_nom
-      : commande.boutique_retrait_nom;
+  const jour = libelleGroupeJour(commande.retrait_le);
+  const heure = formatHeureRetrait(commande.retrait_le);
+  const statut = libelleStatut(commande.statut);
+  const labelAccessibilite = `Commande ${commande.gateau}, ${commande.nb_parts} parts, retrait ${jour} à ${heure}, ${statut}`;
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.ligne, pressed && styles.ligneAppuyee]}
       accessibilityRole="button"
-      accessibilityLabel={`${commande.gateau}, ${commande.client_nom}`}
+      accessibilityLabel={labelAccessibilite}
     >
-      <Text style={styles.heure}>{formatHeureRetrait(commande.retrait_le)}</Text>
-      <View style={styles.ligneCorps}>
+      <Text style={styles.heure} accessible={false}>
+        {heure}
+      </Text>
+      <View style={styles.ligneCorps} accessible={false}>
         <Text style={styles.gateau}>
           {commande.gateau} · {commande.nb_parts} parts
         </Text>
@@ -152,8 +160,17 @@ function LigneCommande({
         <View style={styles.etiquettes}>
           <EtiquetteStatut statut={commande.statut} />
           <View style={styles.etiquetteBoutique}>
-            <Text style={styles.etiquetteBoutiqueTexte}>{boutique}</Text>
+            <Text style={styles.etiquetteBoutiqueTexte}>
+              Fabriquée à {commande.boutique_fabrication_nom}
+            </Text>
           </View>
+          {afficherRetraitBoutique ? (
+            <View style={styles.etiquetteBoutique}>
+              <Text style={styles.etiquetteBoutiqueTexte}>
+                Retrait à {commande.boutique_retrait_nom}
+              </Text>
+            </View>
+          ) : null}
         </View>
         {commande.non_recue_signalee_le ? (
           <Text style={styles.nonRecue}>
