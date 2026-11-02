@@ -1,9 +1,7 @@
 import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 
-import { useNomsBoutiquesEntreprise } from '@/api/boutiques';
 import { useCommandes } from '@/api/commandes';
-import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
@@ -11,16 +9,10 @@ import { FiltresCommandes, ListeCommandesGroupees } from '@/components/liste-com
 import type { FiltreStatutCommandes } from '@/lib/commandes';
 
 export default function EcranCommandesPatissier() {
-  const { profil } = useAuth();
-  const boutiques = useNomsBoutiquesEntreprise();
   const [filtreStatut, setFiltreStatut] = useState<FiltreStatutCommandes>('a_venir');
-  const [boutiqueId, setBoutiqueId] = useState<string | null>(profil?.boutique_id ?? null);
-  const liste = useCommandes({
-    filtreStatut,
-    boutiqueFabricationId: boutiqueId,
-  });
+  const liste = useCommandes({ filtreStatut });
 
-  if (liste.isLoading || boutiques.isLoading) {
+  if (liste.isLoading) {
     return (
       <Ecran>
         <EtatChargement />
@@ -28,15 +20,12 @@ export default function EcranCommandesPatissier() {
     );
   }
 
-  if (liste.isError || boutiques.isError) {
+  if (liste.isError) {
     return (
       <Ecran>
         <EtatErreur
-          message={messageErreur(liste.error ?? boutiques.error)}
-          onReessayer={() => {
-            void liste.refetch();
-            void boutiques.refetch();
-          }}
+          message={messageErreur(liste.error)}
+          onReessayer={() => void liste.refetch()}
         />
       </Ecran>
     );
@@ -50,14 +39,7 @@ export default function EcranCommandesPatissier() {
       enRafraichissement={liste.isRefetching}
       onRafraichir={() => void liste.refetch()}
     >
-      <FiltresCommandes
-        filtreStatut={filtreStatut}
-        onFiltreStatut={setFiltreStatut}
-        boutiqueId={boutiqueId}
-        onBoutique={setBoutiqueId}
-        boutiques={boutiques.data ?? []}
-        libelleToutes="Toutes"
-      />
+      <FiltresCommandes filtreStatut={filtreStatut} onFiltreStatut={setFiltreStatut} />
 
       {commandes.length === 0 ? (
         <EtatVide message="Aucune commande pour ce filtre." />

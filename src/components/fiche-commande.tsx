@@ -70,10 +70,11 @@ export function ContenuFicheCommande({
           libelle="Inscription"
           valeur={commande.inscription?.trim() ? commande.inscription : '—'}
         />
-        <Ligne libelle="Fabriquée à" valeur={commande.boutique_fabrication_nom} />
         {afficherBoutiqueRetrait ? (
           <Ligne libelle="Retrait à" valeur={commande.boutique_retrait_nom} />
-        ) : null}
+        ) : (
+          <Ligne libelle="Fabriquée à" valeur={commande.boutique_fabrication_nom} />
+        )}
       </Bloc>
 
       {commande.prix_centimes != null ? (
