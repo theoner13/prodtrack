@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { CommandeEnrichie } from '@/api/commandes';
 import { libelleStatut } from '@/api/commandes';
@@ -15,7 +16,7 @@ import {
   couleurs,
   espacements,
   polices,
-  rayonPuce,
+  rayonPilule,
   styleTitreSection,
   tailles,
 } from '@/theme';
@@ -99,7 +100,7 @@ export function FiltresCommandes({
 type PropsListe = {
   commandes: CommandeEnrichie[];
   onOuvrir: (id: string) => void;
-  /** Pâtissier : affiche aussi « Retrait à … ». Vendeuse : fabrication seulement. */
+  /** Pâtissier : mentions « Retrait à … » sur la ligne secondaire. */
   afficherRetraitBoutique?: boolean;
 };
 
@@ -113,7 +114,9 @@ export function ListeCommandesGroupees({
     <View style={styles.liste}>
       {groupes.map((groupe) => (
         <View key={groupe.cle} style={styles.groupe}>
-          <Text style={styles.titreGroupe}>{groupe.libelle}</Text>
+          <Text style={[styles.titreGroupe, stickyWeb]}>
+            {groupe.libelle} · {groupe.commandes.length}
+          </Text>
           {groupe.commandes.map((c) => (
             <LigneCommande
               key={c.id}
@@ -128,19 +131,25 @@ export function ListeCommandesGroupees({
   );
 }
 
-function LigneCommande({
+export function LigneCommande({
   commande,
   onPress,
-  afficherRetraitBoutique,
+  afficherRetraitBoutique = false,
 }: {
   commande: CommandeEnrichie;
   onPress: () => void;
-  afficherRetraitBoutique: boolean;
+  afficherRetraitBoutique?: boolean;
 }) {
-  const jour = libelleGroupeJour(commande.retrait_le);
   const heure = formatHeureRetrait(commande.retrait_le);
+  const jour = libelleGroupeJour(commande.retrait_le);
   const statut = libelleStatut(commande.statut);
   const labelAccessibilite = `Commande ${commande.gateau}, ${commande.nb_parts} parts, retrait ${jour} à ${heure}, ${statut}`;
+  const autreBoutique =
+    !afficherRetraitBoutique &&
+    commande.boutique_fabrication_id !== commande.boutique_retrait_id;
+  const ligneSecondaire = afficherRetraitBoutique
+    ? `${commande.client_nom} · Retrait ${commande.boutique_retrait_nom}`
+    : commande.client_nom;
 
   return (
     <Pressable
@@ -149,40 +158,45 @@ function LigneCommande({
       accessibilityRole="button"
       accessibilityLabel={labelAccessibilite}
     >
-      <Text style={styles.heure} accessible={false}>
-        {heure}
-      </Text>
-      <View style={styles.ligneCorps} accessible={false}>
-        <Text style={styles.gateau}>
-          {commande.gateau} · {commande.nb_parts} parts
-        </Text>
-        <Text style={styles.client}>{commande.client_nom}</Text>
-        <View style={styles.etiquettes}>
-          <EtiquetteStatut statut={commande.statut} />
-          <View style={styles.etiquetteBoutique}>
-            <Text style={styles.etiquetteBoutiqueTexte}>
-              Fabriquée à {commande.boutique_fabrication_nom}
-            </Text>
-          </View>
-          {afficherRetraitBoutique ? (
-            <View style={styles.etiquetteBoutique}>
-              <Text style={styles.etiquetteBoutiqueTexte}>
-                Retrait à {commande.boutique_retrait_nom}
-              </Text>
-            </View>
-          ) : null}
-        </View>
+      <View style={styles.heureBloc} accessible={false}>
+        <Text style={styles.heure}>{heure}</Text>
         {commande.non_recue_signalee_le ? (
-          <Text style={styles.nonRecue}>
-            {libelleNonRecueSignalee(commande.non_recue_signalee_le)}
-          </Text>
+          <View
+            style={styles.pointNonRecue}
+            accessibilityLabel={libelleNonRecueSignalee(commande.non_recue_signalee_le)}
+          />
         ) : null}
+      </View>
+
+      <View style={styles.ligneCorps} accessible={false}>
+        <View style={styles.ligneGateau}>
+          {autreBoutique ? (
+            <Ionicons
+              name="storefront-outline"
+              size={14}
+              color={couleurs.texteSecondaire}
+              accessibilityLabel={`Fabriquée à ${commande.boutique_fabrication_nom}`}
+              style={styles.iconeBoutique}
+            />
+          ) : null}
+          <Text style={styles.gateau} numberOfLines={1}>
+            {commande.gateau} · {commande.nb_parts} parts
+          </Text>
+        </View>
+        <Text style={styles.client} numberOfLines={1}>
+          {ligneSecondaire}
+        </Text>
+      </View>
+
+      <View style={styles.ligneDroite} accessible={false}>
+        <PastilleStatut statut={commande.statut} />
+        <Text style={styles.chevron}>›</Text>
       </View>
     </Pressable>
   );
 }
 
-function EtiquetteStatut({ statut }: { statut: StatutCommande }) {
+function PastilleStatut({ statut }: { statut: StatutCommande }) {
   const couleur =
     statut === 'prete'
       ? couleurs.succes
@@ -193,12 +207,27 @@ function EtiquetteStatut({ statut }: { statut: StatutCommande }) {
           : statut === 'recuperee'
             ? couleurs.texteSecondaire
             : couleurs.principal;
+  const fond =
+    statut === 'prete'
+      ? couleurs.succesClair
+      : statut === 'recue'
+        ? couleurs.alerteClair
+        : statut === 'annulee'
+          ? couleurs.erreurClair
+          : statut === 'recuperee'
+            ? couleurs.fondPuce
+            : couleurs.principalClair;
   return (
-    <View style={[styles.etiquetteStatut, { borderColor: couleur }]}>
-      <Text style={[styles.etiquetteStatutTexte, { color: couleur }]}>{libelleStatut(statut)}</Text>
+    <View style={[styles.pastille, { backgroundColor: fond }]}>
+      <Text style={[styles.pastilleTexte, { color: couleur }]}>{libelleStatut(statut)}</Text>
     </View>
   );
 }
+
+const stickyWeb =
+  Platform.OS === 'web'
+    ? ({ position: 'sticky' as const, top: 0, zIndex: 1 } as const)
+    : undefined;
 
 const styles = StyleSheet.create({
   filtres: {
@@ -207,13 +236,13 @@ const styles = StyleSheet.create({
   },
   puces: {
     flexDirection: 'row',
-    gap: espacements.s,
+    gap: 6,
     paddingVertical: 2,
   },
   puce: {
-    minHeight: 36,
-    paddingHorizontal: 14,
-    borderRadius: rayonPuce,
+    minHeight: 28,
+    paddingHorizontal: 10,
+    borderRadius: rayonPilule,
     backgroundColor: couleurs.fondPuce,
     alignItems: 'center',
     justifyContent: 'center',
@@ -222,7 +251,7 @@ const styles = StyleSheet.create({
     backgroundColor: couleurs.principal,
   },
   puceTexte: {
-    fontSize: tailles.petit,
+    fontSize: 12,
     color: couleurs.texteSecondaire,
     fontFamily: polices.sans,
   },
@@ -231,19 +260,22 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   liste: {
-    gap: espacements.l,
+    gap: espacements.s,
   },
   groupe: {
     gap: 0,
   },
   titreGroupe: {
     ...styleTitreSection,
-    marginBottom: espacements.s,
+    backgroundColor: couleurs.fond,
+    paddingVertical: 6,
+    marginBottom: 0,
   },
   ligne: {
     flexDirection: 'row',
-    gap: espacements.m,
-    paddingVertical: 14,
+    alignItems: 'center',
+    gap: espacements.s,
+    paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: couleurs.bordure,
     minHeight: 56,
@@ -251,60 +283,70 @@ const styles = StyleSheet.create({
   ligneAppuyee: {
     opacity: 0.7,
   },
+  heureBloc: {
+    width: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   heure: {
-    width: 52,
     fontSize: tailles.normal,
-    fontWeight: '600',
+    fontWeight: '700',
     color: couleurs.texte,
     fontFamily: polices.sans,
-    paddingTop: 2,
+  },
+  pointNonRecue: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: couleurs.erreur,
   },
   ligneCorps: {
     flex: 1,
+    minWidth: 0,
+    gap: 1,
+  },
+  ligneGateau: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
+    minWidth: 0,
+  },
+  iconeBoutique: {
+    flexShrink: 0,
   },
   gateau: {
+    flex: 1,
     fontSize: tailles.normal,
     fontWeight: '500',
     color: couleurs.texte,
     fontFamily: polices.sans,
   },
   client: {
-    fontSize: tailles.petit,
-    color: couleurs.texteSecondaire,
+    fontSize: 12,
+    color: couleurs.texteMuet,
     fontFamily: polices.sans,
   },
-  etiquettes: {
+  ligneDroite: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 4,
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 0,
   },
-  etiquetteStatut: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
+  pastille: {
+    borderRadius: rayonPilule,
+    paddingHorizontal: 7,
     paddingVertical: 2,
   },
-  etiquetteStatutTexte: {
-    fontSize: 12,
+  pastilleTexte: {
+    fontSize: 11,
     fontFamily: polices.sans,
+    fontWeight: '500',
   },
-  etiquetteBoutique: {
-    backgroundColor: couleurs.fondPuce,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  etiquetteBoutiqueTexte: {
-    fontSize: 12,
-    color: couleurs.texteSecondaire,
+  chevron: {
+    fontSize: 18,
+    color: couleurs.texteMuet,
     fontFamily: polices.sans,
-  },
-  nonRecue: {
-    fontSize: 12,
-    color: couleurs.erreur,
-    fontFamily: polices.sans,
-    marginTop: 2,
+    lineHeight: 20,
   },
 });

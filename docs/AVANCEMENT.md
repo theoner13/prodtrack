@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-11-02 : Commandes (vente) : liste compacte et mieux organisée, fiche en blocs (Cursor)
 - 2026-11-02 : Commandes : compteur parts compact, étiquettes « Fabriquée à » / « Retrait à », lignes de liste cliquables (Cursor)
 - 2026-11-02 : Commandes de gâteaux : saisie vendeuse, envoi à la boutique qui fabrique, suivi À faire / Prête / Reçue / Récupérée, signalement non reçu, CA au pâtissier (Cursor)
 - 2026-11-02 : Tableau de bord : courbe visible même sur une période sans vente (Cursor)

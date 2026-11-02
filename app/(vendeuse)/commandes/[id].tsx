@@ -85,17 +85,6 @@ export default function EcranDetailCommandeVendeuse() {
       <ContenuFicheCommande commande={c} />
 
       <View style={styles.actions}>
-        {c.statut === 'a_faire' ? (
-          <Bouton
-            titre="Modifier"
-            variante="secondaire"
-            onPress={() =>
-              router.push(`/(vendeuse)/commandes/modifier/${c.id}` as Href)
-            }
-            pleineLargeur
-          />
-        ) : null}
-
         {c.statut === 'prete' ? (
           <Bouton
             titre="Marquer reçue"
@@ -109,27 +98,29 @@ export default function EcranDetailCommandeVendeuse() {
         ) : null}
 
         {c.statut === 'recue' ? (
-          <>
-            <Bouton
-              titre="Marquer récupérée"
-              onPress={() =>
-                void action(
-                  () => marquerRecuperee.mutateAsync(c.id),
-                  'Commande marquée récupérée.',
-                )
-              }
-              chargement={marquerRecuperee.isPending}
-              desactive={enCours}
-              pleineLargeur
-            />
-            <LienSecondaire
-              titre="Annuler « reçue »"
-              desactive={enCours}
-              onPress={() =>
-                void action(() => annulerRecue.mutateAsync(c.id), 'Réception annulée.')
-              }
-            />
-          </>
+          <Bouton
+            titre="Marquer récupérée"
+            onPress={() =>
+              void action(
+                () => marquerRecuperee.mutateAsync(c.id),
+                'Commande marquée récupérée.',
+              )
+            }
+            chargement={marquerRecuperee.isPending}
+            desactive={enCours}
+            pleineLargeur
+          />
+        ) : null}
+
+        {c.statut === 'a_faire' ? (
+          <Bouton
+            titre="Modifier"
+            variante="secondaire"
+            onPress={() =>
+              router.push(`/(vendeuse)/commandes/modifier/${c.id}` as Href)
+            }
+            pleineLargeur
+          />
         ) : null}
 
         {(c.statut === 'a_faire' || c.statut === 'prete') && !c.non_recue_signalee_le ? (
@@ -152,6 +143,16 @@ export default function EcranDetailCommandeVendeuse() {
               Vous pourrez signaler un gâteau non reçu à partir de {signal.aPartirDe}.
             </Text>
           )
+        ) : null}
+
+        {c.statut === 'recue' ? (
+          <LienSecondaire
+            titre="Annuler « reçue »"
+            desactive={enCours}
+            onPress={() =>
+              void action(() => annulerRecue.mutateAsync(c.id), 'Réception annulée.')
+            }
+          />
         ) : null}
 
         {c.statut === 'a_faire' || c.statut === 'prete' || c.statut === 'recue' ? (
