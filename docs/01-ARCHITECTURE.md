@@ -41,7 +41,7 @@ Ces points étaient ambigus ou contradictoires. Décisions prises pour coder :
 | D8 | **Erreurs de saisie** | Production/sortie : l'auteur peut **annuler sa saisie le jour même**. Après : le patron fait un **ajustement**. Saisie vendeuse : modifiable (1 ligne par produit et par jour). |
 | D9 | **Doublons** (deux pâtissiers déclarent « Croissant ») | Nom de produit **unique par boutique** (hors produits archivés). |
 | D10 | **Champs de la fiche produit** | Nom, prix, photo, conservation (frais/surgelé), durée de conservation en jours, seuil minimum, recette. |
-| D11 | **Confidentialité** | Un pâtissier ne voit **que son propre CA**. Le patron voit tout. La vendeuse voit les saisies de sa boutique. |
+| D11 | **Confidentialité** | Seul l’admin voit le chiffre d’affaires (vue `ca_journalier`, migration `0019_ca_admin_seulement.sql`). La vendeuse voit les saisies de sa boutique. Un pâtissier ou une vendeuse ne lit aucun CA. |
 | D12 | **Suppression d'un employé** | Toujours un **archivage** (`archive_le`) : l'employé ne voit plus rien, son historique reste. Ses produits restent et le patron les réattribue. |
 | D13 | **« Reste » de la vendeuse** | Information uniquement (statistique). Le MVP ne gère pas de stock vitrine. |
 | D14 | « IA » de prévision | Calcul statistique (moyennes par jour de la semaine). Améliorable plus tard. |

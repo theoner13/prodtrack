@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-11-03 : Confidentialité : seul l'admin voit le chiffre d'affaires (Cursor)
 - 2026-11-02 : Commandes : fiche de détail plus lisible (en-tête, inscription, frise de suivi, action principale en haut) (Cursor)
 - 2026-11-02 : Commandes : un pâtissier ne voit que les commandes fabriquées dans sa boutique (Cursor)
 - 2026-11-02 : Commandes (vente) : liste compacte et mieux organisée, fiche en blocs (Cursor)

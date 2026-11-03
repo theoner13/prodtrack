@@ -43,8 +43,7 @@ export default function EcranInformation() {
       </Text>
       <Text style={styles.texte}>
         L’admin voit le chiffre d’affaires de chaque employé, par produit et par jour. L’équipe
-        vente voit les saisies de sa boutique. Un pâtissier ne voit que son propre chiffre
-        d’affaires.
+        vente voit les saisies de sa boutique. Seul l’admin voit le chiffre d’affaires.
       </Text>
       <Text style={styles.texte}>
         Ces données sont conservées tant que le compte existe. Si le compte est archivé, l’historique

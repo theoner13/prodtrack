@@ -174,7 +174,7 @@ La prévision n'est fiable qu'après environ 8 semaines de données ; avant, l'a
 - Mention d'information sur le suivi individuel affichée et validée dans l'application.
 - **[Ajout]** Exports Excel et PDF pour l'admin (au lieu du CSV).
 - **[Ajout]** Un nom de produit est unique dans une boutique (pas de doublon).
-- **[Ajout]** Confidentialité : un pâtissier ne voit que son propre CA ; l'admin voit tout.
+- **[Ajout]** Confidentialité : seul l'admin voit le chiffre d'affaires (migration 0019) ; un pâtissier ou une vendeuse ne lit aucun CA.
 
 ### 5.2 Choix retenus
 
