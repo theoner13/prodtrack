@@ -335,13 +335,13 @@ const styles = StyleSheet.create({
   },
   pastille: {
     borderRadius: rayonPilule,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   pastilleTexte: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: polices.sans,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   chevron: {
     fontSize: 18,

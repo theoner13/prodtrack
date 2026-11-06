@@ -580,6 +580,21 @@ export function SaisieStock({ type }: Props) {
         ((type === 'sortie' || modeExterieur) && pertes.isRefetching)
       }
       onRafraichir={() => void rafraichir()}
+      pied={
+        listeBase.length > 0 ? (
+          <>
+            {!formulairePerteOuvert ? (
+              <Banniere message={message} type={typeMessage} onFermer={fermerMessage} duree={5000} />
+            ) : null}
+            <Bouton
+              titre={titreBouton}
+              pleineLargeur
+              onPress={() => void soumettre()}
+              chargement={enregistrer.isPending}
+            />
+          </>
+        ) : undefined
+      }
     >
       {type === 'production' ? (
         <ChoixSegmente
@@ -686,129 +701,114 @@ export function SaisieStock({ type }: Props) {
           ))
         : listeFiltre.map((produit) => renduLigne(produit))}
 
-      {listeBase.length > 0 || (afficherPertes && listePertes.length > 0) ? (
+      {afficherPertes && listePertes.length > 0 ? (
         <>
-          {!formulairePerteOuvert ? (
-            <Banniere message={message} type={typeMessage} onFermer={fermerMessage} duree={5000} />
-          ) : null}
-          {listeBase.length > 0 ? (
-            <Bouton
-              titre={titreBouton}
-              pleineLargeur
-              onPress={() => void soumettre()}
-              chargement={enregistrer.isPending}
-            />
-          ) : null}
-          {afficherPertes ? (
-            <>
-              <Bouton
-                titre="Déclarer une perte"
-                variante="secondaire"
-                onPress={() => {
-                  setFormulairePerteOuvert((ouvert) => {
-                    if (ouvert) reinitialiserFormulairePerte();
-                    return !ouvert;
-                  });
-                }}
+          <Bouton
+            titre="Déclarer une perte"
+            variante="secondaire"
+            onPress={() => {
+              setFormulairePerteOuvert((ouvert) => {
+                if (ouvert) reinitialiserFormulairePerte();
+                return !ouvert;
+              });
+            }}
+          />
+          {formulairePerteOuvert ? (
+            <View style={styles.formulairePerte}>
+              <Text style={styles.label}>Produit</Text>
+              <View style={styles.puces}>
+                {listePertes.map((produit) => (
+                  <Pressable
+                    key={produit.id}
+                    onPress={() => {
+                      setPerteProduitId(produit.id);
+                      if (produit.conservation === 'frais') {
+                        setPerteDansLeStock(false);
+                      }
+                    }}
+                    style={[
+                      styles.puce,
+                      perteProduitId === produit.id && styles.puceActive,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: perteProduitId === produit.id }}
+                  >
+                    <Text
+                      style={[
+                        styles.puceTexte,
+                        perteProduitId === produit.id && styles.puceTexteActive,
+                      ]}
+                    >
+                      {produit.nom}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Quantité perdue</Text>
+              <Compteur
+                valeur={perteQuantite}
+                onChange={setPerteQuantite}
+                libelle="Quantité perdue"
               />
-              {formulairePerteOuvert ? (
-                <View style={styles.formulairePerte}>
-                  <Text style={styles.label}>Produit</Text>
-                  <View style={styles.puces}>
-                    {listePertes.map((produit) => (
-                      <Pressable
-                        key={produit.id}
-                        onPress={() => {
-                          setPerteProduitId(produit.id);
-                          if (produit.conservation === 'frais') {
-                            setPerteDansLeStock(false);
-                          }
-                        }}
-                        style={[
-                          styles.puce,
-                          perteProduitId === produit.id && styles.puceActive,
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: perteProduitId === produit.id }}
-                      >
-                        <Text
-                          style={[
-                            styles.puceTexte,
-                            perteProduitId === produit.id && styles.puceTexteActive,
-                          ]}
-                        >
-                          {produit.nom}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
 
-                  <Text style={styles.label}>Quantité perdue</Text>
-                  <Compteur
-                    valeur={perteQuantite}
-                    onChange={setPerteQuantite}
-                    libelle="Quantité perdue"
-                  />
+              <Text style={styles.label}>Motif</Text>
+              <View style={styles.puces}>
+                {MOTIFS.map((motif) => (
+                  <Pressable
+                    key={motif.id}
+                    onPress={() => setPerteMotif(motif.id)}
+                    style={[styles.puce, perteMotif === motif.id && styles.puceActive]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: perteMotif === motif.id }}
+                  >
+                    <Text
+                      style={[
+                        styles.puceTexte,
+                        perteMotif === motif.id && styles.puceTexteActive,
+                      ]}
+                    >
+                      {motif.libelle}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
 
-                  <Text style={styles.label}>Motif</Text>
-                  <View style={styles.puces}>
-                    {MOTIFS.map((motif) => (
-                      <Pressable
-                        key={motif.id}
-                        onPress={() => setPerteMotif(motif.id)}
-                        style={[styles.puce, perteMotif === motif.id && styles.puceActive]}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: perteMotif === motif.id }}
-                      >
-                        <Text
-                          style={[
-                            styles.puceTexte,
-                            perteMotif === motif.id && styles.puceTexteActive,
-                          ]}
-                        >
-                          {motif.libelle}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-
-                  {!perteEstFrais ? (
-                    <>
-                      <Pressable
-                        onPress={() => setPerteDansLeStock((v) => !v)}
-                        style={styles.case}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: perteDansLeStock }}
-                      >
-                        <Text style={styles.caseSymbole}>{perteDansLeStock ? '☑' : '☐'}</Text>
-                        <Text style={styles.caseTexte}>
-                          Ces produits étaient encore dans le stock
-                        </Text>
-                      </Pressable>
-                      <Text style={styles.aideCase}>
-                        Laissez décoché si ces produits avaient déjà été sortis : le stock ne change
-                        pas.
-                      </Text>
-                    </>
-                  ) : null}
-
-                  <Banniere
-                    message={message}
-                    type={typeMessage}
-                    onFermer={fermerMessage}
-                    duree={5000}
-                  />
-                  <Bouton
-                    titre="Enregistrer la perte"
-                    onPress={() => void soumettrePerte()}
-                    chargement={declarerPerte.isPending}
-                  />
-                </View>
+              {!perteEstFrais ? (
+                <>
+                  <Pressable
+                    onPress={() => setPerteDansLeStock((v) => !v)}
+                    style={styles.case}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: perteDansLeStock }}
+                  >
+                    <Text style={styles.caseSymbole}>{perteDansLeStock ? '☑' : '☐'}</Text>
+                    <Text style={styles.caseTexte}>
+                      Ces produits étaient encore dans le stock
+                    </Text>
+                  </Pressable>
+                  <Text style={styles.aideCase}>
+                    Laissez décoché si ces produits avaient déjà été sortis : le stock ne change
+                    pas.
+                  </Text>
+                </>
               ) : null}
-            </>
+
+              <Banniere
+                message={message}
+                type={typeMessage}
+                onFermer={fermerMessage}
+                duree={5000}
+              />
+              <Bouton
+                titre="Enregistrer la perte"
+                onPress={() => void soumettrePerte()}
+                chargement={declarerPerte.isPending}
+              />
+            </View>
           ) : null}
         </>
-      ) : message ? (
+      ) : listeBase.length === 0 && message ? (
         <Banniere message={message} type={typeMessage} onFermer={fermerMessage} duree={5000} />
       ) : null}
 

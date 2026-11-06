@@ -1,10 +1,8 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { couleurs, polices, tailles } from '@/theme';
+import { couleurs, polices, tailleToucheMin, tailles } from '@/theme';
 
-const DIAMETRE = 32;
-/** hitSlop pour atteindre ≥ 48 px de zone tactile (32 + 8 × 2). */
-const HIT_SLOP = 8;
+const DIAMETRE = 36;
 
 type Props = {
   valeur: number;
@@ -34,7 +32,7 @@ export function Compteur({
       ? couleurs.erreur
       : couleurs.principal
     : couleurs.fondPuce;
-  const couleurValeur = actif ? couleurs.texteSurPrincipal : couleurs.texteMuet;
+  const couleurValeur = actif ? couleurs.texteSurPrincipal : couleurs.texte;
   const couleurMoins = actif ? couleurs.texteSurPrincipal : couleurs.texte;
   const fondPlus = actif ? couleurs.texteSurPrincipal : couleurs.principal;
   const couleurPlus = actif ? couleurs.principal : couleurs.texteSurPrincipal;
@@ -46,10 +44,9 @@ export function Compteur({
         accessibilityLabel={`${libelle} : moins un`}
         disabled={valeur <= 0}
         onPress={() => onChange(Math.max(0, valeur - 1))}
-        hitSlop={HIT_SLOP}
         style={({ pressed }) => [
           styles.bouton,
-          { opacity: actif ? 1 : 0.3 },
+          !actif && styles.boutonMoinsRepos,
           pressed && styles.appuye,
         ]}
       >
@@ -66,7 +63,7 @@ export function Compteur({
           compact && styles.champCompact,
           {
             color: couleurValeur,
-            fontWeight: actif ? '500' : '400',
+            fontWeight: actif ? '600' : '500',
           },
         ]}
       />
@@ -74,7 +71,6 @@ export function Compteur({
         accessibilityRole="button"
         accessibilityLabel={`${libelle} : plus un`}
         onPress={() => onChange(valeur + 1)}
-        hitSlop={HIT_SLOP}
         style={({ pressed }) => [
           styles.bouton,
           { backgroundColor: fondPlus },
@@ -92,42 +88,49 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
+    minHeight: tailleToucheMin,
     paddingHorizontal: 4,
-    borderRadius: 20,
+    borderRadius: tailleToucheMin / 2,
   },
   piluleCompact: {
-    height: 36,
-    borderRadius: 18,
+    minHeight: tailleToucheMin,
+    borderRadius: tailleToucheMin / 2,
   },
   bouton: {
-    width: DIAMETRE,
-    height: DIAMETRE,
-    borderRadius: DIAMETRE / 2,
+    width: tailleToucheMin,
+    height: tailleToucheMin,
+    borderRadius: tailleToucheMin / 2,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  /** − visible même à zéro : fond beige + contour, pas semi-transparent. */
+  boutonMoinsRepos: {
+    backgroundColor: couleurs.fond,
+    borderWidth: 1,
+    borderColor: couleurs.soulignement,
   },
   appuye: {
     opacity: 0.75,
     transform: [{ scale: 0.92 }],
   },
   signe: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '500',
-    lineHeight: 20,
+    lineHeight: 22,
     fontFamily: polices.sans,
   },
   champ: {
-    width: 34,
+    width: 40,
     height: DIAMETRE,
     borderWidth: 0,
     backgroundColor: 'transparent',
     textAlign: 'center',
-    fontSize: tailles.normal,
+    fontSize: tailles.grand,
     fontFamily: polices.sans,
     padding: 0,
   },
   champCompact: {
-    width: 30,
+    width: 36,
+    fontSize: tailles.normal,
   },
 });

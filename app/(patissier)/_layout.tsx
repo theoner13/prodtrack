@@ -5,7 +5,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { ActionsEntete } from '@/components/actions-entete';
 import { LogoEntete } from '@/components/logo';
 import { OngletIcone } from '@/components/onglet-icone';
-import { optionsOngletsCommunes } from '@/lib/options-onglets';
+import { optionsOngletsDenses } from '@/lib/options-onglets';
 import { couleurs } from '@/theme';
 
 export default function LayoutPatissier() {
@@ -16,7 +16,7 @@ export default function LayoutPatissier() {
   return (
     <Tabs
       screenOptions={{
-        ...optionsOngletsCommunes,
+        ...optionsOngletsDenses,
         headerLeft: () => <LogoEntete />,
         headerRight: () => <ActionsEntete />,
       }}

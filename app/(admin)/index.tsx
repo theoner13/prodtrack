@@ -10,6 +10,7 @@ import { CourbeCa } from '@/components/courbe-ca';
 import { DetailCaEmploye } from '@/components/detail-ca-employe';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
+import { RangPuces } from '@/components/rang-puces';
 import {
   classementPertes,
   classementProduits,
@@ -258,7 +259,7 @@ export default function EcranTableauDeBord() {
       }}
     >
       <Text style={styles.section}>Boutique</Text>
-      <View style={styles.puces}>
+      <RangPuces>
         <Puce
           libelle="Toutes"
           active={boutiqueId === null}
@@ -278,10 +279,10 @@ export default function EcranTableauDeBord() {
             }}
           />
         ))}
-      </View>
+      </RangPuces>
 
       <Text style={styles.section}>Période</Text>
-      <View style={styles.puces}>
+      <RangPuces>
         {PERIODES.map((p) => (
           <Puce
             key={p.id}
@@ -297,7 +298,7 @@ export default function EcranTableauDeBord() {
             }}
           />
         ))}
-      </View>
+      </RangPuces>
 
       {periode === 'perso' ? (
         <View style={styles.datesPerso}>
@@ -548,17 +549,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: couleurs.texteSecondaire,
   },
-  puces: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: espacements.s,
-  },
   puce: {
     height: 32,
     paddingHorizontal: espacements.m,
     borderRadius: 16,
     backgroundColor: couleurs.fondPuce,
     justifyContent: 'center',
+    flexShrink: 0,
   },
   puceActive: {
     backgroundColor: couleurs.principal,

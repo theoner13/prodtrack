@@ -37,7 +37,7 @@ import {
   texteMisEnVente,
 } from '@/lib/mis-en-vente';
 import { etiquetteBoutique } from '@/lib/production-exterieure';
-import { couleurs, espacements, ombres, polices, tailles } from '@/theme';
+import { couleurs, espacements, polices, tailles } from '@/theme';
 
 type ValeursProduit = { vendu: number; jete: number; reste: number };
 
@@ -277,7 +277,7 @@ export default function EcranFinDeJournee() {
       onRafraichir={() => void rafraichir()}
       pied={
         liste.length > 0 ? (
-          <View style={styles.piedFeuille}>
+          <>
             {texteModifications ? (
               <Text style={styles.confirmation}>{texteModifications}</Text>
             ) : null}
@@ -288,7 +288,7 @@ export default function EcranFinDeJournee() {
               onPress={() => void soumettre()}
               chargement={enregistrer.isPending}
             />
-          </View>
+          </>
         ) : undefined
       }
     >
@@ -501,14 +501,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.6,
     color: couleurs.texte,
     fontFamily: polices.sans,
-  },
-  piedFeuille: {
-    backgroundColor: couleurs.fondGroupe,
-    borderRadius: 18,
-    padding: 8,
-    paddingLeft: espacements.m,
-    gap: espacements.s,
-    ...ombres.feuille,
   },
   sousLignePleine: {
     alignSelf: 'stretch',

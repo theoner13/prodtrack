@@ -65,6 +65,8 @@ export const rayonPilule = 999;
 
 export const hauteurBouton = 52;
 export const hauteurBoutonCompact = 42;
+/** Zone de touche minimale recommandée (accessibilité). */
+export const tailleToucheMin = 44;
 
 export const ombres = {
   douce: {

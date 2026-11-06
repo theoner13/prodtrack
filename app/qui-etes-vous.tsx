@@ -205,15 +205,15 @@ const styles = StyleSheet.create({
   avatarCode: {
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: couleurs.principal,
+    borderRadius: 16,
+    backgroundColor: couleurs.fondGroupe,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarCodeLettre: {
     fontSize: 20,
     fontWeight: '500',
-    color: couleurs.texteSurPrincipal,
+    color: couleurs.principal,
     fontFamily: polices.sans,
   },
   grille: {
@@ -242,14 +242,14 @@ const styles = StyleSheet.create({
     borderRadius: TAILLE_PHOTO / 2,
   },
   initiale: {
-    backgroundColor: couleurs.principal,
+    backgroundColor: couleurs.fondGroupe,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lettre: {
     fontSize: 15,
     fontWeight: '500',
-    color: couleurs.texteSurPrincipal,
+    color: couleurs.principal,
     fontFamily: polices.sans,
   },
   tuileTextes: {

@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-11-06 : Version de test ergonomie (branche test-ergonomie) : onglets, compteurs, bouton fixe, filtres, pastilles (Cursor)
 - 2026-11-03 : Confidentialité : seul l'admin voit le chiffre d'affaires (Cursor)
 - 2026-11-02 : Commandes : fiche de détail plus lisible (en-tête, inscription, frise de suivi, action principale en haut) (Cursor)
 - 2026-11-02 : Commandes : un pâtissier ne voit que les commandes fabriquées dans sa boutique (Cursor)

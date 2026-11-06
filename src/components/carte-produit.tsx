@@ -102,14 +102,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   initiale: {
-    backgroundColor: couleurs.principal,
+    backgroundColor: couleurs.fondGroupe,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lettre: {
     fontSize: tailles.petit,
     fontWeight: '500',
-    color: couleurs.texteSurPrincipal,
+    color: couleurs.principal,
     fontFamily: polices.sans,
   },
   textes: {

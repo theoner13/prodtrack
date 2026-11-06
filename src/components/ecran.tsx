@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { couleurs, espacements, polices, styleTitreEcran } from '@/theme';
+import { couleurs, espacements, ombres, polices, styleTitreEcran } from '@/theme';
 
 /** Largeur max du contenu sur ordinateur (l’en-tête reste pleine largeur). */
 const LARGEUR_MAX_CONTENU = 720;
@@ -108,5 +108,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: couleurs.bordure,
     backgroundColor: couleurs.fond,
+    ...ombres.douce,
   },
 });

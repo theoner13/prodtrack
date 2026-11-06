@@ -32,13 +32,13 @@ const styles = StyleSheet.create({
   avatar: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: couleurs.principal,
+    borderRadius: 12,
+    backgroundColor: couleurs.fondGroupe,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initiale: {
-    color: couleurs.texteSurPrincipal,
+    color: couleurs.principal,
     fontSize: 13,
     fontWeight: '500',
     fontFamily: polices.sans,

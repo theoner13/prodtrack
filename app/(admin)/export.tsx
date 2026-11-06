@@ -22,6 +22,7 @@ import { Banniere } from '@/components/banniere';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur } from '@/components/etats';
+import { RangPuces } from '@/components/rang-puces';
 import {
   datesPeriode,
   formatDateFr,
@@ -250,7 +251,7 @@ export default function EcranExport() {
       />
 
       <Text style={styles.section}>Boutique</Text>
-      <View style={styles.puces}>
+      <RangPuces>
         <Puce
           libelle="Toutes"
           active={boutiqueId === null}
@@ -264,10 +265,10 @@ export default function EcranExport() {
             onPress={() => setBoutiqueId(b.id)}
           />
         ))}
-      </View>
+      </RangPuces>
 
       <Text style={styles.section}>Période</Text>
-      <View style={styles.puces}>
+      <RangPuces>
         {PERIODES.map((p) => (
           <Puce
             key={p.id}
@@ -283,7 +284,7 @@ export default function EcranExport() {
             }}
           />
         ))}
-      </View>
+      </RangPuces>
 
       {periode === 'perso' ? (
         <View style={styles.datesPerso}>
@@ -406,17 +407,13 @@ const styles = StyleSheet.create({
     ...styleTitreSection,
     marginTop: espacements.m,
   },
-  puces: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: espacements.s,
-  },
   puce: {
     height: 32,
     paddingHorizontal: espacements.m,
     borderRadius: 16,
     backgroundColor: couleurs.fondPuce,
     justifyContent: 'center',
+    flexShrink: 0,
   },
   puceActive: {
     backgroundColor: couleurs.principal,
