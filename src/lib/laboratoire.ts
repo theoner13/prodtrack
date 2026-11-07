@@ -163,6 +163,130 @@ export function regrouperCommandesLaboParJour<T extends CommandeLaboPourGroupe>(
   });
 }
 
+export type CommandeLaboPourPlanning = {
+  produit_id: string;
+  pour_le: string;
+  quantite: number;
+  produit_nom: string;
+  fabricant_nom: string;
+  client: string | null;
+  note: string | null;
+  annulee_le: string | null;
+};
+
+export type LigneClientPlanningLabo = {
+  clientLibelle: string;
+  quantite: number;
+  notes: string[];
+};
+
+export type CarteProduitPlanningLabo = {
+  produitId: string;
+  produitNom: string;
+  fabricantNom: string;
+  quantite: number;
+  clients: LigneClientPlanningLabo[];
+};
+
+export type JourPlanningLabo = {
+  jour: string;
+  libelle: string;
+  totalPieces: number;
+  produits: CarteProduitPlanningLabo[];
+};
+
+const LIBELLE_SANS_CLIENT = 'Sans client';
+
+/**
+ * Regroupe les commandes labo non annulées (à partir d'aujourd'hui) :
+ * jour → produit (qté décroissante) → client (quantités additionnées).
+ */
+export function planningLaboParJour(
+  commandes: CommandeLaboPourPlanning[],
+  aujourdhui: string = aujourdhuiParis(),
+): JourPlanningLabo[] {
+  const actives = commandes.filter(
+    (c) => c.annulee_le == null && c.pour_le >= aujourdhui && c.quantite > 0,
+  );
+
+  type AccClient = { quantite: number; notes: string[] };
+  type AccProduit = {
+    produitNom: string;
+    fabricantNom: string;
+    quantite: number;
+    clients: Map<string, AccClient>;
+  };
+
+  const parJour = new Map<string, Map<string, AccProduit>>();
+
+  for (const commande of actives) {
+    let produits = parJour.get(commande.pour_le);
+    if (!produits) {
+      produits = new Map();
+      parJour.set(commande.pour_le, produits);
+    }
+
+    let produit = produits.get(commande.produit_id);
+    if (!produit) {
+      produit = {
+        produitNom: commande.produit_nom,
+        fabricantNom: commande.fabricant_nom,
+        quantite: 0,
+        clients: new Map(),
+      };
+      produits.set(commande.produit_id, produit);
+    }
+
+    produit.quantite += commande.quantite;
+    const cleClient = (commande.client ?? '').trim() || LIBELLE_SANS_CLIENT;
+    const existant = produit.clients.get(cleClient) ?? { quantite: 0, notes: [] };
+    existant.quantite += commande.quantite;
+    const note = (commande.note ?? '').trim();
+    if (note && !existant.notes.includes(note)) {
+      existant.notes.push(note);
+    }
+    produit.clients.set(cleClient, existant);
+  }
+
+  const jours = [...parJour.keys()].sort((a, b) => a.localeCompare(b));
+  return jours.map((jour) => {
+    const produitsMap = parJour.get(jour)!;
+    const produits: CarteProduitPlanningLabo[] = [...produitsMap.entries()]
+      .map(([produitId, acc]) => {
+        const clients = [...acc.clients.entries()]
+          .map(([clientLibelle, c]) => ({
+            clientLibelle,
+            quantite: c.quantite,
+            notes: c.notes,
+          }))
+          .sort(
+            (a, b) =>
+              b.quantite - a.quantite ||
+              a.clientLibelle.localeCompare(b.clientLibelle, 'fr'),
+          );
+        return {
+          produitId,
+          produitNom: acc.produitNom,
+          fabricantNom: acc.fabricantNom,
+          quantite: acc.quantite,
+          clients,
+        };
+      })
+      .sort(
+        (a, b) =>
+          b.quantite - a.quantite || a.produitNom.localeCompare(b.produitNom, 'fr'),
+      );
+
+    const totalPieces = produits.reduce((somme, p) => somme + p.quantite, 0);
+    return {
+      jour,
+      libelle: libelleJourCommandeLabo(jour, aujourdhui),
+      totalPieces,
+      produits,
+    };
+  });
+}
+
 /** Total et détail par produit / par jour pour le CA laboratoire d'un fabricant. */
 export function detailCaLaboratoire(
   lignes: LigneCaLabo[],

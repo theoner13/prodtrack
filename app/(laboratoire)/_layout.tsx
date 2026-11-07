@@ -24,6 +24,19 @@ export default function LayoutLaboratoire() {
         }}
       />
       <Tabs.Screen
+        name="planning"
+        options={{
+          title: 'Planning',
+          tabBarIcon: ({ focused }) => (
+            <OngletIcone
+              nom="calendar-outline"
+              nomActif="calendar"
+              focused={focused}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="sorties"
         options={{
           title: 'Sorties',

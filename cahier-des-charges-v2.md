@@ -121,6 +121,7 @@ Contexte : un laboratoire central cuit viennoiseries, brioches, pains, pizzas…
 
 7. Le laboratoire saisit des **commandes** (produit du labo, quantité, jour, client/note facultatifs) ; le pâtissier fabricant est notifié ; les commandes entrent dans son **prévisionnel** (en plus de la moyenne habituelle des sorties).
 8. Les sorties du labo génèrent un **CA laboratoire** (prix figé à la sortie), visible uniquement par l'admin dans la fiche de l'employé, séparé du CA des boutiques (D11).
+9. Un onglet **Planning** (lecture seule) montre jour par jour les commandes à venir : total par produit et détail par client, avec une frise de jours comme le planning pâtissier.
 
 ## 4. Règles de calcul
 
@@ -222,6 +223,6 @@ Section du cahier d'origine, inchangée : chiffrage par bloc, deux montants pour
 | Pâtissier | Stock limité à ses produits, ajout de stock depuis la fiche, annulation le jour même |
 | Vente | Saisie aujourd'hui ou hier, historique 14 jours |
 | Vente / Pâtissier | Commandes de gâteaux : saisie, suivi À faire / Prête / Reçue / Récupérée, signalement non reçu, CA au fabricant |
-| Laboratoire | Profil dédié, stock par pâtissier, envois depuis la boutique, sorties au labo, commandes, prévisionnel et CA laboratoire (admin) |
+| Laboratoire | Profil dédié, stock par pâtissier, envois depuis la boutique, sorties au labo, commandes, planning jour par jour, prévisionnel et CA laboratoire (admin) |
 | Règles | Prévision sur les sorties ; seuil et planning réservés aux surgelés ; quantité suggérée ; prix figé à la vente |
 | Présentation | Style épuré, logo, animation d'accueil, icônes fines, version web installable |

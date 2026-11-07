@@ -8,6 +8,7 @@ import {
   filtrerCommandesLabo,
   grouperParPatissierLabo,
   libelleJourCommandeLabo,
+  planningLaboParJour,
   regrouperCommandesLaboParJour,
 } from './laboratoire.ts';
 
@@ -135,6 +136,142 @@ describe('regrouperCommandesLaboParJour', () => {
       ['Brioche', 'Croissant'],
     );
     assert.equal(groupes[1]!.libelle, 'Demain');
+  });
+});
+
+describe('planningLaboParJour', () => {
+  const base = [
+    {
+      produit_id: 'pac',
+      pour_le: '2026-11-08',
+      quantite: 100,
+      produit_nom: 'Pain au chocolat',
+      fabricant_nom: 'Alice',
+      client: 'Client A',
+      note: 'Chaud',
+      annulee_le: null,
+    },
+    {
+      produit_id: 'pac',
+      pour_le: '2026-11-08',
+      quantite: 100,
+      produit_nom: 'Pain au chocolat',
+      fabricant_nom: 'Alice',
+      client: 'Client B',
+      note: null,
+      annulee_le: null,
+    },
+    {
+      produit_id: 'pac',
+      pour_le: '2026-11-08',
+      quantite: 50,
+      produit_nom: 'Pain au chocolat',
+      fabricant_nom: 'Alice',
+      client: 'Client A',
+      note: 'Chaud',
+      annulee_le: null,
+    },
+    {
+      produit_id: 'brioche',
+      pour_le: '2026-11-08',
+      quantite: 20,
+      produit_nom: 'Brioche',
+      fabricant_nom: 'Bob',
+      client: null,
+      note: 'Sans sucre',
+      annulee_le: null,
+    },
+    {
+      produit_id: 'pac',
+      pour_le: '2026-11-08',
+      quantite: 999,
+      produit_nom: 'Pain au chocolat',
+      fabricant_nom: 'Alice',
+      client: 'Annulé',
+      note: null,
+      annulee_le: '2026-11-07T10:00:00Z',
+    },
+    {
+      produit_id: 'croiss',
+      pour_le: '2026-11-07',
+      quantite: 10,
+      produit_nom: 'Croissant',
+      fabricant_nom: 'Alice',
+      client: 'Café',
+      note: null,
+      annulee_le: null,
+    },
+    {
+      produit_id: 'loin',
+      pour_le: '2026-11-20',
+      quantite: 5,
+      produit_nom: 'Pain',
+      fabricant_nom: 'Bob',
+      client: 'Hôtel',
+      note: null,
+      annulee_le: null,
+    },
+  ];
+
+  it('additionne par client, ignore les annulées et trie par quantité', () => {
+    const jours = planningLaboParJour(base, '2026-11-08');
+    assert.equal(jours.length, 2);
+
+    const jour = jours[0]!;
+    assert.equal(jour.jour, '2026-11-08');
+    assert.equal(jour.libelle, "Aujourd'hui");
+    assert.equal(jour.totalPieces, 270);
+    assert.equal(jour.produits.length, 2);
+
+    const pac = jour.produits[0]!;
+    assert.equal(pac.produitNom, 'Pain au chocolat');
+    assert.equal(pac.quantite, 250);
+    assert.equal(pac.fabricantNom, 'Alice');
+    assert.equal(pac.clients.length, 2);
+    assert.equal(pac.clients[0]!.clientLibelle, 'Client A');
+    assert.equal(pac.clients[0]!.quantite, 150);
+    assert.deepEqual(pac.clients[0]!.notes, ['Chaud']);
+    assert.equal(pac.clients[1]!.clientLibelle, 'Client B');
+    assert.equal(pac.clients[1]!.quantite, 100);
+
+    const brioche = jour.produits[1]!;
+    assert.equal(brioche.produitNom, 'Brioche');
+    assert.equal(brioche.clients[0]!.clientLibelle, 'Sans client');
+    assert.deepEqual(brioche.clients[0]!.notes, ['Sans sucre']);
+
+    assert.equal(jours[1]!.jour, '2026-11-20');
+    assert.equal(jours[1]!.totalPieces, 5);
+  });
+
+  it('libellé Demain pour le lendemain', () => {
+    const jours = planningLaboParJour(base, '2026-11-07');
+    const demain = jours.find((j) => j.jour === '2026-11-08');
+    assert.ok(demain);
+    assert.equal(demain!.libelle, 'Demain');
+  });
+
+  it('n’inclut pas les jours sans commande active', () => {
+    const jours = planningLaboParJour(
+      [
+        {
+          produit_id: 'x',
+          pour_le: '2026-11-09',
+          quantite: 1,
+          produit_nom: 'X',
+          fabricant_nom: 'A',
+          client: null,
+          note: null,
+          annulee_le: '2026-11-08T12:00:00Z',
+        },
+      ],
+      '2026-11-08',
+    );
+    assert.equal(jours.length, 0);
+  });
+
+  it('ignore les commandes avant aujourd’hui', () => {
+    const jours = planningLaboParJour(base, '2026-11-08');
+    assert.ok(!jours.some((j) => j.jour === '2026-11-07'));
   });
 });
 
