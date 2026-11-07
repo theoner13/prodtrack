@@ -5,6 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { z } from 'zod';
 
+import { useNomsBoutiquesEntreprise } from '@/api/boutiques';
 import { useCatalogueBoutiques } from '@/api/catalogue';
 import { envoyerPhoto, supprimerPhoto } from '@/api/photos';
 import {
@@ -34,6 +35,7 @@ import { EditeurRecette, estVide, UNITES, type LigneSaisie, type Unite } from '@
 import { optionsEnteteRetourTitre } from '@/components/entete-retour-titre';
 import { EtatChargement, EtatErreur } from '@/components/etats';
 import { eurosVersCentimes } from '@/lib/format';
+import { etiquetteLaboratoire } from '@/lib/laboratoire';
 import { etiquetteBoutique } from '@/lib/production-exterieure';
 import { couleurs, espacements, rayon, rayonPetit, styleTitreSection, tailles } from '@/theme';
 
@@ -83,13 +85,15 @@ function quantiteTexte(valeur: number): string {
 }
 
 export default function EcranFicheProduit() {
-  const { id, ajoute, exterieur } = useLocalSearchParams<{
+  const { id, ajoute, exterieur, laboratoire } = useLocalSearchParams<{
     id: string;
     ajoute?: string;
     exterieur?: string;
+    laboratoire?: string;
   }>();
   const creation = id === 'nouveau';
-  const modeExterieurCreation = creation && exterieur === '1';
+  const modeLaboCreation = creation && laboratoire === '1';
+  const modeExterieurCreation = (creation && exterieur === '1') || modeLaboCreation;
   const { width } = useWindowDimensions();
   const deuxColonnes = width >= 360;
   const { profil, verrouillerApresSaisie } = useAuth();
@@ -103,6 +107,19 @@ export default function EcranFicheProduit() {
     modeExterieur ? (profil?.id ?? null) : null,
   );
   const autresBoutiques = useCatalogueBoutiques();
+  const nomsEntreprise = useNomsBoutiquesEntreprise();
+  const laboratoires = useMemo(
+    () => (nomsEntreprise.data ?? []).filter((b) => b.est_laboratoire),
+    [nomsEntreprise.data],
+  );
+  const idsLaboratoires = useMemo(
+    () => new Set(laboratoires.map((b) => b.id)),
+    [laboratoires],
+  );
+  const produitExistantLabo =
+    produitExistantExterieur &&
+    Boolean(fiche.data?.produit.boutique_id && idsLaboratoires.has(fiche.data.produit.boutique_id));
+  const modeLabo = modeLaboCreation || produitExistantLabo;
   const mesProduits = useMesProduits(modeExterieurCreation ? (profil?.id ?? null) : null);
   const enregistrer = useEnregistrerMonProduit();
   const enregistrerProduction = useEnregistrerMouvements();
@@ -141,9 +158,9 @@ export default function EcranFicheProduit() {
     defaultValues: {
       nom: '',
       prix: '',
-      conservation: 'frais',
+      conservation: modeLaboCreation ? 'surgele' : 'frais',
       intermediaire: false,
-      duree: '2',
+      duree: modeLaboCreation ? '30' : '2',
       seuil: '0',
       photo: '',
       lignes: [],
@@ -153,6 +170,13 @@ export default function EcranFicheProduit() {
   const intermediaire = watch('intermediaire');
   const photo = watch('photo');
   const lignes = watch('lignes');
+
+  useEffect(() => {
+    if (modeLaboCreation) {
+      setValue('conservation', 'surgele');
+      setValue('intermediaire', false);
+    }
+  }, [modeLaboCreation, setValue]);
 
   useEffect(() => {
     if (!fiche.data || dejaCharge.current) return;
@@ -230,12 +254,17 @@ export default function EcranFicheProduit() {
       return;
     }
     if (modeExterieurCreation && !boutiqueDestinataireId) {
-      setErreur('Choisissez la boutique qui reçoit le produit.');
+      setErreur(
+        modeLaboCreation
+          ? 'Choisissez le laboratoire qui reçoit le produit.'
+          : 'Choisissez la boutique qui reçoit le produit.',
+      );
       return;
     }
     setErreur(null);
     const impose = fiche.data?.produit.impose_par_admin ?? false;
     const estIntermediaire = modeExterieur || impose ? false : valeurs.intermediaire;
+    const conservationFinale = modeLabo ? 'surgele' : valeurs.conservation;
     const prixCentimes = estIntermediaire ? 0 : eurosVersCentimes(valeurs.prix);
     if (prixCentimes === null) return;
     const boutiqueCible = modeExterieurCreation
@@ -263,9 +292,9 @@ export default function EcranFicheProduit() {
         nom: valeurs.nom,
         prixCentimes,
         photoUrl,
-        conservation: valeurs.conservation,
+        conservation: conservationFinale,
         dureeJours: Number(valeurs.duree),
-        seuilMin: valeurs.conservation === 'surgele' ? Number(valeurs.seuil) : 0,
+        seuilMin: conservationFinale === 'surgele' ? Number(valeurs.seuil) : 0,
         intermediaire: estIntermediaire,
         impose,
         lignes: valeurs.lignes
@@ -455,23 +484,32 @@ export default function EcranFicheProduit() {
     />
   );
 
+  const destinatairesCreation = modeLaboCreation
+    ? laboratoires
+    : (autresBoutiques.data ?? []);
+
   const destinataireFigee =
     produitExistantExterieur && produit
-      ? etiquetteBoutique(
-          (autresBoutiques.data ?? []).find((b) => b.id === produit.boutique_id)?.nom ??
-            'Boutique',
-        )
+      ? modeLabo
+        ? etiquetteLaboratoire()
+        : etiquetteBoutique(
+            (autresBoutiques.data ?? []).find((b) => b.id === produit.boutique_id)?.nom ??
+              (nomsEntreprise.data ?? []).find((b) => b.id === produit.boutique_id)?.nom ??
+              'Boutique',
+          )
       : null;
 
   return (
     <Ecran defilement>
       <Stack.Screen
         options={optionsEnteteRetourTitre(
-          modeExterieurCreation
-            ? 'Nouveau produit extérieur'
-            : creation
-              ? 'Nouveau produit'
-              : 'Modifier le produit',
+          modeLaboCreation
+            ? 'Nouveau produit au laboratoire'
+            : modeExterieurCreation
+              ? 'Nouveau produit extérieur'
+              : creation
+                ? 'Nouveau produit'
+                : 'Modifier le produit',
         )}
       />
       <View style={styles.formulaire}>
@@ -501,12 +539,18 @@ export default function EcranFicheProduit() {
 
         {modeExterieurCreation ? (
           <View style={styles.bloc}>
-            <Text style={styles.titreSection}>Envoyer à</Text>
-            {(autresBoutiques.data ?? []).length === 0 ? (
-              <Text style={styles.aide}>Aucune autre boutique dans votre entreprise.</Text>
+            <Text style={styles.titreSection}>
+              {modeLaboCreation ? 'Laboratoire' : 'Envoyer à'}
+            </Text>
+            {destinatairesCreation.length === 0 ? (
+              <Text style={styles.aide}>
+                {modeLaboCreation
+                  ? 'Aucun laboratoire dans votre entreprise. Demandez à l’admin d’en créer un.'
+                  : 'Aucune autre boutique dans votre entreprise.'}
+              </Text>
             ) : (
               <View style={styles.puces}>
-                {(autresBoutiques.data ?? []).map((boutique) => {
+                {destinatairesCreation.map((boutique) => {
                   const active = boutiqueDestinataireId === boutique.id;
                   return (
                     <Pressable
@@ -529,7 +573,11 @@ export default function EcranFicheProduit() {
         ) : null}
 
         {destinataireFigee ? (
-          <Text style={styles.aide}>Envoyé à {destinataireFigee} (non modifiable).</Text>
+          <Text style={styles.aide}>
+            {modeLabo
+              ? `Au laboratoire (non modifiable).`
+              : `Envoyé à ${destinataireFigee} (non modifiable).`}
+          </Text>
         ) : null}
 
         {modeExterieurCreation && produitsLocauxCopiables.length > 0 ? (
@@ -597,18 +645,22 @@ export default function EcranFicheProduit() {
           ) : null}
           <View style={afficherPrix ? styles.colonneChamp : styles.pleineLargeur}>
             <Text style={styles.libelle}>Conservation</Text>
-            <ChoixSegmente
-              options={[
-                { valeur: 'frais', libelle: 'Frais' },
-                { valeur: 'surgele', libelle: 'Surgelé' },
-              ]}
-              valeur={conservation}
-              desactive={impose}
-              onChange={(valeur) => {
-                setValue('conservation', valeur);
-                if (valeur === 'frais') setValue('seuil', '0');
-              }}
-            />
+            {modeLabo ? (
+              <Text style={styles.aide}>Surgelé (obligatoire pour le laboratoire).</Text>
+            ) : (
+              <ChoixSegmente
+                options={[
+                  { valeur: 'frais', libelle: 'Frais' },
+                  { valeur: 'surgele', libelle: 'Surgelé' },
+                ]}
+                valeur={conservation}
+                desactive={impose}
+                onChange={(valeur) => {
+                  setValue('conservation', valeur);
+                  if (valeur === 'frais') setValue('seuil', '0');
+                }}
+              />
+            )}
           </View>
         </View>
 

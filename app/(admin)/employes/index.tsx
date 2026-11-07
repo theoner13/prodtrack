@@ -14,7 +14,13 @@ import type { Profil } from '@/types/database';
 
 function description(employe: Profil): string {
   const role =
-    employe.role === 'admin' ? 'Admin' : employe.role === 'patissier' ? 'Pâtissier' : 'Vente';
+    employe.role === 'admin'
+      ? 'Admin'
+      : employe.role === 'patissier'
+        ? 'Pâtissier'
+        : employe.role === 'laboratoire'
+          ? 'Laboratoire'
+          : 'Vente';
   const equipe = employe.equipe === 'jour' ? 'Jour' : employe.equipe === 'nuit' ? 'Nuit' : null;
   const archive = employe.archive_le ? 'Archivé' : null;
   return [role, equipe, archive].filter((partie) => partie !== null).join(' · ');

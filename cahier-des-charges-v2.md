@@ -40,8 +40,9 @@ Pour les patrons qui n'ont pas le temps de surveiller chacune de leurs boutiques
 | Admin | Le patron | Configure les boutiques, les produits et les prix. Consulte les chiffres de tous les employés et de toutes les boutiques. Gère les comptes. |
 | Pâtissier | Équipe de production (jour ou nuit) | Déclare les produits qu'il fabrique, ses recettes, sa production, ses sorties et ses pertes. Consulte son planning. |
 | Vente | Équipe de vente | Déclare pour chaque produit les quantités vendues, jetées et restantes. |
+| **[Ajout]** Laboratoire | Équipe du laboratoire de production central | Voit le stock reçu des boutiques (groupé par pâtissier) et enregistre les sorties. Pas de saisie de vente ni de CA à l'étape 1. |
 
-**[Ajout]** Les rôles s'affichent « Admin », « Pâtissier » et « Vente » (au lieu de Patron et Vendeuse).
+**[Ajout]** Les rôles s'affichent « Admin », « Pâtissier », « Vente » et « Laboratoire » (au lieu de Patron et Vendeuse).
 
 **Inscription et connexion**
 
@@ -57,7 +58,7 @@ Pour les patrons qui n'ont pas le temps de surveiller chacune de leurs boutiques
 
 ### 3.1 Compte Admin
 
-1. **Boutiques** : créer une ou plusieurs boutiques ; chaque boutique a son code d'invitation.
+1. **Boutiques** : créer une ou plusieurs boutiques ; chaque boutique a son code d'invitation. **[Ajout]** Créer aussi un **laboratoire** (boutique spéciale avec étiquette et code d'invitation dédié).
 2. **Catalogue et prix** : fixer ou modifier le prix de vente de chaque article de chaque boutique, y compris un prix déjà saisi par un pâtissier.
 3. **Imposer un produit (gamme obligatoire, facultative)** : le patron peut imposer un produit à une ou plusieurs boutiques. Ces produits s'ajoutent d'office et ne peuvent pas être retirés par l'employé.
    - **[Ajout]** Seuls le nom, le prix et la boutique sont obligatoires. La recette, la photo, le seuil, la durée de conservation et le pâtissier sont facultatifs.
@@ -102,6 +103,21 @@ Pour les patrons qui n'ont pas le temps de surveiller chacune de leurs boutiques
 3. **[Ajout]** Saisie pour aujourd'hui ou pour hier (en cas d'oubli), modifiable ; historique des 14 derniers jours.
 4. Ces saisies alimentent le CA par employé et par boutique, et les statistiques de pertes.
 5. **[Ajout] Commandes de gâteaux** : prendre une commande client (nom, téléphone, gâteau, parts, demandes, inscription, boutique qui fabrique, date/heure de retrait, prix et acompte facultatifs). La boutique de retrait est toujours celle où la commande est prise. Suivi : À faire → Prête → Reçue → Récupérée (ou Annulée). Marquer reçue / récupérée, signaler un gâteau non reçu à partir d'une heure avant le retrait. Le prix entre dans le CA du pâtissier fabricant le jour de la récupération.
+
+### 3.4 [Ajout] Laboratoire (validé par le propriétaire le 07/11/2026)
+
+Contexte : un laboratoire central cuit viennoiseries, brioches, pains, pizzas… envoyés par les pâtissiers des boutiques.
+
+**Étape 1 (livrée)**
+
+1. L'admin crée un laboratoire (boutique spéciale) et partage son code d'invitation.
+2. Rejoindre avec ce code force le rôle **Laboratoire**.
+3. Le pâtissier crée des **produits au laboratoire** (surgelés, même nom possible qu'en boutique) et saisit les **envois** (comme une production) : le stock du labo augmente immédiatement.
+4. Le laboratoire voit le **stock** groupé par pâtissier (avec boutique d'origine) et enregistre ses **sorties**.
+5. Le pâtissier voit une section **Au laboratoire** dans son stock.
+6. Pas de saisie de vente sur un laboratoire ; pas de CA laboratoire à cette étape (seul l'admin voit le CA, D11).
+
+**Étape 2 (à venir)** : commandes passées au labo, prévisionnel, CA laboratoire.
 
 ## 4. Règles de calcul
 
@@ -203,5 +219,6 @@ Section du cahier d'origine, inchangée : chiffrage par bloc, deux montants pour
 | Pâtissier | Stock limité à ses produits, ajout de stock depuis la fiche, annulation le jour même |
 | Vente | Saisie aujourd'hui ou hier, historique 14 jours |
 | Vente / Pâtissier | Commandes de gâteaux : saisie, suivi À faire / Prête / Reçue / Récupérée, signalement non reçu, CA au fabricant |
+| Laboratoire | Profil dédié, stock par pâtissier, envois depuis la boutique, sorties au labo (étape 1) ; commandes / prévisionnel / CA en étape 2 |
 | Règles | Prévision sur les sorties ; seuil et planning réservés aux surgelés ; quantité suggérée ; prix figé à la vente |
 | Présentation | Style épuré, logo, animation d'accueil, icônes fines, version web installable |

@@ -154,7 +154,13 @@ function adresseApresPin(pathname: string, racine: string, profil: Profil): Href
   }
   if (pathname === '/profil' || pathname === '/notifications') return pathname;
   const groupe =
-    profil.role === 'admin' ? '(admin)' : profil.role === 'patissier' ? '(patissier)' : '(vendeuse)';
+    profil.role === 'admin'
+      ? '(admin)'
+      : profil.role === 'patissier'
+        ? '(patissier)'
+        : profil.role === 'laboratoire'
+          ? '(laboratoire)'
+          : '(vendeuse)';
   if (racine !== groupe) return null;
   if (!pathname || pathname === '/') return `/${groupe}` as Href;
   return `/${groupe}${pathname}` as Href;
@@ -163,7 +169,7 @@ function adresseApresPin(pathname: string, racine: string, profil: Profil): Href
 function cheminAtteint(pathname: string, href: Href): boolean {
   const cible = String(href);
   if (cible === '/profil' || cible === '/notifications') return pathname === cible;
-  const sansGroupe = cible.replace(/^\/\((admin|patissier|vendeuse)\)/, '') || '/';
+  const sansGroupe = cible.replace(/^\/\((admin|patissier|vendeuse|laboratoire)\)/, '') || '/';
   return pathname === sansGroupe || (sansGroupe === '/' && pathname === '/');
 }
 
@@ -237,10 +243,13 @@ function destination(etat: {
       ? '(admin)'
       : etat.profil.role === 'patissier'
         ? '(patissier)'
-        : '(vendeuse)';
+        : etat.profil.role === 'laboratoire'
+          ? '(laboratoire)'
+          : '(vendeuse)';
   if (etat.racine === groupe) return null;
 
   if (etat.profil.role === 'admin') return '/(admin)';
   if (etat.profil.role === 'patissier') return '/(patissier)';
+  if (etat.profil.role === 'laboratoire') return '/(laboratoire)' as Href;
   return '/(vendeuse)';
 }

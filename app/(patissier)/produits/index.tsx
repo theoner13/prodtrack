@@ -2,6 +2,7 @@ import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useNomsBoutiquesEntreprise } from '@/api/boutiques';
 import { useUrlsSignees } from '@/api/photos';
 import {
   useMesProduits,
@@ -14,6 +15,7 @@ import { Banniere } from '@/components/banniere';
 import { CarteProduit } from '@/components/carte-produit';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
+import { etiquetteLaboratoire } from '@/lib/laboratoire';
 import { etiquetteBoutique } from '@/lib/production-exterieure';
 import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/theme';
 
@@ -21,18 +23,39 @@ export default function EcranMesProduits() {
   const { profil } = useAuth();
   const mes = useMesProduits(profil?.id ?? null);
   const aPrendre = useProduitsAPrendre(profil?.boutique_id ?? null);
+  const nomsEntreprise = useNomsBoutiquesEntreprise();
   const prendre = usePrendreProduit();
   const [banniere, setBanniere] = useState<string | null>(null);
   const [erreurPrise, setErreurPrise] = useState<string | null>(null);
+
+  const idsLaboratoires = useMemo(() => {
+    const set = new Set<string>();
+    for (const b of nomsEntreprise.data ?? []) {
+      if (b.est_laboratoire) set.add(b.id);
+    }
+    return set;
+  }, [nomsEntreprise.data]);
 
   const produits = mes.data?.produits ?? [];
   const locaux = useMemo(
     () => produits.filter((produit) => produit.provenance_boutique_id == null),
     [produits],
   );
+  const auLabo = useMemo(
+    () =>
+      produits.filter(
+        (produit) =>
+          produit.provenance_boutique_id != null && idsLaboratoires.has(produit.boutique_id),
+      ),
+    [produits, idsLaboratoires],
+  );
   const exterieurs = useMemo(
-    () => produits.filter((produit) => produit.provenance_boutique_id != null),
-    [produits],
+    () =>
+      produits.filter(
+        (produit) =>
+          produit.provenance_boutique_id != null && !idsLaboratoires.has(produit.boutique_id),
+      ),
+    [produits, idsLaboratoires],
   );
   const chemins = [
     ...produits.map((produit) => produit.photo_url),
@@ -88,6 +111,14 @@ export default function EcranMesProduits() {
   return (
     <Ecran defilement>
       <View style={styles.entete}>
+        <Pressable
+          onPress={() => router.push('/produits/nouveau?laboratoire=1' as Href)}
+          style={styles.lien}
+          accessibilityRole="button"
+          accessibilityLabel="Nouveau produit au laboratoire"
+        >
+          <Text style={styles.lienTexte}>+ Produit au laboratoire</Text>
+        </Pressable>
         <Pressable
           onPress={() => ouvrir('nouveau')}
           style={styles.lien}
@@ -154,7 +185,7 @@ export default function EcranMesProduits() {
       {premiereFois ? (
         <EtatVide message="Ajoutez les produits que vous fabriquez." />
       ) : null}
-      {locaux.length === 0 && exterieurs.length === 0 && !premiereFois ? (
+      {locaux.length === 0 && exterieurs.length === 0 && auLabo.length === 0 && !premiereFois ? (
         <EtatVide message="Vous n'avez aucun produit en cours. Ajoutez-en un pour le fabriquer." />
       ) : null}
       {locaux.map((produit) => (
@@ -169,6 +200,28 @@ export default function EcranMesProduits() {
           </CarteProduit>
         </Pressable>
       ))}
+
+      {auLabo.length > 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.titreSection}>Au laboratoire</Text>
+          {auLabo.map((produit) => (
+            <Pressable
+              key={produit.id}
+              accessibilityRole="button"
+              onPress={() => ouvrir(produit.id)}
+            >
+              <CarteProduit
+                nom={produit.nom}
+                prixCentimes={produit.prix_centimes}
+                photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
+              >
+                <Text style={styles.badge}>{etiquetteLaboratoire()}</Text>
+                <Text style={styles.badge}>{etiquetteBoutique(produit.boutiqueNom)}</Text>
+              </CarteProduit>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
       {exterieurs.length > 0 ? (
         <View style={styles.section}>
@@ -200,6 +253,8 @@ const styles = StyleSheet.create({
   entete: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    gap: espacements.m,
   },
   lien: {
     paddingVertical: espacements.xs,

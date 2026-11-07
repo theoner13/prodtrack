@@ -27,6 +27,7 @@ export type Database = {
           code_invitation: string
           created_at: string
           entreprise_id: string
+          est_laboratoire: boolean
           id: string
           nom: string
         }
@@ -35,6 +36,7 @@ export type Database = {
           code_invitation?: string
           created_at?: string
           entreprise_id: string
+          est_laboratoire?: boolean
           id?: string
           nom: string
         }
@@ -43,6 +45,7 @@ export type Database = {
           code_invitation?: string
           created_at?: string
           entreprise_id?: string
+          est_laboratoire?: boolean
           id?: string
           nom?: string
         }
@@ -897,6 +900,7 @@ export type Database = {
       noms_boutiques_entreprise: {
         Args: never
         Returns: {
+          est_laboratoire: boolean
           id: string
           nom: string
         }[]
@@ -924,7 +928,7 @@ export type Database = {
       supprimer_jeton_push: { Args: { p_jeton: string }; Returns: undefined }
     }
     Enums: {
-      role_employe: "admin" | "patissier" | "vendeuse"
+      role_employe: "admin" | "patissier" | "vendeuse" | "laboratoire"
       statut_commande: "a_faire" | "prete" | "recue" | "recuperee" | "annulee"
       type_conservation: "frais" | "surgele"
       type_mouvement: "production" | "sortie" | "ajustement"
@@ -1055,7 +1059,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      role_employe: ["admin", "patissier", "vendeuse"],
+      role_employe: ["admin", "patissier", "vendeuse", "laboratoire"],
       statut_commande: ["a_faire", "prete", "recue", "recuperee", "annulee"],
       type_conservation: ["frais", "surgele"],
       type_mouvement: ["production", "sortie", "ajustement"],

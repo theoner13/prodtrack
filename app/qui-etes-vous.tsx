@@ -24,6 +24,7 @@ const ROLES: Record<RoleEmploye, string> = {
   admin: 'Admin',
   patissier: 'Pâtissier',
   vendeuse: 'Vente',
+  laboratoire: 'Laboratoire',
 };
 
 const LARGEUR_TABLETTE = 700;

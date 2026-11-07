@@ -259,7 +259,7 @@ export default function EcranExport() {
         {(boutiques.data ?? []).map((b) => (
           <Puce
             key={b.id}
-            libelle={b.nom}
+            libelle={b.est_laboratoire ? `${b.nom} (labo)` : b.nom}
             active={boutiqueId === b.id}
             onPress={() => setBoutiqueId(b.id)}
           />

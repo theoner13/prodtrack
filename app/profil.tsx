@@ -16,6 +16,7 @@ const ROLES: Record<RoleEmploye, string> = {
   admin: 'Admin',
   patissier: 'Pâtissier',
   vendeuse: 'Vente',
+  laboratoire: 'Laboratoire',
 };
 
 export default function EcranProfil() {
@@ -52,7 +53,13 @@ export default function EcranProfil() {
       return;
     }
     const accueil: Href =
-      moi.role === 'admin' ? '/(admin)' : moi.role === 'patissier' ? '/(patissier)' : '/(vendeuse)';
+      moi.role === 'admin'
+        ? '/(admin)'
+        : moi.role === 'patissier'
+          ? '/(patissier)'
+          : moi.role === 'laboratoire'
+            ? ('/(laboratoire)' as Href)
+            : '/(vendeuse)';
     router.replace(accueil);
   }
 

@@ -22,7 +22,7 @@ export function useBoutiques() {
 export function useNomsBoutiquesEntreprise() {
   return useQuery({
     queryKey: ['boutiques', 'noms-entreprise'],
-    queryFn: async (): Promise<{ id: string; nom: string }[]> => {
+    queryFn: async (): Promise<{ id: string; nom: string; est_laboratoire: boolean }[]> => {
       const { data, error } = await db().rpc('noms_boutiques_entreprise');
       if (error) throw error;
       return data ?? [];
@@ -33,13 +33,19 @@ export function useNomsBoutiquesEntreprise() {
 export function useCreerBoutique() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (saisie: { entrepriseId: string; nom: string; adresse: string }) => {
+    mutationFn: async (saisie: {
+      entrepriseId: string;
+      nom: string;
+      adresse: string;
+      estLaboratoire?: boolean;
+    }) => {
       const { error } = await db()
         .from('boutiques')
         .insert({
           entreprise_id: saisie.entrepriseId,
           nom: saisie.nom.trim(),
           adresse: saisie.adresse.trim() || null,
+          est_laboratoire: saisie.estLaboratoire ?? false,
         });
       if (error) throw error;
     },

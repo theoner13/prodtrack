@@ -17,7 +17,7 @@ import { couleurs, tailles } from '@/theme';
 const schema = z
   .object({
     code: z.string().regex(/^[A-Z0-9]{8}$/, 'Le code comporte 8 caractères.'),
-    role: z.enum(['patissier', 'vendeuse'], { error: 'Choisissez un rôle.' }),
+    role: z.enum(['patissier', 'vendeuse', 'laboratoire'], { error: 'Choisissez un rôle.' }),
     prenom: z.string().trim().min(1, 'Indiquez votre prénom.'),
     nom: z.string().trim().min(1, 'Indiquez votre nom.'),
     equipe: z.enum(['jour', 'nuit']).optional(),
@@ -95,6 +95,11 @@ export default function EcranRejoindre() {
         variante={role === 'vendeuse' ? 'principal' : 'secondaire'}
         onPress={() => setValue('role', 'vendeuse', { shouldValidate: true })}
       />
+      <Bouton
+        titre="Laboratoire"
+        variante={role === 'laboratoire' ? 'principal' : 'secondaire'}
+        onPress={() => setValue('role', 'laboratoire', { shouldValidate: true })}
+      />
       {formState.errors.role ? <Text style={styles.erreur}>{formState.errors.role.message}</Text> : null}
       {role === 'patissier' ? (
         <>
@@ -113,6 +118,12 @@ export default function EcranRejoindre() {
             <Text style={styles.erreur}>{formState.errors.equipe.message}</Text>
           ) : null}
         </>
+      ) : null}
+      {role === 'laboratoire' ? (
+        <Text style={styles.aide}>
+          Utilisez le code d’invitation du laboratoire. Le rôle Laboratoire est forcé
+          automatiquement avec ce code.
+        </Text>
       ) : null}
       <Controller
         control={control}
@@ -142,7 +153,7 @@ export default function EcranRejoindre() {
       />
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
       <Bouton
-        titre="Rejoindre la boutique"
+        titre={role === 'laboratoire' ? 'Rejoindre le laboratoire' : 'Rejoindre la boutique'}
         chargement={formState.isSubmitting}
         onPress={handleSubmit(rejoindre)}
       />
@@ -155,6 +166,11 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     fontWeight: '600',
     color: couleurs.texte,
+  },
+  aide: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    lineHeight: 20,
   },
   erreur: {
     fontSize: tailles.normal,

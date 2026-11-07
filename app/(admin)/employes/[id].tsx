@@ -40,6 +40,7 @@ const ROLES: Record<RoleEmploye, string> = {
   admin: 'Admin',
   patissier: 'Pâtissier',
   vendeuse: 'Vente',
+  laboratoire: 'Laboratoire',
 };
 
 export default function EcranFicheEmploye() {

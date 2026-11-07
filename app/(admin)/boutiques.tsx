@@ -31,6 +31,7 @@ export default function EcranBoutiques() {
   const boutiques = useBoutiques();
   const creer = useCreerBoutique();
   const [formulaireOuvert, setFormulaireOuvert] = useState(false);
+  const [creationLabo, setCreationLabo] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [messagePartage, setMessagePartage] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
@@ -58,8 +59,15 @@ export default function EcranBoutiques() {
     }
   }
 
+  function ouvrirFormulaire(labo: boolean) {
+    setCreationLabo(labo);
+    setFormulaireOuvert(true);
+    setErreur(null);
+  }
+
   function fermerFormulaire() {
     setFormulaireOuvert(false);
+    setCreationLabo(false);
     setErreur(null);
     reset();
   }
@@ -72,10 +80,12 @@ export default function EcranBoutiques() {
         entrepriseId: profil.entreprise_id,
         nom: valeurs.nom,
         adresse: valeurs.adresse,
+        estLaboratoire: creationLabo,
       });
       reset();
       setFormulaireOuvert(false);
-      setConfirmation('Boutique créée.');
+      setCreationLabo(false);
+      setConfirmation(creationLabo ? 'Laboratoire créé.' : 'Boutique créée.');
     } catch (probleme: unknown) {
       setErreur(messageErreur(probleme));
     }
@@ -88,20 +98,28 @@ export default function EcranBoutiques() {
 
       <View style={styles.entete}>
         <Pressable
-          onPress={() => {
-            setFormulaireOuvert(true);
-            setErreur(null);
-          }}
+          onPress={() => ouvrirFormulaire(false)}
           style={styles.lien}
           accessibilityRole="button"
           accessibilityLabel="Nouvelle boutique"
         >
           <Text style={styles.lienTexte}>+ Nouvelle boutique</Text>
         </Pressable>
+        <Pressable
+          onPress={() => ouvrirFormulaire(true)}
+          style={styles.lien}
+          accessibilityRole="button"
+          accessibilityLabel="Nouveau laboratoire"
+        >
+          <Text style={styles.lienTexte}>+ Nouveau laboratoire</Text>
+        </Pressable>
       </View>
 
       {formulaireOuvert ? (
         <View style={styles.formulaire}>
+          <Text style={styles.titreFormulaire}>
+            {creationLabo ? 'Nouveau laboratoire' : 'Nouvelle boutique'}
+          </Text>
           <Controller
             control={control}
             name="nom"
@@ -130,7 +148,7 @@ export default function EcranBoutiques() {
           />
           {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
           <Bouton
-            titre="Créer la boutique"
+            titre={creationLabo ? 'Créer le laboratoire' : 'Créer la boutique'}
             chargement={formState.isSubmitting}
             onPress={handleSubmit(enregistrer)}
           />
@@ -155,6 +173,7 @@ export default function EcranBoutiques() {
       {boutiques.data?.map((boutique) => (
         <View key={boutique.id} style={styles.carte}>
           <Text style={styles.nom}>{boutique.nom}</Text>
+          {boutique.est_laboratoire ? <Text style={styles.badge}>Laboratoire</Text> : null}
           {boutique.adresse ? <Text style={styles.adresse}>{boutique.adresse}</Text> : null}
           <Text style={styles.code} selectable>
             {boutique.code_invitation}
@@ -179,6 +198,8 @@ const styles = StyleSheet.create({
   entete: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    gap: espacements.m,
   },
   lien: {
     paddingVertical: espacements.xs,
@@ -192,6 +213,23 @@ const styles = StyleSheet.create({
   formulaire: {
     gap: espacements.m,
     marginBottom: espacements.m,
+  },
+  titreFormulaire: {
+    fontSize: tailles.normal,
+    fontWeight: '600',
+    color: couleurs.texte,
+    fontFamily: polices.sans,
+  },
+  badge: {
+    overflow: 'hidden',
+    alignSelf: 'flex-start',
+    backgroundColor: couleurs.principalClair,
+    color: couleurs.principalFonce,
+    fontSize: 12,
+    fontWeight: '600',
+    paddingHorizontal: espacements.s,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
   lienAnnuler: {
     alignSelf: 'flex-start',

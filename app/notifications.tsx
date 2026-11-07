@@ -58,7 +58,13 @@ export default function EcranNotifications() {
       return;
     }
     const accueil: Href =
-      profil?.role === 'admin' ? '/(admin)' : profil?.role === 'vendeuse' ? '/(vendeuse)' : '/(patissier)';
+      profil?.role === 'admin'
+        ? '/(admin)'
+        : profil?.role === 'vendeuse'
+          ? '/(vendeuse)'
+          : profil?.role === 'laboratoire'
+            ? ('/(laboratoire)' as Href)
+            : '/(patissier)';
     router.replace(accueil);
   }
 

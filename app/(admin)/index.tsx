@@ -267,7 +267,9 @@ export default function EcranTableauDeBord() {
             setBoutiqueOuverte(null);
           }}
         />
-        {(boutiques.data ?? []).map((b) => (
+        {(boutiques.data ?? [])
+          .filter((b) => !b.est_laboratoire)
+          .map((b) => (
           <Puce
             key={b.id}
             libelle={b.nom}

@@ -9,9 +9,10 @@ import { supabase } from '@/lib/supabase';
 import { couleurs, tailles } from '@/theme';
 
 export default function EcranInformation() {
-  const { session, rechargerProfil } = useAuth();
+  const { session, profil, rechargerProfil } = useAuth();
   const [erreur, setErreur] = useState<string | null>(null);
   const [chargement, setChargement] = useState(false);
+  const estLabo = profil?.role === 'laboratoire';
 
   async function accepter() {
     if (!supabase || !session) return;
@@ -33,21 +34,24 @@ export default function EcranInformation() {
   return (
     <EcranAuth titre="Information" largeurMax={600} centrerVerticalement={false} avecLogo={false}>
       <Text style={styles.texte}>
-        ProdTrack suit le travail de chaque employé pour organiser la production et calculer le
-        chiffre d’affaires.
+        {estLabo
+          ? 'ProdTrack suit le stock du laboratoire pour organiser la production des boutiques.'
+          : 'ProdTrack suit le travail de chaque employé pour organiser la production et calculer le chiffre d’affaires.'}
       </Text>
       <Text style={styles.texte}>
-        Données collectées : nom, prénom, email, rôle, boutique, équipe (jour ou nuit), photo
-        facultative, quantités produites ou sorties, et le chiffre d’affaires des produits que vous
-        fabriquez.
+        {estLabo
+          ? 'Données collectées : nom, prénom, email, rôle, laboratoire, photo facultative, et quantités sorties du stock du laboratoire.'
+          : 'Données collectées : nom, prénom, email, rôle, boutique, équipe (jour ou nuit), photo facultative, quantités produites ou sorties, et le chiffre d’affaires des produits que vous fabriquez.'}
       </Text>
       <Text style={styles.texte}>
-        L’admin voit le chiffre d’affaires de chaque employé, par produit et par jour. L’équipe
-        vente voit les saisies de sa boutique. Seul l’admin voit le chiffre d’affaires.
+        {estLabo
+          ? 'Le laboratoire voit le stock et saisit les sorties. Seul l’admin voit le chiffre d’affaires. Aucun CA n’est calculé pour le laboratoire à cette étape.'
+          : 'L’admin voit le chiffre d’affaires de chaque employé, par produit et par jour. L’équipe vente voit les saisies de sa boutique. Seul l’admin voit le chiffre d’affaires.'}
       </Text>
       <Text style={styles.texte}>
-        Ces données sont conservées tant que le compte existe. Si le compte est archivé, l’historique
-        de production et de chiffre d’affaires est conservé.
+        {estLabo
+          ? 'Ces données sont conservées tant que le compte existe. Si le compte est archivé, l’historique des sorties est conservé.'
+          : 'Ces données sont conservées tant que le compte existe. Si le compte est archivé, l’historique de production et de chiffre d’affaires est conservé.'}
       </Text>
       <Text style={styles.texte}>
         Vous pouvez demander l’accès à vos données et leur rectification. Le contact est l’admin
