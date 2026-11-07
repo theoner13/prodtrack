@@ -59,6 +59,81 @@ export type Database = {
           },
         ]
       }
+      commandes_labo: {
+        Row: {
+          annulee_le: string | null
+          client: string | null
+          created_at: string
+          cree_par: string
+          id: string
+          laboratoire_id: string
+          note: string | null
+          pour_le: string
+          produit_id: string
+          quantite: number
+        }
+        Insert: {
+          annulee_le?: string | null
+          client?: string | null
+          created_at?: string
+          cree_par?: string
+          id?: string
+          laboratoire_id: string
+          note?: string | null
+          pour_le: string
+          produit_id: string
+          quantite: number
+        }
+        Update: {
+          annulee_le?: string | null
+          client?: string | null
+          created_at?: string
+          cree_par?: string
+          id?: string
+          laboratoire_id?: string
+          note?: string | null
+          pour_le?: string
+          produit_id?: string
+          quantite?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commandes_labo_cree_par_fkey"
+            columns: ["cree_par"]
+            isOneToOne: false
+            referencedRelation: "profils"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commandes_labo_laboratoire_id_fkey"
+            columns: ["laboratoire_id"]
+            isOneToOne: false
+            referencedRelation: "boutiques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commandes_labo_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: false
+            referencedRelation: "disponible_frais"
+            referencedColumns: ["produit_id"]
+          },
+          {
+            foreignKeyName: "commandes_labo_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: false
+            referencedRelation: "produits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commandes_labo_produit_id_fkey"
+            columns: ["produit_id"]
+            isOneToOne: false
+            referencedRelation: "stock_actuel"
+            referencedColumns: ["produit_id"]
+          },
+        ]
+      }
       commandes: {
         Row: {
           acompte_centimes: number | null
@@ -278,6 +353,7 @@ export type Database = {
           created_at: string
           id: string
           jour: string
+          prix_unitaire_centimes: number | null
           produit_id: string
           quantite: number
           saisi_par: string
@@ -287,6 +363,7 @@ export type Database = {
           created_at?: string
           id?: string
           jour?: string
+          prix_unitaire_centimes?: number | null
           produit_id: string
           quantite: number
           saisi_par?: string
@@ -296,6 +373,7 @@ export type Database = {
           created_at?: string
           id?: string
           jour?: string
+          prix_unitaire_centimes?: number | null
           produit_id?: string
           quantite?: number
           saisi_par?: string
@@ -742,6 +820,19 @@ export type Database = {
         }
         Relationships: []
       }
+      ca_laboratoire: {
+        Row: {
+          ca_centimes: number | null
+          fabricant_id: string | null
+          jour: string | null
+          laboratoire_id: string | null
+          prix_unitaire_centimes: number | null
+          produit_id: string | null
+          produit_nom: string | null
+          quantite: number | null
+        }
+        Relationships: []
+      }
       disponible_frais: {
         Row: {
           boutique_id: string | null
@@ -1079,7 +1170,9 @@ export type Notification = Tables<'notifications'>;
 export type StockActuel = Tables<'stock_actuel'>;
 export type DisponibleFrais = Tables<'disponible_frais'>;
 export type CaJournalier = Tables<'ca_journalier'>;
+export type CaLaboratoire = Tables<'ca_laboratoire'>;
 export type PerteProduction = Tables<'pertes_production'>;
 export type Commande = Tables<'commandes'>;
+export type CommandeLabo = Tables<'commandes_labo'>;
 export type RoleEmploye = Enums<'role_employe'>;
 export type StatutCommande = Enums<'statut_commande'>;

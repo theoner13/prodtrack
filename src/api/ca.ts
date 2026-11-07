@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { lireToutesLesLignes, paquetsDe } from '@/api/pagination';
 import { supabase } from '@/lib/supabase';
-import type { CaJournalier } from '@/types/database';
+import type { CaJournalier, CaLaboratoire } from '@/types/database';
 
 function db() {
   if (!supabase) throw new Error('Supabase non configuré');
@@ -68,6 +68,54 @@ export type LigneExportPerte = {
 function nomProfil(prenom: string, nom: string, archiveLe: string | null): string {
   const base = `${prenom} ${nom}`.trim();
   return archiveLe ? `${base} (archivé)` : base;
+}
+
+export function useCaLaboratoire(
+  debut: string | null,
+  fin: string | null,
+  fabricantId: string | null,
+) {
+  return useQuery({
+    queryKey: ['ca', 'laboratoire', debut, fin, fabricantId],
+    enabled: Boolean(debut && fin && fabricantId),
+    queryFn: async (): Promise<CaLaboratoire[]> => {
+      const lignes = await lireToutesLesLignes<CaLaboratoire>(() =>
+        db()
+          .from('ca_laboratoire')
+          .select('*')
+          .eq('fabricant_id', fabricantId as string)
+          .gte('jour', debut as string)
+          .lte('jour', fin as string)
+          .order('jour')
+          .order('produit_id'),
+      );
+      return lignes;
+    },
+  });
+}
+
+/** True si le pâtissier a au moins un produit au laboratoire (actif). */
+export function useAProduitsLabo(fabricantId: string | null) {
+  return useQuery({
+    queryKey: ['ca', 'a-produits-labo', fabricantId],
+    enabled: Boolean(fabricantId),
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await db()
+        .from('produits')
+        .select('id, boutique_id')
+        .eq('fabricant_id', fabricantId as string)
+        .is('archive_le', null);
+      if (error) throw error;
+      if ((data ?? []).length === 0) return false;
+
+      const { data: boutiques, error: errB } = await db().rpc('noms_boutiques_entreprise');
+      if (errB) throw errB;
+      const labs = new Set(
+        (boutiques ?? []).filter((b) => b.est_laboratoire).map((b) => b.id),
+      );
+      return (data ?? []).some((p) => labs.has(p.boutique_id));
+    },
+  });
 }
 
 export function useCaJournalier(

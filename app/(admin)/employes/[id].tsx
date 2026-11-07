@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useBoutiques } from '@/api/boutiques';
-import { useCaJournalier } from '@/api/ca';
+import { useAProduitsLabo, useCaJournalier, useCaLaboratoire } from '@/api/ca';
 import { useChangerArchivage, useEmploye } from '@/api/employes';
 import { useUrlSignee } from '@/api/photos';
 import { useAuth } from '@/auth/AuthProvider';
@@ -23,6 +23,7 @@ import {
   type TypePeriode,
 } from '@/lib/ca';
 import { aujourdhuiParis, formatEuros } from '@/lib/format';
+import { detailCaLaboratoire } from '@/lib/laboratoire';
 import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/theme';
 import type { RoleEmploye } from '@/types/database';
 
@@ -93,6 +94,12 @@ export default function EcranFicheEmploye() {
     datesDetail?.fin ?? null,
     boutiqueId,
   );
+  const aProduitsLabo = useAProduitsLabo(employeId ?? null);
+  const caLabo = useCaLaboratoire(
+    datesDetail?.debut ?? null,
+    datesDetail?.fin ?? null,
+    employeId ?? null,
+  );
 
   const lignesTuiles = useMemo(
     () => (caTuiles.data ?? []).filter((l) => l.fabricant_id === employeId),
@@ -123,6 +130,14 @@ export default function EcranFicheEmploye() {
     () => (employeId ? detailFabricant(lignesDetail, employeId) : null),
     [lignesDetail, employeId],
   );
+
+  const detailLabo = useMemo(
+    () => (employeId ? detailCaLaboratoire(caLabo.data ?? [], employeId) : null),
+    [caLabo.data, employeId],
+  );
+
+  const afficherCaLabo =
+    Boolean(aProduitsLabo.data) || (caLabo.data ?? []).length > 0;
 
   const boutiqueNom = useMemo(() => {
     const bid = employe.data?.boutique_id;
@@ -285,6 +300,51 @@ export default function EcranFicheEmploye() {
           ) : detail ? (
             <DetailCaEmploye detail={detail} />
           ) : null}
+
+          {afficherCaLabo ? (
+            <>
+              <Text style={styles.section}>CA laboratoire</Text>
+              {erreurPeriode ? null : caLabo.isLoading || aProduitsLabo.isLoading ? (
+                <EtatChargement />
+              ) : caLabo.isError || aProduitsLabo.isError ? (
+                <EtatErreur
+                  message="Impossible de charger le CA laboratoire."
+                  onReessayer={() => {
+                    void caLabo.refetch();
+                    void aProduitsLabo.refetch();
+                  }}
+                />
+              ) : detailLabo ? (
+                <View style={styles.blocCaLabo}>
+                  <Text style={styles.totalLabo}>
+                    Total période : {formatEuros(detailLabo.totalCentimes)}
+                  </Text>
+                  {detailLabo.produits.length === 0 && detailLabo.jours.length === 0 ? (
+                    <Text style={styles.videLabo}>Aucune sortie labo sur cette période.</Text>
+                  ) : (
+                    <>
+                      <Text style={styles.sousSectionLabo}>Par produit</Text>
+                      {detailLabo.produits.map((p) => (
+                        <View key={p.cle} style={styles.ligneLabo}>
+                          <Text style={styles.ligneLaboNom}>{p.nom}</Text>
+                          <Text style={styles.ligneLaboQte}>{p.quantite}</Text>
+                          <Text style={styles.ligneLaboCa}>{formatEuros(p.caCentimes)}</Text>
+                        </View>
+                      ))}
+                      <Text style={styles.sousSectionLabo}>Par jour</Text>
+                      {detailLabo.jours.map((j) => (
+                        <View key={j.cle} style={styles.ligneLabo}>
+                          <Text style={styles.ligneLaboNom}>{formatDateFr(j.cle)}</Text>
+                          <Text style={styles.ligneLaboQte}>{j.quantite}</Text>
+                          <Text style={styles.ligneLaboCa}>{formatEuros(j.caCentimes)}</Text>
+                        </View>
+                      ))}
+                    </>
+                  )}
+                </View>
+              ) : null}
+            </>
+          ) : null}
         </>
       ) : (
         <Text style={styles.messageCa}>
@@ -409,6 +469,56 @@ const styles = StyleSheet.create({
     fontSize: tailles.normal,
     color: couleurs.texteSecondaire,
     marginTop: espacements.m,
+  },
+  blocCaLabo: {
+    gap: espacements.xs,
+    paddingTop: espacements.s,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: couleurs.bordure,
+  },
+  totalLabo: {
+    fontSize: tailles.normal,
+    fontWeight: '700',
+    color: couleurs.texte,
+    marginBottom: espacements.s,
+  },
+  sousSectionLabo: {
+    fontSize: tailles.section,
+    fontWeight: '600',
+    color: couleurs.texteSecondaire,
+    marginTop: espacements.s,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  ligneLabo: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: couleurs.bordure,
+    gap: 4,
+  },
+  ligneLaboNom: {
+    flex: 1,
+    fontSize: tailles.petit,
+    color: couleurs.texte,
+  },
+  ligneLaboQte: {
+    width: 48,
+    textAlign: 'right',
+    fontSize: tailles.petit,
+    color: couleurs.texte,
+  },
+  ligneLaboCa: {
+    width: 72,
+    textAlign: 'right',
+    fontSize: tailles.petit,
+    color: couleurs.texte,
+  },
+  videLabo: {
+    fontSize: tailles.petit,
+    color: couleurs.texte,
+    paddingVertical: 4,
   },
   chiffres: {
     flexDirection: 'row',

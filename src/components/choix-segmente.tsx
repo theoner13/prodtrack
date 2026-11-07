@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { couleurs, polices, tailles } from '@/theme';
 
@@ -23,8 +23,18 @@ export function ChoixSegmente<T extends string>({
   onChange,
   desactive = false,
 }: Props<T>) {
+  const { width } = useWindowDimensions();
+  // À 390 px, 4 libellés longs sont tronqués en une seule ligne → grille 2×2.
+  const grille = options.length >= 4 && width < 520;
+
   return (
-    <View style={[styles.cadre, desactive && styles.cadreDesactive]}>
+    <View
+      style={[
+        styles.cadre,
+        grille && styles.cadreGrille,
+        desactive && styles.cadreDesactive,
+      ]}
+    >
       {options.map((option) => {
         const choisi = option.valeur === valeur;
         return (
@@ -35,15 +45,20 @@ export function ChoixSegmente<T extends string>({
             accessibilityState={{ selected: choisi, disabled: desactive }}
             disabled={desactive}
             onPress={() => onChange(option.valeur)}
-            style={[styles.option, choisi && styles.optionChoisie]}
+            style={[
+              styles.option,
+              grille && styles.optionGrille,
+              choisi && styles.optionChoisie,
+            ]}
           >
             <Text
               style={[
                 styles.texte,
+                grille && styles.texteGrille,
                 choisi && styles.texteChoisi,
                 desactive && !choisi && styles.texteDesactive,
               ]}
-              numberOfLines={1}
+              numberOfLines={grille ? 2 : 1}
             >
               {option.libelle}
             </Text>
@@ -63,6 +78,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: couleurs.fondSegment,
   },
+  cadreGrille: {
+    flexWrap: 'wrap',
+    height: undefined,
+    rowGap: 2,
+    columnGap: 2,
+  },
   cadreDesactive: {
     opacity: 0.7,
   },
@@ -74,6 +95,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: 'transparent',
   },
+  optionGrille: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    minHeight: 36,
+    paddingVertical: 6,
+  },
   optionChoisie: {
     backgroundColor: couleurs.principal,
   },
@@ -82,6 +109,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: couleurs.texteSecondaire,
     fontFamily: polices.sans,
+    textAlign: 'center',
+  },
+  texteGrille: {
+    fontSize: 13,
   },
   texteChoisi: {
     color: couleurs.texteSurPrincipal,

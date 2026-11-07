@@ -32,6 +32,15 @@ export default function LayoutLaboratoire() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="commandes"
+        options={{
+          title: 'Commandes',
+          tabBarIcon: ({ focused }) => (
+            <OngletIcone nom="list-outline" nomActif="list" focused={focused} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

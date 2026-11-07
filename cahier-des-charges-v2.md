@@ -40,7 +40,7 @@ Pour les patrons qui n'ont pas le temps de surveiller chacune de leurs boutiques
 | Admin | Le patron | Configure les boutiques, les produits et les prix. Consulte les chiffres de tous les employés et de toutes les boutiques. Gère les comptes. |
 | Pâtissier | Équipe de production (jour ou nuit) | Déclare les produits qu'il fabrique, ses recettes, sa production, ses sorties et ses pertes. Consulte son planning. |
 | Vente | Équipe de vente | Déclare pour chaque produit les quantités vendues, jetées et restantes. |
-| **[Ajout]** Laboratoire | Équipe du laboratoire de production central | Voit le stock reçu des boutiques (groupé par pâtissier) et enregistre les sorties. Pas de saisie de vente ni de CA à l'étape 1. |
+| **[Ajout]** Laboratoire | Équipe du laboratoire de production central | Voit le stock reçu des boutiques (groupé par pâtissier), enregistre les sorties et les commandes clients du labo. Pas de saisie de vente. |
 
 **[Ajout]** Les rôles s'affichent « Admin », « Pâtissier », « Vente » et « Laboratoire » (au lieu de Patron et Vendeuse).
 
@@ -115,9 +115,12 @@ Contexte : un laboratoire central cuit viennoiseries, brioches, pains, pizzas…
 3. Le pâtissier crée des **produits au laboratoire** (surgelés, même nom possible qu'en boutique) et saisit les **envois** (comme une production) : le stock du labo augmente immédiatement.
 4. Le laboratoire voit le **stock** groupé par pâtissier (avec boutique d'origine) et enregistre ses **sorties**.
 5. Le pâtissier voit une section **Au laboratoire** dans son stock.
-6. Pas de saisie de vente sur un laboratoire ; pas de CA laboratoire à cette étape (seul l'admin voit le CA, D11).
+6. Pas de saisie de vente sur un laboratoire.
 
-**Étape 2 (à venir)** : commandes passées au labo, prévisionnel, CA laboratoire.
+**Étape 2 (livrée)**
+
+7. Le laboratoire saisit des **commandes** (produit du labo, quantité, jour, client/note facultatifs) ; le pâtissier fabricant est notifié ; les commandes entrent dans son **prévisionnel** (en plus de la moyenne habituelle des sorties).
+8. Les sorties du labo génèrent un **CA laboratoire** (prix figé à la sortie), visible uniquement par l'admin dans la fiche de l'employé, séparé du CA des boutiques (D11).
 
 ## 4. Règles de calcul
 
@@ -219,6 +222,6 @@ Section du cahier d'origine, inchangée : chiffrage par bloc, deux montants pour
 | Pâtissier | Stock limité à ses produits, ajout de stock depuis la fiche, annulation le jour même |
 | Vente | Saisie aujourd'hui ou hier, historique 14 jours |
 | Vente / Pâtissier | Commandes de gâteaux : saisie, suivi À faire / Prête / Reçue / Récupérée, signalement non reçu, CA au fabricant |
-| Laboratoire | Profil dédié, stock par pâtissier, envois depuis la boutique, sorties au labo (étape 1) ; commandes / prévisionnel / CA en étape 2 |
+| Laboratoire | Profil dédié, stock par pâtissier, envois depuis la boutique, sorties au labo, commandes, prévisionnel et CA laboratoire (admin) |
 | Règles | Prévision sur les sorties ; seuil et planning réservés aux surgelés ; quantité suggérée ; prix figé à la vente |
 | Présentation | Style épuré, logo, animation d'accueil, icônes fines, version web installable |

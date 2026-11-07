@@ -6,6 +6,8 @@ export type EntreePlanning = {
   intermediaire: boolean;
   /** Boutique destinataire pour un produit extérieur, sinon null. */
   boutiqueDestinataire?: string | null;
+  /** Produit stocké / vendu via un laboratoire. */
+  laboratoire?: boolean;
   stock: number;
   seuil: number;
   jourFabrication: string | null;
@@ -19,6 +21,7 @@ export type LignePlanning = {
   nom: string;
   intermediaire: boolean;
   boutiqueDestinataire?: string | null;
+  laboratoire?: boolean;
   stock: number;
   seuil: number;
   sousSeuil: boolean;
@@ -108,6 +111,7 @@ export function construirePlanning(entrees: EntreePlanning[], aujourdhui: string
       nom: entree.nom,
       intermediaire: entree.intermediaire,
       boutiqueDestinataire: entree.boutiqueDestinataire ?? null,
+      laboratoire: entree.laboratoire ?? false,
       stock: entree.stock,
       seuil: entree.seuil,
       sousSeuil,

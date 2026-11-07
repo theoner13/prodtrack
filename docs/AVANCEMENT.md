@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-11-07 : Laboratoire, étape 2 : commandes, prévisionnel et CA laboratoire (Cursor)
 - 2026-11-07 : Laboratoire, étape 1 : profil, stock, envois et sorties (Cursor)
 - 2026-11-03 : Confidentialité : seul l'admin voit le chiffre d'affaires (Cursor)
 - 2026-11-02 : Commandes : fiche de détail plus lisible (en-tête, inscription, frise de suivi, action principale en haut) (Cursor)

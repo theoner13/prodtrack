@@ -3,7 +3,9 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useNomsBoutiquesEntreprise } from '@/api/boutiques';
+import { useCommandesLaboFabricant } from '@/api/commandes-labo';
 import { useUrlsSignees } from '@/api/photos';
+import { useMesPrevisions } from '@/api/previsions';
 import { useMesProduits } from '@/api/produits';
 import { useStockFabricant } from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
@@ -12,7 +14,11 @@ import { CarteProduit } from '@/components/carte-produit';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { etiquetteLaboratoire } from '@/lib/laboratoire';
+import {
+  etiquetteLaboratoire,
+  libelleJourCommandeLabo,
+} from '@/lib/laboratoire';
+import { aujourdhuiParis } from '@/lib/format';
 import { etiquetteBoutique } from '@/lib/production-exterieure';
 import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
 
@@ -25,8 +31,11 @@ export default function EcranStock() {
   const userId = profil?.id ?? null;
   const mes = useMesProduits(userId);
   const stock = useStockFabricant(userId);
+  const previsions = useMesPrevisions(userId);
+  const commandesLabo = useCommandesLaboFabricant(userId);
   const nomsEntreprise = useNomsBoutiquesEntreprise();
   const [recherche, setRecherche] = useState('');
+  const aujourdhui = aujourdhuiParis();
 
   const idsLaboratoires = useMemo(() => {
     const set = new Set<string>();
@@ -77,8 +86,32 @@ export default function EcranStock() {
     .filter((chemin): chemin is string => Boolean(chemin));
   const photos = useUrlsSignees(chemins);
 
+  const commandesParProduit = useMemo(() => {
+    const map = new Map<string, NonNullable<typeof commandesLabo.data>>();
+    for (const commande of commandesLabo.data ?? []) {
+      const liste = map.get(commande.produit_id) ?? [];
+      liste.push(commande);
+      map.set(commande.produit_id, liste);
+    }
+    return map;
+  }, [commandesLabo.data]);
+
+  const previsionParProduit = useMemo(() => {
+    const map = new Map<string, string | null>();
+    for (const ligne of previsions.data ?? []) {
+      map.set(ligne.produitId, ligne.jourFabrication);
+    }
+    return map;
+  }, [previsions.data]);
+
   async function rafraichir() {
-    await Promise.all([mes.refetch(), stock.refetch(), nomsEntreprise.refetch()]);
+    await Promise.all([
+      mes.refetch(),
+      stock.refetch(),
+      nomsEntreprise.refetch(),
+      previsions.refetch(),
+      commandesLabo.refetch(),
+    ]);
   }
 
   if (mes.isLoading || stock.isLoading) {
@@ -163,29 +196,44 @@ export default function EcranStock() {
           {auLabo.map((produit) => {
             const info = stockParProduit.get(produit.id);
             const valeur = info?.stock ?? 0;
+            const commandesProduit = commandesParProduit.get(produit.id) ?? [];
+            const jourFab = previsionParProduit.get(produit.id) ?? null;
             return (
-              <Pressable
-                key={produit.id}
-                accessibilityRole="button"
-                accessibilityLabel={`Ouvrir la fiche de ${produit.nom}`}
-                onPress={() => router.push(`/produits/${produit.id}` as Href)}
-              >
-                <CarteProduit
-                  nom={produit.nom}
-                  photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
-                  sousTitre={etiquetteBoutique(produit.boutiqueNom)}
-                  droite={
-                    <Text
-                      accessibilityLabel={`Stock labo ${produit.nom} : ${valeur}`}
-                      style={styles.chiffre}
-                    >
-                      {valeur}
-                    </Text>
-                  }
+              <View key={produit.id} style={styles.blocLabo}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ouvrir la fiche de ${produit.nom}`}
+                  onPress={() => router.push(`/produits/${produit.id}` as Href)}
                 >
-                  <Text style={styles.badge}>{etiquetteLaboratoire()}</Text>
-                </CarteProduit>
-              </Pressable>
+                  <CarteProduit
+                    nom={produit.nom}
+                    photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
+                    sousTitre={etiquetteBoutique(produit.boutiqueNom)}
+                    droite={
+                      <Text
+                        accessibilityLabel={`Stock labo ${produit.nom} : ${valeur}`}
+                        style={styles.chiffre}
+                      >
+                        {valeur}
+                      </Text>
+                    }
+                  >
+                    <Text style={styles.badge}>{etiquetteLaboratoire()}</Text>
+                  </CarteProduit>
+                </Pressable>
+                {commandesProduit.map((commande) => (
+                  <Text key={commande.id} style={styles.detailLabo}>
+                    {libelleJourCommandeLabo(commande.pour_le, aujourdhui)} ·{' '}
+                    {commande.quantite}
+                    {commande.client ? ` · ${commande.client}` : ''}
+                  </Text>
+                ))}
+                {jourFab ? (
+                  <Text style={styles.detailLabo}>
+                    Prochaine fabrication : {libelleJourCommandeLabo(jourFab, aujourdhui)}
+                  </Text>
+                ) : null}
+              </View>
             );
           })}
         </View>
@@ -201,6 +249,14 @@ const styles = StyleSheet.create({
   },
   titreSection: {
     ...styleTitreSection,
+  },
+  blocLabo: {
+    gap: 4,
+  },
+  detailLabo: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    paddingLeft: espacements.s,
   },
   chiffre: {
     fontSize: tailles.titre,

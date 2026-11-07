@@ -2,6 +2,7 @@ import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useNomsBoutiquesEntreprise } from '@/api/boutiques';
 import { useMesPrevisions, type PrevisionProduit } from '@/api/previsions';
 import { useMesProduits } from '@/api/produits';
 import { useStockFabricant } from '@/api/stock';
@@ -11,6 +12,7 @@ import { Bouton } from '@/components/bouton';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { aujourdhuiParis } from '@/lib/format';
+import { etiquetteLaboratoire } from '@/lib/laboratoire';
 import {
   construirePlanning,
   libelleAccessibiliteLigne,
@@ -135,7 +137,9 @@ function LigneProduitPlanning({
             </Text>
           </Pressable>
           {ligne.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
-          {ligne.boutiqueDestinataire ? (
+          {ligne.laboratoire ? (
+            <Text style={styles.badge}>{etiquetteLaboratoire()}</Text>
+          ) : ligne.boutiqueDestinataire ? (
             <Text style={styles.badge}>{ligne.boutiqueDestinataire}</Text>
           ) : null}
         </View>
@@ -163,11 +167,17 @@ export default function EcranPlanning() {
   const mes = useMesProduits(profil?.id ?? null);
   const previsions = useMesPrevisions(profil?.id ?? null);
   const stock = useStockFabricant(profil?.id ?? null);
+  const nomsEntreprise = useNomsBoutiquesEntreprise();
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [jourSelectionne, setJourSelectionne] = useState<string | null>(null);
 
   async function rafraichir() {
-    await Promise.all([mes.refetch(), previsions.refetch(), stock.refetch()]);
+    await Promise.all([
+      mes.refetch(),
+      previsions.refetch(),
+      stock.refetch(),
+      nomsEntreprise.refetch(),
+    ]);
   }
 
   if (mes.isLoading || previsions.isLoading || stock.isLoading) {
@@ -229,18 +239,25 @@ export default function EcranPlanning() {
   const previsionParId = new Map(lignesPrevision.map((ligne) => [ligne.produitId, ligne]));
   const aujourdhui = aujourdhuiParis();
 
+  const idsLaboratoires = new Set(
+    (nomsEntreprise.data ?? []).filter((b) => b.est_laboratoire).map((b) => b.id),
+  );
+
   const entrees = surgeles.map((produit) => {
     const prevision = previsionParId.get(produit.id);
     const info = stockParProduit.get(produit.id);
     const stockValeur = info?.stock ?? prevision?.stockActuel ?? 0;
     const seuil = info?.seuil ?? produit.seuil_min;
+    const auLabo = idsLaboratoires.has(produit.boutique_id);
     return {
       produitId: produit.id,
       nom: produit.nom,
       intermediaire: produit.intermediaire,
-      boutiqueDestinataire: produit.provenance_boutique_id
-        ? etiquetteBoutique(produit.boutiqueNom)
-        : null,
+      boutiqueDestinataire:
+        !auLabo && produit.provenance_boutique_id
+          ? etiquetteBoutique(produit.boutiqueNom)
+          : null,
+      laboratoire: auLabo,
       stock: stockValeur,
       seuil,
       jourFabrication: prevision?.jourFabrication ?? null,
