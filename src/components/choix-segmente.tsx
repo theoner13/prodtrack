@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   },
   cadreGrille: {
     flexWrap: 'wrap',
-    height: undefined,
+    height: 'auto',
     rowGap: 2,
     columnGap: 2,
   },
