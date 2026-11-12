@@ -25,6 +25,31 @@ export const FILTRES_COMMANDES_LABO: { id: FiltreCommandesLabo; libelle: string 
   { id: 'annulees', libelle: 'Annulées' },
 ];
 
+export type StatutCommandeLabo = 'a_faire' | 'prete' | 'effectuee' | 'annulee';
+
+export const LIBELLES_STATUT_COMMANDE_LABO: Record<StatutCommandeLabo, string> = {
+  a_faire: 'À faire',
+  prete: 'Prête',
+  effectuee: 'Effectuée',
+  annulee: 'Annulée',
+};
+
+/** Statut dérivé des horodatages (annulée > effectuée > prête > à faire). */
+export function statutCommandeLabo(commande: {
+  annulee_le: string | null;
+  prete_le?: string | null;
+  effectuee_le?: string | null;
+}): StatutCommandeLabo {
+  if (commande.annulee_le != null) return 'annulee';
+  if (commande.effectuee_le != null) return 'effectuee';
+  if (commande.prete_le != null) return 'prete';
+  return 'a_faire';
+}
+
+export function libelleStatutCommandeLabo(statut: StatutCommandeLabo): string {
+  return LIBELLES_STATUT_COMMANDE_LABO[statut];
+}
+
 export type CommandeLaboPourGroupe = {
   id: string;
   pour_le: string;
@@ -33,6 +58,8 @@ export type CommandeLaboPourGroupe = {
   fabricant_nom: string;
   client: string | null;
   annulee_le: string | null;
+  prete_le?: string | null;
+  effectuee_le?: string | null;
 };
 
 export type GroupeCommandesLabo<T extends CommandeLaboPourGroupe> = {
@@ -117,8 +144,15 @@ export function libelleJourCommandeLabo(
   return `${weekday.charAt(0).toLocaleUpperCase('fr-FR')}${weekday.slice(1)} ${jj}/${mm}`;
 }
 
-/** Filtre une liste selon À venir / Passées / Annulées. */
-export function filtrerCommandesLabo<T extends { pour_le: string; annulee_le: string | null }>(
+type CommandePourFiltre = {
+  pour_le: string;
+  annulee_le: string | null;
+  effectuee_le?: string | null;
+};
+
+/** Filtre une liste selon À venir / Passées / Annulées.
+ * Une commande effectuée quitte « À venir » pour « Passées ». */
+export function filtrerCommandesLabo<T extends CommandePourFiltre>(
   commandes: T[],
   filtre: FiltreCommandesLabo,
   aujourdhui: string = aujourdhuiParis(),
@@ -128,9 +162,13 @@ export function filtrerCommandesLabo<T extends { pour_le: string; annulee_le: st
   }
   const actives = commandes.filter((c) => c.annulee_le == null);
   if (filtre === 'a_venir') {
-    return actives.filter((c) => c.pour_le >= aujourdhui);
+    return actives.filter(
+      (c) => c.effectuee_le == null && c.pour_le >= aujourdhui,
+    );
   }
-  return actives.filter((c) => c.pour_le < aujourdhui);
+  return actives.filter(
+    (c) => c.effectuee_le != null || c.pour_le < aujourdhui,
+  );
 }
 
 /**
@@ -172,12 +210,16 @@ export type CommandeLaboPourPlanning = {
   client: string | null;
   note: string | null;
   annulee_le: string | null;
+  prete_le?: string | null;
+  effectuee_le?: string | null;
 };
 
 export type LigneClientPlanningLabo = {
   clientLibelle: string;
   quantite: number;
   notes: string[];
+  /** Marque affichée seulement si toutes les commandes regroupées ont ce statut. */
+  marqueStatut: 'prete' | 'effectuee' | null;
 };
 
 export type CarteProduitPlanningLabo = {
@@ -197,6 +239,16 @@ export type JourPlanningLabo = {
 
 const LIBELLE_SANS_CLIENT = 'Sans client';
 
+/** Marque commune seulement si toutes les commandes ont le même statut prête/effectuée. */
+function marqueStatutClients(
+  statuts: StatutCommandeLabo[],
+): 'prete' | 'effectuee' | null {
+  if (statuts.length === 0) return null;
+  if (statuts.every((s) => s === 'effectuee')) return 'effectuee';
+  if (statuts.every((s) => s === 'prete')) return 'prete';
+  return null;
+}
+
 /**
  * Regroupe les commandes labo non annulées (à partir d'aujourd'hui) :
  * jour → produit (qté décroissante) → client (quantités additionnées).
@@ -209,7 +261,11 @@ export function planningLaboParJour(
     (c) => c.annulee_le == null && c.pour_le >= aujourdhui && c.quantite > 0,
   );
 
-  type AccClient = { quantite: number; notes: string[] };
+  type AccClient = {
+    quantite: number;
+    notes: string[];
+    statuts: StatutCommandeLabo[];
+  };
   type AccProduit = {
     produitNom: string;
     fabricantNom: string;
@@ -239,8 +295,13 @@ export function planningLaboParJour(
 
     produit.quantite += commande.quantite;
     const cleClient = (commande.client ?? '').trim() || LIBELLE_SANS_CLIENT;
-    const existant = produit.clients.get(cleClient) ?? { quantite: 0, notes: [] };
+    const existant = produit.clients.get(cleClient) ?? {
+      quantite: 0,
+      notes: [],
+      statuts: [],
+    };
     existant.quantite += commande.quantite;
+    existant.statuts.push(statutCommandeLabo(commande));
     const note = (commande.note ?? '').trim();
     if (note && !existant.notes.includes(note)) {
       existant.notes.push(note);
@@ -258,6 +319,7 @@ export function planningLaboParJour(
             clientLibelle,
             quantite: c.quantite,
             notes: c.notes,
+            marqueStatut: marqueStatutClients(c.statuts),
           }))
           .sort(
             (a, b) =>

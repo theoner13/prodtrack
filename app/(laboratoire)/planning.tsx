@@ -9,6 +9,7 @@ import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { aujourdhuiParis } from '@/lib/format';
 import {
   libelleJourCommandeLabo,
+  libelleStatutCommandeLabo,
   planningLaboParJour,
   type JourPlanningLabo,
 } from '@/lib/laboratoire';
@@ -17,6 +18,7 @@ import {
   espacements,
   ombres,
   polices,
+  rayonPuce,
   tailles,
 } from '@/theme';
 
@@ -223,9 +225,32 @@ export default function EcranPlanningLabo() {
               <Text style={styles.fabricant}>{produit.fabricantNom}</Text>
               {produit.clients.map((client) => (
                 <View key={client.clientLibelle} style={styles.blocClient}>
-                  <Text style={styles.ligneClient}>
-                    {client.quantite} · {client.clientLibelle}
-                  </Text>
+                  <View style={styles.ligneClientRang}>
+                    <Text style={styles.ligneClient}>
+                      {client.quantite} · {client.clientLibelle}
+                    </Text>
+                    {client.marqueStatut ? (
+                      <View
+                        style={[
+                          styles.marqueStatut,
+                          client.marqueStatut === 'effectuee'
+                            ? styles.marqueEffectuee
+                            : styles.marquePrete,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.marqueStatutTexte,
+                            client.marqueStatut === 'effectuee'
+                              ? styles.marqueEffectueeTexte
+                              : styles.marquePreteTexte,
+                          ]}
+                        >
+                          {libelleStatutCommandeLabo(client.marqueStatut)}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                   {client.notes.map((note) => (
                     <Text key={note} style={styles.note}>
                       {note}
@@ -368,10 +393,38 @@ const styles = StyleSheet.create({
     marginLeft: espacements.m,
     gap: 2,
   },
+  ligneClientRang: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: espacements.s,
+  },
   ligneClient: {
     fontSize: tailles.normal,
     color: couleurs.texte,
     fontFamily: polices.sans,
+  },
+  marqueStatut: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: rayonPuce,
+  },
+  marquePrete: {
+    backgroundColor: couleurs.succesClair,
+  },
+  marqueEffectuee: {
+    backgroundColor: couleurs.principalClair,
+  },
+  marqueStatutTexte: {
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: polices.sans,
+  },
+  marquePreteTexte: {
+    color: couleurs.succes,
+  },
+  marqueEffectueeTexte: {
+    color: couleurs.principalFonce,
   },
   note: {
     fontSize: tailles.petit,

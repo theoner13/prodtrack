@@ -17,6 +17,8 @@ import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import {
   etiquetteLaboratoire,
   libelleJourCommandeLabo,
+  libelleStatutCommandeLabo,
+  statutCommandeLabo,
 } from '@/lib/laboratoire';
 import { aujourdhuiParis } from '@/lib/format';
 import { etiquetteBoutique } from '@/lib/production-exterieure';
@@ -221,13 +223,18 @@ export default function EcranStock() {
                     <Text style={styles.badge}>{etiquetteLaboratoire()}</Text>
                   </CarteProduit>
                 </Pressable>
-                {commandesProduit.map((commande) => (
-                  <Text key={commande.id} style={styles.detailLabo}>
-                    {libelleJourCommandeLabo(commande.pour_le, aujourdhui)} ·{' '}
-                    {commande.quantite}
-                    {commande.client ? ` · ${commande.client}` : ''}
-                  </Text>
-                ))}
+                {commandesProduit.map((commande) => {
+                  const statut = statutCommandeLabo(commande);
+                  return (
+                    <Text key={commande.id} style={styles.detailLabo}>
+                      {libelleJourCommandeLabo(commande.pour_le, aujourdhui)} ·{' '}
+                      {commande.quantite}
+                      {commande.client ? ` · ${commande.client}` : ''}
+                      {' · '}
+                      {libelleStatutCommandeLabo(statut)}
+                    </Text>
+                  );
+                })}
                 {jourFab ? (
                   <Text style={styles.detailLabo}>
                     Prochaine fabrication : {libelleJourCommandeLabo(jourFab, aujourdhui)}

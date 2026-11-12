@@ -8,8 +8,10 @@ import {
   filtrerCommandesLabo,
   grouperParPatissierLabo,
   libelleJourCommandeLabo,
+  libelleStatutCommandeLabo,
   planningLaboParJour,
   regrouperCommandesLaboParJour,
+  statutCommandeLabo,
 } from './laboratoire.ts';
 
 describe('etiquetteLaboratoire', () => {
@@ -72,11 +74,54 @@ describe('libelleJourCommandeLabo', () => {
   });
 });
 
+describe('statutCommandeLabo', () => {
+  it('dérive le statut et ses libellés', () => {
+    assert.equal(
+      statutCommandeLabo({ annulee_le: null, prete_le: null, effectuee_le: null }),
+      'a_faire',
+    );
+    assert.equal(
+      statutCommandeLabo({
+        annulee_le: null,
+        prete_le: '2026-11-07T10:00:00Z',
+        effectuee_le: null,
+      }),
+      'prete',
+    );
+    assert.equal(
+      statutCommandeLabo({
+        annulee_le: null,
+        prete_le: '2026-11-07T10:00:00Z',
+        effectuee_le: '2026-11-07T12:00:00Z',
+      }),
+      'effectuee',
+    );
+    assert.equal(
+      statutCommandeLabo({
+        annulee_le: '2026-11-07T09:00:00Z',
+        prete_le: null,
+        effectuee_le: null,
+      }),
+      'annulee',
+    );
+    assert.equal(libelleStatutCommandeLabo('a_faire'), 'À faire');
+    assert.equal(libelleStatutCommandeLabo('prete'), 'Prête');
+    assert.equal(libelleStatutCommandeLabo('effectuee'), 'Effectuée');
+    assert.equal(libelleStatutCommandeLabo('annulee'), 'Annulée');
+  });
+});
+
 describe('filtrerCommandesLabo', () => {
   const base = [
-    { id: '1', pour_le: '2026-11-07', annulee_le: null },
-    { id: '2', pour_le: '2026-11-05', annulee_le: null },
-    { id: '3', pour_le: '2026-11-09', annulee_le: '2026-11-06T10:00:00Z' },
+    { id: '1', pour_le: '2026-11-07', annulee_le: null, effectuee_le: null },
+    { id: '2', pour_le: '2026-11-05', annulee_le: null, effectuee_le: null },
+    { id: '3', pour_le: '2026-11-09', annulee_le: '2026-11-06T10:00:00Z', effectuee_le: null },
+    {
+      id: '4',
+      pour_le: '2026-11-10',
+      annulee_le: null,
+      effectuee_le: '2026-11-07T12:00:00Z',
+    },
   ];
 
   it('filtre à venir, passées et annulées', () => {
@@ -86,11 +131,44 @@ describe('filtrerCommandesLabo', () => {
     );
     assert.deepEqual(
       filtrerCommandesLabo(base, 'passees', '2026-11-07').map((c) => c.id),
-      ['2'],
+      ['2', '4'],
     );
     assert.deepEqual(
       filtrerCommandesLabo(base, 'annulees', '2026-11-07').map((c) => c.id),
       ['3'],
+    );
+  });
+
+  it('place une commande effectuée future dans Passées', () => {
+    assert.deepEqual(
+      filtrerCommandesLabo(
+        [
+          {
+            id: 'x',
+            pour_le: '2026-11-20',
+            annulee_le: null,
+            effectuee_le: '2026-11-07T08:00:00Z',
+          },
+        ],
+        'a_venir',
+        '2026-11-07',
+      ).map((c) => c.id),
+      [],
+    );
+    assert.deepEqual(
+      filtrerCommandesLabo(
+        [
+          {
+            id: 'x',
+            pour_le: '2026-11-20',
+            annulee_le: null,
+            effectuee_le: '2026-11-07T08:00:00Z',
+          },
+        ],
+        'passees',
+        '2026-11-07',
+      ).map((c) => c.id),
+      ['x'],
     );
   });
 });
@@ -231,8 +309,10 @@ describe('planningLaboParJour', () => {
     assert.equal(pac.clients[0]!.clientLibelle, 'Client A');
     assert.equal(pac.clients[0]!.quantite, 150);
     assert.deepEqual(pac.clients[0]!.notes, ['Chaud']);
+    assert.equal(pac.clients[0]!.marqueStatut, null);
     assert.equal(pac.clients[1]!.clientLibelle, 'Client B');
     assert.equal(pac.clients[1]!.quantite, 100);
+    assert.equal(pac.clients[1]!.marqueStatut, null);
 
     const brioche = jour.produits[1]!;
     assert.equal(brioche.produitNom, 'Brioche');
@@ -272,6 +352,81 @@ describe('planningLaboParJour', () => {
   it('ignore les commandes avant aujourd’hui', () => {
     const jours = planningLaboParJour(base, '2026-11-08');
     assert.ok(!jours.some((j) => j.jour === '2026-11-07'));
+  });
+
+  it('marque le client seulement si toutes les commandes ont le même statut', () => {
+    const jours = planningLaboParJour(
+      [
+        {
+          produit_id: 'pac',
+          pour_le: '2026-11-08',
+          quantite: 10,
+          produit_nom: 'Pain',
+          fabricant_nom: 'Alice',
+          client: 'Hôtel',
+          note: null,
+          annulee_le: null,
+          prete_le: '2026-11-07T10:00:00Z',
+          effectuee_le: null,
+        },
+        {
+          produit_id: 'pac',
+          pour_le: '2026-11-08',
+          quantite: 5,
+          produit_nom: 'Pain',
+          fabricant_nom: 'Alice',
+          client: 'Hôtel',
+          note: null,
+          annulee_le: null,
+          prete_le: '2026-11-07T11:00:00Z',
+          effectuee_le: null,
+        },
+        {
+          produit_id: 'pac',
+          pour_le: '2026-11-08',
+          quantite: 3,
+          produit_nom: 'Pain',
+          fabricant_nom: 'Alice',
+          client: 'Café',
+          note: null,
+          annulee_le: null,
+          prete_le: '2026-11-07T10:00:00Z',
+          effectuee_le: null,
+        },
+        {
+          produit_id: 'pac',
+          pour_le: '2026-11-08',
+          quantite: 2,
+          produit_nom: 'Pain',
+          fabricant_nom: 'Alice',
+          client: 'Café',
+          note: null,
+          annulee_le: null,
+          prete_le: null,
+          effectuee_le: null,
+        },
+        {
+          produit_id: 'pac',
+          pour_le: '2026-11-08',
+          quantite: 4,
+          produit_nom: 'Pain',
+          fabricant_nom: 'Alice',
+          client: 'Boulangerie',
+          note: null,
+          annulee_le: null,
+          prete_le: '2026-11-07T09:00:00Z',
+          effectuee_le: '2026-11-07T12:00:00Z',
+        },
+      ],
+      '2026-11-08',
+    );
+    const clients = jours[0]!.produits[0]!.clients;
+    const hotel = clients.find((c) => c.clientLibelle === 'Hôtel');
+    const cafe = clients.find((c) => c.clientLibelle === 'Café');
+    const boulangerie = clients.find((c) => c.clientLibelle === 'Boulangerie');
+    assert.equal(hotel?.marqueStatut, 'prete');
+    assert.equal(cafe?.marqueStatut, null);
+    assert.equal(boulangerie?.marqueStatut, 'effectuee');
   });
 });
 

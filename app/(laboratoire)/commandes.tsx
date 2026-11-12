@@ -3,8 +3,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
   useAnnulerCommandeLabo,
+  useChangerStatutCommandeLabo,
   useCommandesLabo,
   useCreerCommandeLabo,
+  type CommandeLaboEnrichie,
 } from '@/api/commandes-labo';
 import { useProduits } from '@/api/produits';
 import { useAuth } from '@/auth/AuthProvider';
@@ -18,17 +20,37 @@ import { pucesJoursRetrait } from '@/lib/commandes';
 import { aujourdhuiParis } from '@/lib/format';
 import {
   FILTRES_COMMANDES_LABO,
+  libelleStatutCommandeLabo,
   regrouperCommandesLaboParJour,
+  statutCommandeLabo,
   type FiltreCommandesLabo,
+  type StatutCommandeLabo,
 } from '@/lib/laboratoire';
 import {
   couleurs,
   espacements,
+  hauteurBouton,
   polices,
   rayonPuce,
   styleTitreSection,
   tailles,
 } from '@/theme';
+
+function couleurPastille(statut: StatutCommandeLabo): {
+  fond: string;
+  texte: string;
+} {
+  if (statut === 'prete') {
+    return { fond: couleurs.succesClair, texte: couleurs.succes };
+  }
+  if (statut === 'effectuee') {
+    return { fond: couleurs.principalClair, texte: couleurs.principalFonce };
+  }
+  if (statut === 'annulee') {
+    return { fond: couleurs.fondSegment, texte: couleurs.texteSecondaire };
+  }
+  return { fond: couleurs.fondSegment, texte: couleurs.texteSecondaire };
+}
 
 export default function EcranCommandesLabo() {
   const { profil } = useAuth();
@@ -36,12 +58,14 @@ export default function EcranCommandesLabo() {
   const [filtre, setFiltre] = useState<FiltreCommandesLabo>('a_venir');
   const [formulaireOuvert, setFormulaireOuvert] = useState(false);
   const [annulerId, setAnnulerId] = useState<string | null>(null);
+  const [statutEnCoursId, setStatutEnCoursId] = useState<string | null>(null);
   const [erreurAction, setErreurAction] = useState<string | null>(null);
 
   const commandes = useCommandesLabo(laboratoireId, filtre);
   const produits = useProduits(laboratoireId);
   const creer = useCreerCommandeLabo();
   const annuler = useAnnulerCommandeLabo();
+  const changerStatut = useChangerStatutCommandeLabo();
 
   const aujourdhui = aujourdhuiParis();
   const [produitId, setProduitId] = useState<string | null>(null);
@@ -107,6 +131,28 @@ export default function EcranCommandesLabo() {
       setAnnulerId(null);
     } catch (probleme: unknown) {
       setErreurAction(messageErreur(probleme));
+    }
+  }
+
+  async function appliquerStatut(
+    commande: CommandeLaboEnrichie,
+    action: 'prete' | 'effectuee' | 'retour',
+  ) {
+    setErreurAction(null);
+    setAnnulerId(null);
+    setStatutEnCoursId(commande.id);
+    try {
+      await changerStatut.mutateAsync({
+        id: commande.id,
+        action,
+        prete_le: commande.prete_le,
+        effectuee_le: commande.effectuee_le,
+        annulee_le: commande.annulee_le,
+      });
+    } catch (probleme: unknown) {
+      setErreurAction(messageErreur(probleme));
+    } finally {
+      setStatutEnCoursId(null);
     }
   }
 
@@ -270,17 +316,80 @@ export default function EcranCommandesLabo() {
         <View key={groupe.cle} style={styles.groupe}>
           <Text style={styles.titreGroupe}>{groupe.libelle}</Text>
           {groupe.commandes.map((c) => {
-            const enConfirmation = annulerId === c.id;
+            const commande = c as CommandeLaboEnrichie;
+            const statut = statutCommandeLabo(commande);
+            const pastille = couleurPastille(statut);
+            const enConfirmation = annulerId === commande.id;
+            const enCours = statutEnCoursId === commande.id;
+            const peutStatut = filtre !== 'annulees' && statut !== 'annulee';
+
             return (
-              <View key={c.id} style={styles.carte}>
-                <Text style={styles.lignePrincipale}>
-                  {c.quantite} {c.produit_nom}
-                </Text>
+              <View key={commande.id} style={styles.carte}>
+                <View style={styles.enteteCarte}>
+                  <Text style={styles.lignePrincipale}>
+                    {commande.quantite} {commande.produit_nom}
+                  </Text>
+                  <View
+                    style={[styles.pastilleStatut, { backgroundColor: pastille.fond }]}
+                  >
+                    <Text style={[styles.pastilleStatutTexte, { color: pastille.texte }]}>
+                      {libelleStatutCommandeLabo(statut)}
+                    </Text>
+                  </View>
+                </View>
                 <Text style={styles.ligneSecondaire}>
-                  {c.fabricant_nom}
-                  {c.client ? ` · ${c.client}` : ''}
+                  {commande.fabricant_nom}
+                  {commande.client ? ` · ${commande.client}` : ''}
                 </Text>
-                {filtre !== 'annulees' && c.annulee_le == null ? (
+
+                {peutStatut ? (
+                  <View style={styles.actionsStatut}>
+                    {statut === 'a_faire' ? (
+                      <Pressable
+                        onPress={() => void appliquerStatut(commande, 'prete')}
+                        disabled={enCours}
+                        accessibilityRole="button"
+                        accessibilityLabel="Marquer prête"
+                        style={styles.boutonSecondaireStatut}
+                      >
+                        <Text style={styles.boutonSecondaireStatutTexte}>
+                          Marquer prête
+                        </Text>
+                      </Pressable>
+                    ) : null}
+
+                    {statut === 'a_faire' || statut === 'prete' ? (
+                      <Pressable
+                        onPress={() => void appliquerStatut(commande, 'effectuee')}
+                        disabled={enCours}
+                        accessibilityRole="button"
+                        accessibilityLabel="Marquer effectuée"
+                        style={[
+                          styles.boutonPrincipalStatut,
+                          enCours && styles.boutonPrincipalStatutInactif,
+                        ]}
+                      >
+                        <Text style={styles.boutonPrincipalStatutTexte}>
+                          Marquer effectuée
+                        </Text>
+                      </Pressable>
+                    ) : null}
+
+                    {statut === 'prete' || statut === 'effectuee' ? (
+                      <Pressable
+                        onPress={() => void appliquerStatut(commande, 'retour')}
+                        disabled={enCours}
+                        accessibilityRole="button"
+                        accessibilityLabel="Annuler ce statut"
+                        style={styles.lienStatut}
+                      >
+                        <Text style={styles.lienStatutTexte}>Annuler ce statut</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ) : null}
+
+                {filtre !== 'annulees' && statut === 'a_faire' ? (
                   enConfirmation ? (
                     <View style={styles.confirmation}>
                       <Text style={styles.confirmationTexte}>
@@ -302,7 +411,7 @@ export default function EcranCommandesLabo() {
                     <Pressable
                       onPress={() => {
                         setErreurAction(null);
-                        setAnnulerId(c.id);
+                        setAnnulerId(commande.id);
                       }}
                       accessibilityRole="button"
                       accessibilityLabel="Annuler la commande"
@@ -375,7 +484,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: couleurs.bordure,
   },
+  enteteCarte: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: espacements.s,
+  },
   lignePrincipale: {
+    flex: 1,
     fontSize: tailles.normal,
     fontWeight: '600',
     color: couleurs.texte,
@@ -384,6 +500,60 @@ const styles = StyleSheet.create({
   ligneSecondaire: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+  },
+  pastilleStatut: {
+    paddingHorizontal: espacements.s,
+    paddingVertical: 4,
+    borderRadius: rayonPuce,
+  },
+  pastilleStatutTexte: {
+    fontSize: tailles.petit,
+    fontWeight: '600',
+    fontFamily: polices.sans,
+  },
+  actionsStatut: {
+    gap: espacements.s,
+    marginTop: espacements.s,
+  },
+  boutonPrincipalStatut: {
+    minHeight: hauteurBouton,
+    borderRadius: 14,
+    backgroundColor: couleurs.principal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: espacements.m,
+  },
+  boutonPrincipalStatutInactif: {
+    backgroundColor: couleurs.desactive,
+  },
+  boutonPrincipalStatutTexte: {
+    fontSize: tailles.normal,
+    fontWeight: '600',
+    color: couleurs.texteSurPrincipal,
+    fontFamily: polices.sans,
+  },
+  boutonSecondaireStatut: {
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: espacements.m,
+  },
+  boutonSecondaireStatutTexte: {
+    fontSize: tailles.normal,
+    fontWeight: '600',
+    color: couleurs.principal,
+    fontFamily: polices.sans,
+    textDecorationLine: 'underline',
+  },
+  lienStatut: {
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  lienStatutTexte: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   lienAnnuler: {
     alignSelf: 'flex-start',

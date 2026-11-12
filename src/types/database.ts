@@ -65,10 +65,12 @@ export type Database = {
           client: string | null
           created_at: string
           cree_par: string
+          effectuee_le: string | null
           id: string
           laboratoire_id: string
           note: string | null
           pour_le: string
+          prete_le: string | null
           produit_id: string
           quantite: number
         }
@@ -77,10 +79,12 @@ export type Database = {
           client?: string | null
           created_at?: string
           cree_par?: string
+          effectuee_le?: string | null
           id?: string
           laboratoire_id: string
           note?: string | null
           pour_le: string
+          prete_le?: string | null
           produit_id: string
           quantite: number
         }
@@ -89,10 +93,12 @@ export type Database = {
           client?: string | null
           created_at?: string
           cree_par?: string
+          effectuee_le?: string | null
           id?: string
           laboratoire_id?: string
           note?: string | null
           pour_le?: string
+          prete_le?: string | null
           produit_id?: string
           quantite?: number
         }

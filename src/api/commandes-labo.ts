@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { aujourdhuiParis } from '@/lib/format';
 import {
   filtrerCommandesLabo,
+  statutCommandeLabo,
   type FiltreCommandesLabo,
 } from '@/lib/laboratoire';
 import { supabase } from '@/lib/supabase';
@@ -97,13 +98,19 @@ export function useCommandesLabo(
 
       if (filtre === 'annulees') {
         requete = requete.not('annulee_le', 'is', null);
+      } else if (filtre === 'a_venir') {
+        requete = requete
+          .is('annulee_le', null)
+          .is('effectuee_le', null)
+          .gte('pour_le', aujourdhui);
       } else {
+        // Passées : date passée, ou déjà effectuée (même date future).
         requete = requete.is('annulee_le', null);
-        if (filtre === 'a_venir') {
-          requete = requete.gte('pour_le', aujourdhui);
-        } else {
-          requete = requete.lt('pour_le', aujourdhui);
-        }
+        const { data, error } = await requete;
+        if (error) throw error;
+        return enrichir(
+          filtrerCommandesLabo(data ?? [], 'passees', aujourdhui),
+        );
       }
 
       const { data, error } = await requete;
@@ -113,7 +120,7 @@ export function useCommandesLabo(
   });
 }
 
-/** Commandes à venir (non annulées) pour les produits du fabricant. */
+/** Commandes à venir (non annulées, non effectuées) pour les produits du fabricant. */
 export function useCommandesLaboFabricant(fabricantId: string | null) {
   const aujourdhui = aujourdhuiParis();
   return useQuery({
@@ -134,6 +141,7 @@ export function useCommandesLaboFabricant(fabricantId: string | null) {
         .select('*')
         .in('produit_id', ids)
         .is('annulee_le', null)
+        .is('effectuee_le', null)
         .gte('pour_le', aujourdhui)
         .order('pour_le', { ascending: true });
       if (error) throw error;
@@ -177,6 +185,54 @@ export function useAnnulerCommandeLabo() {
         .from('commandes_labo')
         .update({ annulee_le: new Date().toISOString() })
         .eq('id', id)
+        .is('annulee_le', null);
+      if (error) throw error;
+    },
+    onSuccess: () => invalider(client),
+  });
+}
+
+export type ActionStatutCommandeLabo = 'prete' | 'effectuee' | 'retour';
+
+/** Change le statut : prête, effectuée, ou retour d’un cran. */
+export function useChangerStatutCommandeLabo() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (args: {
+      id: string;
+      action: ActionStatutCommandeLabo;
+      prete_le: string | null;
+      effectuee_le: string | null;
+      annulee_le: string | null;
+    }): Promise<void> => {
+      const statut = statutCommandeLabo(args);
+      if (statut === 'annulee') {
+        throw new Error('Cette commande est annulée.');
+      }
+
+      let patch: { prete_le?: string | null; effectuee_le?: string | null };
+      if (args.action === 'prete') {
+        if (statut !== 'a_faire') {
+          throw new Error('Seule une commande à faire peut être marquée prête.');
+        }
+        patch = { prete_le: new Date().toISOString() };
+      } else if (args.action === 'effectuee') {
+        if (statut !== 'a_faire' && statut !== 'prete') {
+          throw new Error('Cette commande ne peut plus être marquée effectuée.');
+        }
+        patch = { effectuee_le: new Date().toISOString() };
+      } else if (statut === 'effectuee') {
+        patch = { effectuee_le: null };
+      } else if (statut === 'prete') {
+        patch = { prete_le: null };
+      } else {
+        throw new Error('Aucun statut à annuler.');
+      }
+
+      const { error } = await db()
+        .from('commandes_labo')
+        .update(patch)
+        .eq('id', args.id)
         .is('annulee_le', null);
       if (error) throw error;
     },
