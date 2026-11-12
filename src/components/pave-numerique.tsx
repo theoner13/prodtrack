@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { couleurs, espacements, polices } from '@/theme';
+import { couleurs, espacements, ombres, polices } from '@/theme';
 
 type Props = {
   valeur: string;
@@ -18,14 +18,14 @@ const LIGNES: Touche[][] = [
 ];
 
 function diametreTouche(largeurEcran: number): number {
-  return Math.min(72, Math.max(64, Math.round(largeurEcran * 0.185)));
+  return Math.min(76, Math.max(64, Math.round(largeurEcran * 0.185)));
 }
 
 export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
   const { width } = useWindowDimensions();
   const diametre = diametreTouche(width);
   const ecart = Math.round(diametre / 3.5);
-  const taillePoint = 10;
+  const taillePoint = 12;
   const codeComplet = valeur.length >= longueur;
 
   function ajouter(chiffre: string) {
@@ -35,7 +35,7 @@ export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
 
   return (
     <View style={[styles.bloc, { gap: ecart + espacements.s }]}>
-      <View style={[styles.points, { gap: 16 }]}>
+      <View style={[styles.points, { gap: 18 }]}>
         {Array.from({ length: longueur }, (_, index) => {
           const rempli = index < valeur.length;
           return (
@@ -52,7 +52,7 @@ export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
                       backgroundColor: codeComplet ? couleurs.succes : couleurs.principal,
                     }
                   : {
-                      borderWidth: 1,
+                      borderWidth: 1.5,
                       borderColor: couleurs.texteMuet,
                       backgroundColor: 'transparent',
                     },
@@ -84,10 +84,11 @@ export function PaveNumerique({ valeur, onChange, longueur = 4 }: Props) {
                         ? 'transparent'
                         : pressed
                           ? couleurs.principal
-                          : couleurs.fondPuce,
+                          : couleurs.surface,
                       alignItems: 'center',
                       justifyContent: 'center',
                       transform: pressed ? [{ scale: 0.94 }] : undefined,
+                      ...(effacer ? null : ombres.douce),
                     },
                   ]}
                 >
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
   points: {
     flexDirection: 'row',
     justifyContent: 'center',
-    height: 10,
+    height: 12,
     alignItems: 'center',
   },
   grille: {},
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
   },
   texteTouche: {
     fontSize: 26,
-    fontWeight: '300',
+    fontWeight: '400',
     color: couleurs.texte,
     fontFamily: polices.sans,
     fontVariant: ['tabular-nums'],

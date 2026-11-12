@@ -11,9 +11,21 @@ import {
   LigneCommande,
   ListeCommandesGroupees,
 } from '@/components/liste-commandes';
+import { VenteApparition } from '@/components/vente-apparition';
 import { jourRetraitParis, type FiltreStatutCommandes } from '@/lib/commandes';
 import { aujourdhuiParis } from '@/lib/format';
-import { couleurs, espacements, polices, tailles } from '@/theme';
+import {
+  couleurs,
+  degradeBoutonPrincipal,
+  espacements,
+  hauteurBouton,
+  ombres,
+  polices,
+  rayonCarte,
+  rayonPilule,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 
 export default function EcranCommandesVendeuse() {
   const [filtreStatut, setFiltreStatut] = useState<FiltreStatutCommandes>('a_venir');
@@ -55,16 +67,21 @@ export default function EcranCommandesVendeuse() {
       defilement
       enRafraichissement={liste.isRefetching}
       onRafraichir={() => void liste.refetch()}
+      pied={
+        <Pressable
+          onPress={() => router.push('/(vendeuse)/commandes/nouvelle' as Href)}
+          style={({ pressed }) => [
+            styles.boutonNouveau,
+            degradeBoutonPrincipal(),
+            pressed && styles.appuye,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Nouvelle commande"
+        >
+          <Text style={styles.boutonNouveauTexte}>+ Nouvelle commande</Text>
+        </Pressable>
+      }
     >
-      <Pressable
-        onPress={() => router.push('/(vendeuse)/commandes/nouvelle' as Href)}
-        style={styles.lienNouveau}
-        accessibilityRole="button"
-        accessibilityLabel="Nouvelle commande"
-      >
-        <Text style={styles.lienNouveauTexte}>+ Nouvelle commande</Text>
-      </Pressable>
-
       <FiltresCommandes filtreStatut={filtreStatut} onFiltreStatut={setFiltreStatut} />
 
       {commandes.length === 0 ? (
@@ -72,16 +89,18 @@ export default function EcranCommandesVendeuse() {
       ) : (
         <>
           {aRemettre.length > 0 ? (
-            <View style={styles.encart}>
-              <Text style={styles.encartTitre}>À remettre maintenant</Text>
-              {aRemettre.map((c) => (
-                <LigneCommande
-                  key={c.id}
-                  commande={c}
-                  onPress={() => router.push(`/(vendeuse)/commandes/${c.id}` as Href)}
-                />
-              ))}
-            </View>
+            <VenteApparition index={0}>
+              <View style={[styles.encart, ombres.douce]}>
+                <Text style={styles.encartTitre}>À remettre maintenant</Text>
+                {aRemettre.map((c) => (
+                  <LigneCommande
+                    key={c.id}
+                    commande={c}
+                    onPress={() => router.push(`/(vendeuse)/commandes/${c.id}` as Href)}
+                  />
+                ))}
+              </View>
+            </VenteApparition>
           ) : null}
           {commandesListe.length > 0 ? (
             <ListeCommandesGroupees
@@ -98,32 +117,36 @@ export default function EcranCommandesVendeuse() {
 }
 
 const styles = StyleSheet.create({
-  lienNouveau: {
-    alignSelf: 'flex-end',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    marginBottom: espacements.s,
-    minHeight: 40,
+  boutonNouveau: {
+    height: hauteurBouton,
+    borderRadius: rayonPilule,
+    alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'stretch',
   },
-  lienNouveauTexte: {
-    fontSize: tailles.petit,
-    color: couleurs.texteSecondaire,
+  boutonNouveauTexte: {
+    fontSize: tailles.bouton,
+    fontWeight: '600',
+    color: couleurs.texteSurPrincipal,
     fontFamily: polices.sans,
+  },
+  appuye: {
+    opacity: 0.9,
+    transform: [{ scale: 0.97 }],
   },
   encart: {
     backgroundColor: couleurs.alerteClair,
-    borderRadius: 10,
+    borderRadius: rayonCarte,
     paddingHorizontal: espacements.m,
-    paddingTop: espacements.s,
-    paddingBottom: espacements.xs,
-    marginBottom: espacements.m,
+    paddingTop: espacements.m,
+    paddingBottom: espacements.s,
+    marginBottom: espacements.s,
+    gap: 2,
   },
   encartTitre: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: couleurs.crouteFonce,
+    ...styleTitreSection,
+    color: couleurs.accentFonce,
+    marginBottom: espacements.xs,
     fontFamily: polices.sans,
-    marginBottom: 2,
   },
 });

@@ -488,6 +488,19 @@ export function SaisieStock({ type }: Props) {
     (type === 'production' && !modeExterieur ? disponibleBoutique.error : null) ??
     (type === 'sortie' || modeExterieur ? pertes.error : null);
 
+  const resumeSaisie = useMemo(() => {
+    let nbProduits = 0;
+    let pieces = 0;
+    for (const produit of listeBase ?? []) {
+      const q = quantites[produit.id] ?? 0;
+      if (q > 0) {
+        nbProduits += 1;
+        pieces += q;
+      }
+    }
+    return { produits: nbProduits, pieces };
+  }, [listeBase, quantites]);
+
   if (chargement) {
     return (
       <Ecran>
@@ -561,16 +574,15 @@ export function SaisieStock({ type }: Props) {
         ? avecPrefixeFabricant(produit.fabricantNom, texte)
         : texte;
     } else if (type === 'production') {
+      // Espaces insécables : ne pas couper « Stock : 22 » au milieu.
+      const stockLibelle = `Stock\u00A0:\u00A0${stockParProduit.get(produit.id) ?? 0}`;
       detail = produit.intermediaire
-        ? avecPrefixeFabricant(
-            produit.fabricantNom,
-            `Stock : ${stockParProduit.get(produit.id) ?? 0}`,
-          )
-        : `Stock : ${stockParProduit.get(produit.id) ?? 0}`;
+        ? avecPrefixeFabricant(produit.fabricantNom, stockLibelle)
+        : stockLibelle;
     } else {
       detail = avecPrefixeFabricant(
         produit.fabricantNom,
-        `Stock : ${stockParProduit.get(produit.id) ?? 0}`,
+        `Stock\u00A0:\u00A0${stockParProduit.get(produit.id) ?? 0}`,
       );
     }
 
@@ -604,9 +616,31 @@ export function SaisieStock({ type }: Props) {
     );
   }
 
+  const piedEnregistrement =
+    listeBase.length > 0 ? (
+      <>
+        {resumeSaisie.produits > 0 ? (
+          <Text style={styles.resumePied}>
+            {resumeSaisie.produits} produit{resumeSaisie.produits > 1 ? 's' : ''} ·{' '}
+            {resumeSaisie.pieces} pièce{resumeSaisie.pieces > 1 ? 's' : ''}
+          </Text>
+        ) : null}
+        {!formulairePerteOuvert ? (
+          <Banniere message={message} type={typeMessage} onFermer={fermerMessage} duree={5000} />
+        ) : null}
+        <Bouton
+          titre={titreBouton}
+          pleineLargeur
+          onPress={() => void soumettre()}
+          chargement={enregistrer.isPending}
+        />
+      </>
+    ) : null;
+
   return (
     <Ecran
       defilement
+      pied={piedEnregistrement}
       enRafraichissement={
         produits.isRefetching ||
         stockBoutique.isRefetching ||
@@ -741,129 +775,114 @@ export function SaisieStock({ type }: Props) {
           ))
         : listeFiltre.map((produit) => renduLigne(produit))}
 
-      {listeBase.length > 0 || (afficherPertes && listePertes.length > 0) ? (
+      {afficherPertes && listePertes.length > 0 ? (
         <>
-          {!formulairePerteOuvert ? (
-            <Banniere message={message} type={typeMessage} onFermer={fermerMessage} duree={5000} />
-          ) : null}
-          {listeBase.length > 0 ? (
-            <Bouton
-              titre={titreBouton}
-              pleineLargeur
-              onPress={() => void soumettre()}
-              chargement={enregistrer.isPending}
-            />
-          ) : null}
-          {afficherPertes ? (
-            <>
-              <Bouton
-                titre="Déclarer une perte"
-                variante="secondaire"
-                onPress={() => {
-                  setFormulairePerteOuvert((ouvert) => {
-                    if (ouvert) reinitialiserFormulairePerte();
-                    return !ouvert;
-                  });
-                }}
+          <Bouton
+            titre="Déclarer une perte"
+            variante="secondaire"
+            onPress={() => {
+              setFormulairePerteOuvert((ouvert) => {
+                if (ouvert) reinitialiserFormulairePerte();
+                return !ouvert;
+              });
+            }}
+          />
+          {formulairePerteOuvert ? (
+            <View style={styles.formulairePerte}>
+              <Text style={styles.label}>Produit</Text>
+              <View style={styles.puces}>
+                {listePertes.map((produit) => (
+                  <Pressable
+                    key={produit.id}
+                    onPress={() => {
+                      setPerteProduitId(produit.id);
+                      if (produit.conservation === 'frais') {
+                        setPerteDansLeStock(false);
+                      }
+                    }}
+                    style={[
+                      styles.puce,
+                      perteProduitId === produit.id && styles.puceActive,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: perteProduitId === produit.id }}
+                  >
+                    <Text
+                      style={[
+                        styles.puceTexte,
+                        perteProduitId === produit.id && styles.puceTexteActive,
+                      ]}
+                    >
+                      {produit.nom}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Quantité perdue</Text>
+              <Compteur
+                valeur={perteQuantite}
+                onChange={setPerteQuantite}
+                libelle="Quantité perdue"
               />
-              {formulairePerteOuvert ? (
-                <View style={styles.formulairePerte}>
-                  <Text style={styles.label}>Produit</Text>
-                  <View style={styles.puces}>
-                    {listePertes.map((produit) => (
-                      <Pressable
-                        key={produit.id}
-                        onPress={() => {
-                          setPerteProduitId(produit.id);
-                          if (produit.conservation === 'frais') {
-                            setPerteDansLeStock(false);
-                          }
-                        }}
-                        style={[
-                          styles.puce,
-                          perteProduitId === produit.id && styles.puceActive,
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: perteProduitId === produit.id }}
-                      >
-                        <Text
-                          style={[
-                            styles.puceTexte,
-                            perteProduitId === produit.id && styles.puceTexteActive,
-                          ]}
-                        >
-                          {produit.nom}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
 
-                  <Text style={styles.label}>Quantité perdue</Text>
-                  <Compteur
-                    valeur={perteQuantite}
-                    onChange={setPerteQuantite}
-                    libelle="Quantité perdue"
-                  />
+              <Text style={styles.label}>Motif</Text>
+              <View style={styles.puces}>
+                {MOTIFS.map((motif) => (
+                  <Pressable
+                    key={motif.id}
+                    onPress={() => setPerteMotif(motif.id)}
+                    style={[styles.puce, perteMotif === motif.id && styles.puceActive]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: perteMotif === motif.id }}
+                  >
+                    <Text
+                      style={[
+                        styles.puceTexte,
+                        perteMotif === motif.id && styles.puceTexteActive,
+                      ]}
+                    >
+                      {motif.libelle}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
 
-                  <Text style={styles.label}>Motif</Text>
-                  <View style={styles.puces}>
-                    {MOTIFS.map((motif) => (
-                      <Pressable
-                        key={motif.id}
-                        onPress={() => setPerteMotif(motif.id)}
-                        style={[styles.puce, perteMotif === motif.id && styles.puceActive]}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: perteMotif === motif.id }}
-                      >
-                        <Text
-                          style={[
-                            styles.puceTexte,
-                            perteMotif === motif.id && styles.puceTexteActive,
-                          ]}
-                        >
-                          {motif.libelle}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-
-                  {!perteEstFrais ? (
-                    <>
-                      <Pressable
-                        onPress={() => setPerteDansLeStock((v) => !v)}
-                        style={styles.case}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: perteDansLeStock }}
-                      >
-                        <Text style={styles.caseSymbole}>{perteDansLeStock ? '☑' : '☐'}</Text>
-                        <Text style={styles.caseTexte}>
-                          Ces produits étaient encore dans le stock
-                        </Text>
-                      </Pressable>
-                      <Text style={styles.aideCase}>
-                        Laissez décoché si ces produits avaient déjà été sortis : le stock ne change
-                        pas.
-                      </Text>
-                    </>
-                  ) : null}
-
-                  <Banniere
-                    message={message}
-                    type={typeMessage}
-                    onFermer={fermerMessage}
-                    duree={5000}
-                  />
-                  <Bouton
-                    titre="Enregistrer la perte"
-                    onPress={() => void soumettrePerte()}
-                    chargement={declarerPerte.isPending}
-                  />
-                </View>
+              {!perteEstFrais ? (
+                <>
+                  <Pressable
+                    onPress={() => setPerteDansLeStock((v) => !v)}
+                    style={styles.case}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: perteDansLeStock }}
+                  >
+                    <Text style={styles.caseSymbole}>{perteDansLeStock ? '☑' : '☐'}</Text>
+                    <Text style={styles.caseTexte}>
+                      Ces produits étaient encore dans le stock
+                    </Text>
+                  </Pressable>
+                  <Text style={styles.aideCase}>
+                    Laissez décoché si ces produits avaient déjà été sortis : le stock ne change
+                    pas.
+                  </Text>
+                </>
               ) : null}
-            </>
+
+              <Banniere
+                message={message}
+                type={typeMessage}
+                onFermer={fermerMessage}
+                duree={5000}
+              />
+              <Bouton
+                titre="Enregistrer la perte"
+                onPress={() => void soumettrePerte()}
+                chargement={declarerPerte.isPending}
+              />
+            </View>
           ) : null}
         </>
-      ) : message ? (
+      ) : listeBase.length === 0 && message ? (
         <Banniere message={message} type={typeMessage} onFermer={fermerMessage} duree={5000} />
       ) : null}
 
@@ -982,7 +1001,12 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   lienNouveau: {
-    paddingVertical: espacements.xs,
+    minHeight: 44,
+    paddingHorizontal: espacements.m,
+    paddingVertical: espacements.s,
+    borderRadius: 999,
+    backgroundColor: couleurs.fondPuce,
+    justifyContent: 'center',
   },
   lienNouveauTexte: {
     fontSize: tailles.petit,
@@ -996,9 +1020,9 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   puceFiltre: {
-    height: 32,
+    minHeight: 36,
     paddingHorizontal: espacements.m,
-    borderRadius: rayonPetit,
+    borderRadius: 999,
     backgroundColor: couleurs.fondPuce,
     justifyContent: 'center',
   },
@@ -1033,8 +1057,10 @@ const styles = StyleSheet.create({
   saisie: {
     gap: espacements.s,
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: couleurs.bordure,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+    borderRadius: 18,
+    backgroundColor: couleurs.surface,
   },
   saisieInfos: {
     flexDirection: 'row',
@@ -1064,11 +1090,9 @@ const styles = StyleSheet.create({
   },
   formulairePerte: {
     gap: espacements.m,
-    padding: 12,
-    borderRadius: rayonPetit,
-    backgroundColor: couleurs.fondGroupe,
-    borderWidth: 1,
-    borderColor: couleurs.bordure,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: couleurs.surface,
   },
   label: {
     ...styleTitreSection,
@@ -1082,7 +1106,7 @@ const styles = StyleSheet.create({
     backgroundColor: couleurs.fondSegment,
   },
   puce: {
-    height: 32,
+    minHeight: 44,
     paddingHorizontal: espacements.m,
     borderRadius: 8,
     backgroundColor: 'transparent',
@@ -1110,6 +1134,7 @@ const styles = StyleSheet.create({
   caseSymbole: {
     fontSize: tailles.grand,
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   caseTexte: {
     flex: 1,
@@ -1133,5 +1158,13 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     borderRadius: 5,
     fontFamily: polices.sans,
+  },
+  resumePied: {
+    fontSize: tailles.petit,
+    fontWeight: '600',
+    color: couleurs.texteSecondaire,
+    textAlign: 'center',
+    fontFamily: polices.sans,
+    fontVariant: ['tabular-nums'],
   },
 });

@@ -10,6 +10,7 @@ import { useMesProduits } from '@/api/produits';
 import { useStockFabricant } from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
+import { CarteHeros } from '@/components/carte-heros';
 import { CarteProduit } from '@/components/carte-produit';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
@@ -22,7 +23,16 @@ import {
 } from '@/lib/laboratoire';
 import { aujourdhuiParis } from '@/lib/format';
 import { etiquetteBoutique } from '@/lib/production-exterieure';
-import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  polices,
+  rayonCarte,
+  rayonPetit,
+  styleChiffre,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 
 function sansAccents(texte: string): string {
   return texte.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -135,12 +145,29 @@ export default function EcranStock() {
     );
   }
 
+  const nbSousSeuil = locauxEtExterieurs.filter((produit) => {
+    const info = stockParProduit.get(produit.id);
+    const valeur = info?.stock ?? 0;
+    const seuil = info?.seuil ?? produit.seuil_min;
+    return valeur < seuil;
+  }).length;
+
   return (
     <Ecran
       defilement
       enRafraichissement={mes.isRefetching || stock.isRefetching}
       onRafraichir={() => void rafraichir()}
     >
+      {mesProduits.length > 0 ? (
+        <CarteHeros libelle="Produits surgelés" chiffre={locauxEtExterieurs.length}>
+          {nbSousSeuil > 0 ? (
+            <View style={styles.pastilleSeuil}>
+              <Text style={styles.pastilleSeuilTexte}>{`${nbSousSeuil} sous le seuil`}</Text>
+            </View>
+          ) : null}
+        </CarteHeros>
+      ) : null}
+
       {locauxEtExterieurs.length > 10 ? (
         <Champ
           libelle="Rechercher un produit"
@@ -177,7 +204,7 @@ export default function EcranStock() {
               droite={
                 <Text
                   accessibilityLabel={`Stock ${produit.nom} : ${valeur}`}
-                  style={styles.chiffre}
+                  style={[styles.chiffre, sousSeuil && styles.chiffreAlerte]}
                 >
                   {valeur}
                 </Text>
@@ -223,22 +250,26 @@ export default function EcranStock() {
                     <Text style={styles.badge}>{etiquetteLaboratoire()}</Text>
                   </CarteProduit>
                 </Pressable>
-                {commandesProduit.map((commande) => {
-                  const statut = statutCommandeLabo(commande);
-                  return (
-                    <Text key={commande.id} style={styles.detailLabo}>
-                      {libelleJourCommandeLabo(commande.pour_le, aujourdhui)} ·{' '}
-                      {commande.quantite}
-                      {commande.client ? ` · ${commande.client}` : ''}
-                      {' · '}
-                      {libelleStatutCommandeLabo(statut)}
-                    </Text>
-                  );
-                })}
-                {jourFab ? (
-                  <Text style={styles.detailLabo}>
-                    Prochaine fabrication : {libelleJourCommandeLabo(jourFab, aujourdhui)}
-                  </Text>
+                {commandesProduit.length > 0 || jourFab ? (
+                  <View style={styles.detailsLabo}>
+                    {commandesProduit.map((commande) => {
+                      const statut = statutCommandeLabo(commande);
+                      return (
+                        <Text key={commande.id} style={styles.detailLabo}>
+                          {libelleJourCommandeLabo(commande.pour_le, aujourdhui)} ·{' '}
+                          {commande.quantite}
+                          {commande.client ? ` · ${commande.client}` : ''}
+                          {' · '}
+                          {libelleStatutCommandeLabo(statut)}
+                        </Text>
+                      );
+                    })}
+                    {jourFab ? (
+                      <Text style={styles.detailLabo}>
+                        Prochaine fabrication : {libelleJourCommandeLabo(jourFab, aujourdhui)}
+                      </Text>
+                    ) : null}
+                  </View>
                 ) : null}
               </View>
             );
@@ -252,34 +283,61 @@ export default function EcranStock() {
 const styles = StyleSheet.create({
   section: {
     gap: espacements.s,
-    marginTop: espacements.m,
+    marginTop: espacements.xl,
   },
   titreSection: {
     ...styleTitreSection,
+    marginBottom: espacements.xs,
+  },
+  pastilleSeuil: {
+    alignSelf: 'flex-start',
+    marginTop: espacements.xs,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: couleurs.accentClair,
+  },
+  pastilleSeuilTexte: {
+    fontSize: tailles.petit,
+    fontWeight: '600',
+    color: couleurs.accentFonce,
+    fontFamily: polices.sans,
   },
   blocLabo: {
-    gap: 4,
+    gap: espacements.s,
+  },
+  detailsLabo: {
+    gap: espacements.xs,
+    marginHorizontal: espacements.xs,
+    paddingVertical: espacements.s,
+    paddingHorizontal: espacements.m,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.fondGroupe,
   },
   detailLabo: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
-    paddingLeft: espacements.s,
+    fontFamily: polices.sans,
   },
   chiffre: {
-    fontSize: tailles.titre,
-    fontWeight: '700',
-    color: couleurs.texte,
+    ...styleChiffre,
+    fontSize: tailles.ca,
+    letterSpacing: -1,
     minWidth: 48,
     textAlign: 'right',
+  },
+  chiffreAlerte: {
+    color: couleurs.erreur,
   },
   badge: {
     overflow: 'hidden',
     backgroundColor: couleurs.principalClair,
     color: couleurs.principalFonce,
-    fontSize: 12,
+    fontSize: tailles.legend,
     fontWeight: '600',
     paddingHorizontal: espacements.s,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: rayonPetit,
+    fontFamily: polices.sans,
   },
 });

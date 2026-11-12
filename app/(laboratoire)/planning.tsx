@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useCommandesLabo } from '@/api/commandes-labo';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
+import { CarteHeros } from '@/components/carte-heros';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { aujourdhuiParis } from '@/lib/format';
@@ -18,11 +19,13 @@ import {
   espacements,
   ombres,
   polices,
-  rayonPuce,
+  rayonCarte,
+  rayonPilule,
+  styleChiffre,
+  tailleToucheMin,
   tailles,
 } from '@/theme';
 
-const BORDURE_AUJOURDHUI = '#E6D8C6';
 const NB_JOURS_FENETRE = 7;
 
 function ajouterJours(jour: string, n: number): string {
@@ -80,6 +83,7 @@ export default function EcranPlanningLabo() {
 
   const detail = parJour.get(jourActif);
   const totalPieces = detail?.totalPieces ?? 0;
+  const jourVide = !detail || detail.produits.length === 0;
 
   async function rafraichir() {
     await commandes.refetch();
@@ -104,18 +108,15 @@ export default function EcranPlanningLabo() {
     );
   }
 
+  const libelleActif = libelleJourCommandeLabo(jourActif, aujourdhui);
+
   return (
     <Ecran
       defilement
       enRafraichissement={commandes.isRefetching}
       onRafraichir={() => void rafraichir()}
     >
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.bandeJours}
-        accessibilityRole="tablist"
-      >
+      <View style={styles.bandeJours} accessibilityRole="tablist">
         {joursFenetre.map((jour) => {
           const selectionne = jour === jourActif;
           const estAujourdhui = jour === aujourdhui;
@@ -127,10 +128,11 @@ export default function EcranPlanningLabo() {
               accessibilityState={{ selected: selectionne }}
               accessibilityLabel={libelleJourCommandeLabo(jour, aujourdhui)}
               onPress={() => setJourSelectionne(jour)}
-              style={[
+              style={({ pressed }) => [
                 styles.caseJour,
                 selectionne && styles.caseJourActive,
                 !selectionne && estAujourdhui && styles.caseJourAujourdhui,
+                pressed && styles.appuye,
               ]}
             >
               <Text
@@ -146,12 +148,17 @@ export default function EcranPlanningLabo() {
               >
                 {numeroJour(jour)}
               </Text>
-              {total > 0 ? (
+              {estAujourdhui ? (
                 <View
                   style={[
-                    styles.pastille,
-                    selectionne && styles.pastilleActive,
+                    styles.pointAujourdhui,
+                    selectionne && styles.pointAujourdhuiSurActif,
                   ]}
+                />
+              ) : null}
+              {total > 0 ? (
+                <View
+                  style={[styles.pastille, selectionne && styles.pastilleActive]}
                 >
                   <Text
                     style={[
@@ -168,7 +175,7 @@ export default function EcranPlanningLabo() {
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
 
       {(decalage > 0 || aJoursSuivants) && (
         <View style={styles.navSemaine}>
@@ -203,64 +210,62 @@ export default function EcranPlanningLabo() {
         </View>
       )}
 
-      <Text style={styles.enteteJour}>
-        {libelleJourCommandeLabo(jourActif, aujourdhui)}
-      </Text>
-
-      {totalPieces > 0 ? (
-        <Text style={styles.totalJour}>
-          {totalPieces} pièce{totalPieces > 1 ? 's' : ''} au total
-        </Text>
-      ) : null}
-
-      {!detail || detail.produits.length === 0 ? (
+      {jourVide ? (
         <EtatVide message="Aucune commande ce jour-là." />
       ) : (
-        <View style={styles.liste}>
-          {detail.produits.map((produit) => (
-            <View key={produit.produitId} style={styles.carte}>
-              <Text style={styles.lignePrincipale}>
-                {produit.quantite} {produit.produitNom}
-              </Text>
-              <Text style={styles.fabricant}>{produit.fabricantNom}</Text>
-              {produit.clients.map((client) => (
-                <View key={client.clientLibelle} style={styles.blocClient}>
-                  <View style={styles.ligneClientRang}>
-                    <Text style={styles.ligneClient}>
-                      {client.quantite} · {client.clientLibelle}
-                    </Text>
-                    {client.marqueStatut ? (
-                      <View
-                        style={[
-                          styles.marqueStatut,
-                          client.marqueStatut === 'effectuee'
-                            ? styles.marqueEffectuee
-                            : styles.marquePrete,
-                        ]}
-                      >
-                        <Text
+        <>
+          <CarteHeros
+            libelle={libelleActif}
+            chiffre={totalPieces}
+            sousTitre={`${totalPieces} pièce${totalPieces > 1 ? 's' : ''} au total`}
+          />
+          <View style={styles.liste}>
+            {detail!.produits.map((produit) => (
+              <View key={produit.produitId} style={[styles.carte, ombres.douce]}>
+                <View style={styles.infos}>
+                  <Text style={styles.quantiteTitre}>{produit.quantite}</Text>
+                  <Text style={styles.nomProduit}>{produit.produitNom}</Text>
+                  <Text style={styles.fabricant}>{produit.fabricantNom}</Text>
+                </View>
+                {produit.clients.map((client) => (
+                  <View key={client.clientLibelle} style={styles.blocClient}>
+                    <View style={styles.ligneClientRang}>
+                      <Text style={styles.ligneClient}>
+                        {client.quantite} · {client.clientLibelle}
+                      </Text>
+                      {client.marqueStatut ? (
+                        <View
                           style={[
-                            styles.marqueStatutTexte,
+                            styles.marqueStatut,
                             client.marqueStatut === 'effectuee'
-                              ? styles.marqueEffectueeTexte
-                              : styles.marquePreteTexte,
+                              ? styles.marqueEffectuee
+                              : styles.marquePrete,
                           ]}
                         >
-                          {libelleStatutCommandeLabo(client.marqueStatut)}
-                        </Text>
-                      </View>
-                    ) : null}
+                          <Text
+                            style={[
+                              styles.marqueStatutTexte,
+                              client.marqueStatut === 'effectuee'
+                                ? styles.marqueEffectueeTexte
+                                : styles.marquePreteTexte,
+                            ]}
+                          >
+                            {libelleStatutCommandeLabo(client.marqueStatut)}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    {client.notes.map((note) => (
+                      <Text key={note} style={styles.note}>
+                        {note}
+                      </Text>
+                    ))}
                   </View>
-                  {client.notes.map((note) => (
-                    <Text key={note} style={styles.note}>
-                      {note}
-                    </Text>
-                  ))}
-                </View>
-              ))}
-            </View>
-          ))}
-        </View>
+                ))}
+              </View>
+            ))}
+          </View>
+        </>
       )}
     </Ecran>
   );
@@ -274,11 +279,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: couleurs.fondSegment,
     marginBottom: espacements.s,
-    minWidth: '100%',
+    overflow: 'hidden',
   },
   caseJour: {
-    width: 48,
-    minHeight: 84,
+    flex: 1,
+    minHeight: Math.max(84, tailleToucheMin),
     paddingTop: 9,
     paddingBottom: 10,
     borderRadius: 16,
@@ -291,9 +296,7 @@ const styles = StyleSheet.create({
     ...ombres.jourActif,
   },
   caseJourAujourdhui: {
-    backgroundColor: couleurs.fond,
-    borderWidth: 1,
-    borderColor: BORDURE_AUJOURDHUI,
+    backgroundColor: couleurs.surface,
   },
   caseJourSemaine: {
     fontSize: 10,
@@ -303,34 +306,45 @@ const styles = StyleSheet.create({
     fontFamily: polices.sans,
   },
   caseJourSemaineActive: {
-    color: '#E8D9C6',
+    color: couleurs.texteSurSombreDoux,
   },
   caseJourNumero: {
     fontSize: 19,
-    fontWeight: '500',
+    fontWeight: '600',
     letterSpacing: -0.4,
     color: couleurs.texte,
     fontFamily: polices.sans,
+    fontVariant: ['tabular-nums'],
   },
   caseJourNumeroActive: {
     color: couleurs.texteSurPrincipal,
+  },
+  pointAujourdhui: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: couleurs.accent,
+  },
+  pointAujourdhuiSurActif: {
+    backgroundColor: couleurs.accentClair,
   },
   pastille: {
     minWidth: 22,
     paddingHorizontal: 5,
     paddingVertical: 1,
-    borderRadius: 999,
+    borderRadius: rayonPilule,
     backgroundColor: couleurs.croutePoint,
     alignItems: 'center',
   },
   pastilleActive: {
-    backgroundColor: '#E9B98C',
+    backgroundColor: couleurs.croute,
   },
   pastilleTexte: {
     fontSize: 10,
     fontWeight: '600',
     color: couleurs.texteSurPrincipal,
     fontFamily: polices.sans,
+    fontVariant: ['tabular-nums'],
   },
   pastilleTexteActive: {
     color: couleurs.texte,
@@ -347,6 +361,8 @@ const styles = StyleSheet.create({
   },
   lienNav: {
     paddingVertical: espacements.xs,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   lienNavTexte: {
     fontSize: tailles.petit,
@@ -354,31 +370,28 @@ const styles = StyleSheet.create({
     color: couleurs.principal,
     fontFamily: polices.sans,
   },
-  enteteJour: {
-    fontSize: tailles.grand,
-    fontWeight: '500',
-    color: couleurs.texte,
-    marginBottom: espacements.xs,
-    letterSpacing: -0.4,
-    fontFamily: polices.sans,
-  },
-  totalJour: {
-    fontSize: tailles.petit,
-    color: couleurs.texteSecondaire,
-    marginBottom: espacements.s,
-    fontFamily: polices.sans,
-  },
   liste: {
-    gap: espacements.m,
+    gap: 10,
   },
   carte: {
-    gap: 4,
-    paddingVertical: espacements.s,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: couleurs.bordure,
+    gap: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.surface,
   },
-  lignePrincipale: {
-    fontSize: tailles.grand,
+  infos: {
+    gap: 2,
+    minWidth: 0,
+  },
+  quantiteTitre: {
+    ...styleChiffre,
+    fontSize: 40,
+    letterSpacing: -1,
+    color: couleurs.texte,
+  },
+  nomProduit: {
+    fontSize: tailles.normal,
     fontWeight: '600',
     color: couleurs.texte,
     fontFamily: polices.sans,
@@ -386,12 +399,14 @@ const styles = StyleSheet.create({
   fabricant: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
-    marginBottom: 4,
     fontFamily: polices.sans,
   },
   blocClient: {
-    marginLeft: espacements.m,
+    marginLeft: espacements.s,
     gap: 2,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: couleurs.bordureDouce,
   },
   ligneClientRang: {
     flexDirection: 'row',
@@ -400,36 +415,42 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   ligneClient: {
+    flexShrink: 1,
     fontSize: tailles.normal,
     color: couleurs.texte,
     fontFamily: polices.sans,
   },
   marqueStatut: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: rayonPuce,
+    flexShrink: 0,
+    paddingHorizontal: espacements.s,
+    paddingVertical: 4,
+    borderRadius: rayonPilule,
   },
   marquePrete: {
-    backgroundColor: couleurs.succesClair,
+    backgroundColor: couleurs.accentClair,
   },
   marqueEffectuee: {
-    backgroundColor: couleurs.principalClair,
+    backgroundColor: couleurs.succesClair,
   },
   marqueStatutTexte: {
-    fontSize: 11,
+    fontSize: tailles.petit,
     fontWeight: '600',
     fontFamily: polices.sans,
   },
   marquePreteTexte: {
-    color: couleurs.succes,
+    color: couleurs.accentFonce,
   },
   marqueEffectueeTexte: {
-    color: couleurs.principalFonce,
+    color: couleurs.succes,
   },
   note: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     marginLeft: espacements.s,
     fontFamily: polices.sans,
+  },
+  appuye: {
+    opacity: 0.9,
+    transform: [{ scale: 0.97 }],
   },
 });

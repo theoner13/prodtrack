@@ -17,7 +17,14 @@ import { ContenuFicheCommande, LienDanger, LienSecondaire } from '@/components/f
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur } from '@/components/etats';
 import { peutSignalerNonRecue } from '@/lib/commandes';
-import { couleurs, espacements, polices, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  ombres,
+  polices,
+  rayonCarte,
+  tailles,
+} from '@/theme';
 
 export default function EcranDetailCommandeVendeuse() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -104,11 +111,21 @@ export default function EcranDetailCommandeVendeuse() {
       defilement
       enRafraichissement={detail.isRefetching}
       onRafraichir={() => void detail.refetch()}
+      pied={
+        actionPrincipale ? (
+          <>
+            {ok ? <Banniere message={ok} onFermer={() => setOk(null)} /> : null}
+            {actionPrincipale}
+          </>
+        ) : undefined
+      }
     >
-      {ok ? <Banniere message={ok} onFermer={() => setOk(null)} /> : null}
+      {!actionPrincipale && ok ? (
+        <Banniere message={ok} onFermer={() => setOk(null)} />
+      ) : null}
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
 
-      <ContenuFicheCommande commande={c} actionPrincipale={actionPrincipale} />
+      <ContenuFicheCommande commande={c} />
 
       <View style={styles.actions}>
         {c.statut === 'a_faire' ? (
@@ -156,7 +173,7 @@ export default function EcranDetailCommandeVendeuse() {
 
         {c.statut === 'a_faire' || c.statut === 'prete' || c.statut === 'recue' ? (
           confirmerAnnulation ? (
-            <View style={styles.confirmation}>
+            <View style={[styles.confirmation, ombres.douce]}>
               <Text style={styles.confirmationTexte}>Annuler cette commande ?</Text>
               <Bouton
                 titre="Confirmer l'annulation"
@@ -193,9 +210,9 @@ const styles = StyleSheet.create({
     marginBottom: espacements.m,
   },
   actions: {
-    marginTop: espacements.l,
+    marginTop: espacements.m,
     gap: espacements.m,
-    paddingBottom: espacements.xxl,
+    paddingBottom: espacements.l,
   },
   aide: {
     fontSize: tailles.petit,
@@ -207,6 +224,7 @@ const styles = StyleSheet.create({
     gap: espacements.s,
     padding: espacements.m,
     backgroundColor: couleurs.erreurClair,
+    borderRadius: rayonCarte,
   },
   confirmationTexte: {
     fontSize: tailles.normal,

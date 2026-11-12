@@ -1,8 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { EtatVide } from '@/components/etats';
 import { formatDateFr, type DetailCaFabricant, type GroupeCa } from '@/lib/ca';
 import { formatEuros } from '@/lib/format';
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/theme';
 
 type Props = {
   detail: DetailCaFabricant;
@@ -11,6 +12,7 @@ type Props = {
 type LigneTableau = {
   cle: string;
   libelle: string;
+  legende?: string;
   vendu: number;
   jete: number;
   caCentimes: number;
@@ -19,6 +21,8 @@ type LigneTableau = {
 export type LigneProduitCa = {
   cle: string;
   nom: string;
+  /** Légende sous le nom (ex. boutique courte). */
+  legende?: string;
   vendu: number;
   jete: number;
   caCentimes: number;
@@ -54,22 +58,32 @@ function labelAccessibilite(libelle: string, vendu: number, jete: number, caCent
 function EnTete({ premiereColonne }: { premiereColonne: string }) {
   return (
     <View style={styles.ligne} accessibilityRole="header">
-      <Text style={[styles.entete, styles.colLibelle]}>{premiereColonne}</Text>
-      <Text style={[styles.entete, styles.colNombre]}>Vendus</Text>
-      <Text style={[styles.entete, styles.colNombre]}>Jetés</Text>
-      <Text style={[styles.entete, styles.colCa]}>CA</Text>
+      <Text style={[styles.entete, styles.colLibelle]} numberOfLines={1}>
+        {premiereColonne}
+      </Text>
+      <Text style={[styles.entete, styles.colNombre]} numberOfLines={1}>
+        Vendus
+      </Text>
+      <Text style={[styles.entete, styles.colNombre]} numberOfLines={1}>
+        Jetés
+      </Text>
+      <Text style={[styles.entete, styles.colCa]} numberOfLines={1}>
+        CA
+      </Text>
     </View>
   );
 }
 
 function LigneCa({
   libelle,
+  legende,
   vendu,
   jete,
   caCentimes,
   gras,
 }: {
   libelle: string;
+  legende?: string;
   vendu: number;
   jete: number;
   caCentimes: number;
@@ -80,9 +94,17 @@ function LigneCa({
     <View
       style={styles.ligne}
       accessible
-      accessibilityLabel={labelAccessibilite(libelle, vendu, jete, caCentimes)}
+      accessibilityLabel={labelAccessibilite(
+        legende ? `${libelle} · ${legende}` : libelle,
+        vendu,
+        jete,
+        caCentimes,
+      )}
     >
-      <Text style={[styleTexte, styles.colLibelle]}>{libelle}</Text>
+      <View style={styles.colLibelle}>
+        <Text style={styleTexte}>{libelle}</Text>
+        {legende ? <Text style={styles.legende}>{legende}</Text> : null}
+      </View>
       <Text style={[styleTexte, styles.colNombre]}>{vendu}</Text>
       <Text
         style={[
@@ -118,6 +140,7 @@ function TableauCa({
         <LigneCa
           key={l.cle}
           libelle={l.libelle}
+          legende={l.legende}
           vendu={l.vendu}
           jete={l.jete}
           caCentimes={l.caCentimes}
@@ -137,7 +160,6 @@ function TableauCa({
 }
 
 function periodesRecentes(groupes: GroupeCa[]): GroupeCa[] {
-  // parJour / parSemaine / parMois sont chronologiques croissants → on inverse pour le plus récent en haut.
   return [...groupes].reverse();
 }
 
@@ -152,6 +174,7 @@ export function TableauCaProduits({
   const lignes: LigneTableau[] = produits.map((p, i) => ({
     cle: p.cle,
     libelle: avecRang ? `${i + 1}. ${p.nom}` : p.nom,
+    legende: p.legende,
     vendu: p.vendu,
     jete: p.jete,
     caCentimes: p.caCentimes,
@@ -197,7 +220,7 @@ export function DetailCaEmploye({ detail }: Props) {
     produits.length === 0 && jours.length === 0 && semaines.length === 0 && mois.length === 0;
 
   if (aucuneVente) {
-    return <Text style={styles.vide}>Aucune vente sur cette période.</Text>;
+    return <EtatVide message="Aucune vente sur cette période." />;
   }
 
   return (
@@ -206,7 +229,6 @@ export function DetailCaEmploye({ detail }: Props) {
       <TableauCaProduits produits={produits} />
 
       <Text style={styles.detailTitre}>Par jour</Text>
-      {/* Pas de Total : redondant avec le CA déjà affiché au-dessus. */}
       <TableauCa premiereColonne="Jour" lignes={jours} />
 
       <Text style={styles.detailTitre}>Par semaine</Text>
@@ -218,48 +240,59 @@ export function DetailCaEmploye({ detail }: Props) {
   );
 }
 
-const LARGEUR_NOMBRE = 48;
+const LARGEUR_NOMBRE = 64;
 const LARGEUR_CA = 72;
 
 const styles = StyleSheet.create({
   detail: {
     gap: espacements.xs,
     paddingTop: espacements.s,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: couleurs.bordure,
   },
   detailTitre: {
-    fontSize: tailles.section,
-    fontWeight: '600',
-    color: couleurs.texteSecondaire,
+    ...styleTitreSection,
     marginTop: espacements.s,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
   },
   tableau: {
     width: '100%',
+    backgroundColor: couleurs.fondGroupe,
+    borderRadius: 16,
+    paddingHorizontal: 4,
+    overflow: 'hidden',
   },
   ligne: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 6,
+    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: couleurs.bordure,
+    borderBottomColor: couleurs.bordureDouce,
     gap: 4,
   },
   entete: {
     fontSize: 13,
-    color: couleurs.texteSecondaire,
-    fontWeight: '500',
+    color: couleurs.texteMuet,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    fontFamily: polices.sans,
   },
   texte: {
     fontSize: tailles.petit,
     color: couleurs.texte,
+    fontFamily: polices.sans,
+    fontVariant: ['tabular-nums'],
   },
   texteGras: {
     fontSize: tailles.petit,
     color: couleurs.texte,
     fontWeight: '700',
+    fontFamily: polices.sans,
+    fontVariant: ['tabular-nums'],
+  },
+  legende: {
+    fontSize: tailles.legend,
+    color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
+    marginTop: 2,
   },
   colLibelle: {
     flex: 1,
@@ -275,11 +308,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   jeteAlerte: {
-    color: couleurs.alerte,
+    color: couleurs.accentFonce,
   },
   vide: {
     fontSize: tailles.petit,
     color: couleurs.texte,
     paddingVertical: 4,
+    fontFamily: polices.sans,
   },
 });

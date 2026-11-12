@@ -1,20 +1,31 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { useNomsBoutiquesEntreprise } from '@/api/boutiques';
 import { useCommande, useModifierCommande } from '@/api/commandes';
 import { messageErreur } from '@/auth/erreurs';
+import { Bouton } from '@/components/bouton';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur } from '@/components/etats';
-import { FormulaireCommande } from '@/components/formulaire-commande';
+import {
+  FormulaireCommande,
+  type FormulaireCommandeHandle,
+} from '@/components/formulaire-commande';
 import {
   centimesVersSaisie,
   decomposerRetrait,
   validerCommande,
   type SaisieCommande,
 } from '@/lib/commandes';
-import { couleurs, espacements, polices, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  ombres,
+  polices,
+  rayonCarte,
+  tailles,
+} from '@/theme';
 
 export default function EcranModifierCommande() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -23,6 +34,7 @@ export default function EcranModifierCommande() {
   const boutiques = useNomsBoutiquesEntreprise();
   const modifier = useModifierCommande();
   const [erreur, setErreur] = useState<string | null>(null);
+  const formulaireRef = useRef<FormulaireCommandeHandle>(null);
 
   const initial = useMemo<SaisieCommande | null>(() => {
     if (!detail.data) return null;
@@ -88,24 +100,45 @@ export default function EcranModifierCommande() {
   }
 
   return (
-    <Ecran defilement>
-      {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
+    <Ecran
+      defilement
+      pied={
+        <Bouton
+          titre="Enregistrer les modifications"
+          pleineLargeur
+          onPress={() => formulaireRef.current?.soumettre()}
+          chargement={modifier.isPending}
+        />
+      }
+    >
+      {erreur ? (
+        <View style={[styles.bandeauErreur, ombres.douce]}>
+          <Text style={styles.erreur}>{erreur}</Text>
+        </View>
+      ) : null}
       <FormulaireCommande
+        ref={formulaireRef}
         initial={initial}
         boutiques={boutiques.data ?? []}
         onEnregistrer={enregistrer}
         titreBouton="Enregistrer les modifications"
         chargement={modifier.isPending}
+        masquerBouton
       />
     </Ecran>
   );
 }
 
 const styles = StyleSheet.create({
+  bandeauErreur: {
+    backgroundColor: couleurs.erreurClair,
+    borderRadius: rayonCarte,
+    padding: espacements.m,
+    marginBottom: espacements.xs,
+  },
   erreur: {
     fontSize: tailles.petit,
     color: couleurs.erreur,
     fontFamily: polices.sans,
-    marginBottom: espacements.m,
   },
 });

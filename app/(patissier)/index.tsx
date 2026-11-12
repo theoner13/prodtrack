@@ -1,6 +1,6 @@
 import { router, type Href } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { useNomsBoutiquesEntreprise } from '@/api/boutiques';
 import { useMesPrevisions, type PrevisionProduit } from '@/api/previsions';
@@ -9,8 +9,10 @@ import { useStockFabricant } from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
+import { CarteHeros } from '@/components/carte-heros';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
+import { FriseJours } from '@/components/frise-jours';
 import { aujourdhuiParis } from '@/lib/format';
 import { etiquetteLaboratoire } from '@/lib/laboratoire';
 import {
@@ -24,10 +26,12 @@ import {
   espacements,
   ombres,
   polices,
+  rayonCarte,
+  seuilOrdinateur,
+  styleChiffre,
+  styleTitreSection,
   tailles,
 } from '@/theme';
-
-const BORDURE_AUJOURDHUI = '#E6D8C6';
 
 function nomJour(jour: string, capitale: boolean): string {
   const date = new Date(`${jour}T12:00:00Z`);
@@ -97,20 +101,18 @@ function DetailPrevision({ ligne }: { ligne: PrevisionProduit }) {
   );
 }
 
-function LigneProduitPlanning({
+function CarteProduitPlanning({
   ligne,
   aujourdhui,
   prevision,
   deplie,
   onBasculer,
-  derniere,
 }: {
   ligne: LignePlanning;
   aujourdhui: string;
   prevision: PrevisionProduit | undefined;
   deplie: boolean;
   onBasculer: () => void;
-  derniere: boolean;
 }) {
   const aDetail = Boolean(prevision?.detail.length);
 
@@ -120,7 +122,7 @@ function LigneProduitPlanning({
       accessibilityLabel={libelleAccessibiliteLigne(ligne, aujourdhui)}
       accessibilityState={{ expanded: aDetail ? deplie : undefined }}
       onPress={aDetail ? onBasculer : undefined}
-      style={[styles.ligneProduit, !derniere && styles.ligneProduitBordure]}
+      style={({ pressed }) => [styles.carteProduit, ombres.douce, pressed && styles.appuye]}
     >
       <View style={styles.ligneHaute}>
         <View style={styles.centre}>
@@ -132,16 +134,18 @@ function LigneProduitPlanning({
               router.push(`/produits/${ligne.produitId}` as Href);
             }}
           >
-            <Text style={styles.nomLien} numberOfLines={1}>
+            <Text style={styles.nomLien} numberOfLines={2}>
               {ligne.nom}
             </Text>
           </Pressable>
-          {ligne.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
-          {ligne.laboratoire ? (
-            <Text style={styles.badge}>{etiquetteLaboratoire()}</Text>
-          ) : ligne.boutiqueDestinataire ? (
-            <Text style={styles.badge}>{ligne.boutiqueDestinataire}</Text>
-          ) : null}
+          <View style={styles.badges}>
+            {ligne.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
+            {ligne.laboratoire ? (
+              <Text style={styles.badge}>{etiquetteLaboratoire()}</Text>
+            ) : ligne.boutiqueDestinataire ? (
+              <Text style={styles.badge}>{ligne.boutiqueDestinataire}</Text>
+            ) : null}
+          </View>
         </View>
         <View style={styles.droite}>
           {ligne.quantite !== null ? (
@@ -170,6 +174,8 @@ export default function EcranPlanning() {
   const nomsEntreprise = useNomsBoutiquesEntreprise();
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [jourSelectionne, setJourSelectionne] = useState<string | null>(null);
+  const { width } = useWindowDimensions();
+  const grille = width >= seuilOrdinateur;
 
   async function rafraichir() {
     await Promise.all([
@@ -280,6 +286,17 @@ export default function EcranPlanning() {
     '',
   );
 
+  const totalPieces = groupeActif.lignes.reduce(
+    (sum, ligne) => sum + (ligne.quantite ?? 0),
+    0,
+  );
+  const nbAFaire = groupeActif.lignes.length;
+  // Jamais de « 0 » si des produits sont à faire (ex. « dès que possible », quantité nulle).
+  const chiffreHeros =
+    nbAFaire === 0 ? '—' : totalPieces > 0 ? totalPieces : undefined;
+  // Sans chiffre utile, la carte héros n’apporte rien de plus que la frise.
+  const afficherHeros = chiffreHeros != null;
+
   return (
     <Ecran
       defilement
@@ -292,86 +309,58 @@ export default function EcranPlanning() {
         </Text>
       ) : null}
 
-      <View style={styles.bandeJours} accessibilityRole="tablist">
-        {groupes.map((groupe) => {
-          const selectionne = groupe.jour === groupeActif.jour;
-          const estAujourdhui = groupe.jour === aujourdhui;
-          return (
-            <Pressable
-              key={groupe.jour}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: selectionne }}
-              accessibilityLabel={groupe.libelle}
-              onPress={() => {
-                setJourSelectionne(groupe.jour);
-                setOuvert(null);
-              }}
-              style={[
-                styles.caseJour,
-                selectionne && styles.caseJourActive,
-                !selectionne && estAujourdhui && styles.caseJourAujourdhui,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.caseJourSemaine,
-                  selectionne && styles.caseJourSemaineActive,
-                ]}
-              >
-                {initialeJour(groupe.jour)}
-              </Text>
-              <Text
-                style={[styles.caseJourNumero, selectionne && styles.caseJourNumeroActive]}
-              >
-                {numeroJour(groupe.jour)}
-              </Text>
-              <View style={styles.pointsJour}>
-                {groupe.lignes.slice(0, 3).map((ligne) => (
-                  <View
-                    key={ligne.produitId}
-                    style={[
-                      styles.pointJour,
-                      {
-                        backgroundColor: selectionne
-                          ? ligne.sousSeuil
-                            ? '#F2A49B'
-                            : '#E9B98C'
-                          : ligne.sousSeuil
-                            ? couleurs.erreur
-                            : couleurs.croutePoint,
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+      <FriseJours
+        jours={groupes.map((groupe) => ({
+          id: groupe.jour,
+          initiale: initialeJour(groupe.jour),
+          numero: numeroJour(groupe.jour),
+          libelle: groupe.libelle,
+          estAujourdhui: groupe.jour === aujourdhui,
+          points: Math.min(groupe.lignes.length, 3),
+          pointsAlerte: groupe.lignes.slice(0, 3).map((l) => l.sousSeuil),
+        }))}
+        selection={groupeActif.jour}
+        onSelect={(id) => {
+          setJourSelectionne(id);
+          setOuvert(null);
+        }}
+      />
 
-      <Text style={styles.enteteJour}>{groupeActif.libelle}</Text>
+      {afficherHeros ? (
+        <CarteHeros
+          libelle={groupeActif.libelle}
+          chiffre={chiffreHeros}
+          sousTitre={nbAFaire === 0 ? 'Rien à fabriquer' : undefined}
+        />
+      ) : null}
 
-      <View style={styles.carteListe}>
-        {groupeActif.lignes.length === 0 ? (
-          <Text style={styles.jourVide}>Rien à fabriquer</Text>
-        ) : (
-          groupeActif.lignes.map((ligne, index) => (
-            <LigneProduitPlanning
+      {groupeActif.lignes.length === 0 ? null : (
+        <View style={[styles.grille, grille && styles.grille2]}>
+          {groupeActif.lignes.map((ligne) => (
+            <View
               key={ligne.produitId}
-              ligne={ligne}
-              aujourdhui={aujourdhui}
-              prevision={previsionParId.get(ligne.produitId)}
-              deplie={ouvert === ligne.produitId}
-              derniere={index === groupeActif.lignes.length - 1}
-              onBasculer={() =>
-                setOuvert((actuel) => (actuel === ligne.produitId ? null : ligne.produitId))
-              }
-            />
-          ))
-        )}
-      </View>
+              style={grille ? [styles.colonne, groupeActif.lignes.length === 1 && styles.colonneUnique] : undefined}
+            >
+              <CarteProduitPlanning
+                ligne={ligne}
+                aujourdhui={aujourdhui}
+                prevision={previsionParId.get(ligne.produitId)}
+                deplie={ouvert === ligne.produitId}
+                onBasculer={() =>
+                  setOuvert((actuel) => (actuel === ligne.produitId ? null : ligne.produitId))
+                }
+              />
+            </View>
+          ))}
+        </View>
+      )}
 
-      {aSousSeuil ? <Text style={styles.legende}>● sous le seuil de stock</Text> : null}
+      {aSousSeuil ? (
+        <View style={styles.legendeLigne}>
+          <View style={styles.legendePoint} />
+          <Text style={styles.legende}>sous le seuil de stock</Text>
+        </View>
+      ) : null}
       {dernier ? <Text style={styles.calcul}>Dernier calcul : {formatMoment(dernier)}</Text> : null}
     </Ecran>
   );
@@ -384,95 +373,30 @@ const styles = StyleSheet.create({
     marginBottom: espacements.s,
     fontFamily: polices.sans,
   },
-  bandeJours: {
+  grille: {
+    gap: 10,
+  },
+  grille2: {
     flexDirection: 'row',
-    gap: 4,
-    padding: 6,
-    borderRadius: 22,
-    backgroundColor: couleurs.fondSegment,
-    marginBottom: espacements.s,
+    flexWrap: 'wrap',
   },
-  caseJour: {
-    flex: 1,
-    minHeight: 84,
-    paddingTop: 9,
-    paddingBottom: 10,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'transparent',
+  colonne: {
+    width: '50%',
+    maxWidth: '50%',
+    paddingRight: 5,
+    paddingLeft: 5,
   },
-  caseJourActive: {
-    backgroundColor: couleurs.principal,
-    ...ombres.jourActif,
+  colonneUnique: {
+    width: '50%',
+    maxWidth: '50%',
   },
-  caseJourAujourdhui: {
-    backgroundColor: couleurs.fond,
-    borderWidth: 1,
-    borderColor: BORDURE_AUJOURDHUI,
-  },
-  caseJourSemaine: {
-    fontSize: 10,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-    color: couleurs.texteSecondaire,
-    fontFamily: polices.sans,
-  },
-  caseJourSemaineActive: {
-    color: '#E8D9C6',
-  },
-  caseJourNumero: {
-    fontSize: 19,
-    fontWeight: '500',
-    letterSpacing: -0.4,
-    color: couleurs.texte,
-    fontFamily: polices.sans,
-  },
-  caseJourNumeroActive: {
-    color: couleurs.texteSurPrincipal,
-  },
-  pointsJour: {
-    height: 6,
-    flexDirection: 'row',
-    gap: 3,
-    alignItems: 'center',
-  },
-  pointJour: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-  },
-  enteteJour: {
-    fontSize: tailles.grand,
-    fontWeight: '500',
-    color: couleurs.texte,
-    marginBottom: espacements.xs,
-    letterSpacing: -0.4,
-    fontFamily: polices.sans,
-  },
-  carteListe: {
-    borderRadius: 22,
-    backgroundColor: couleurs.fond,
-    borderWidth: 1,
-    borderColor: couleurs.bordureDouce,
-    paddingHorizontal: espacements.m,
-    marginBottom: espacements.s,
-  },
-  jourVide: {
-    fontSize: tailles.normal,
-    color: couleurs.texte,
-    paddingVertical: 34,
-    textAlign: 'center',
-    fontFamily: polices.sans,
-  },
-  ligneProduit: {
-    paddingVertical: 15,
-    backgroundColor: couleurs.fond,
+  carteProduit: {
+    backgroundColor: couleurs.surface,
+    borderRadius: rayonCarte,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     gap: espacements.s,
-  },
-  ligneProduitBordure: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1E9DE',
+    marginBottom: 2,
   },
   ligneHaute: {
     flexDirection: 'row',
@@ -481,7 +405,7 @@ const styles = StyleSheet.create({
   },
   centre: {
     flex: 1,
-    gap: 3,
+    gap: 6,
     minWidth: 0,
   },
   nomLien: {
@@ -491,17 +415,20 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
     fontFamily: polices.sans,
   },
+  badges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
   badge: {
-    alignSelf: 'flex-start',
     overflow: 'hidden',
     backgroundColor: couleurs.fondGroupe,
     color: couleurs.texteSecondaire,
     fontSize: 11,
     fontWeight: '500',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 5,
-    marginTop: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
     fontFamily: polices.sans,
   },
   droite: {
@@ -509,16 +436,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   blocQuantite: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 4,
+    alignItems: 'flex-end',
+    gap: 2,
   },
   quantite: {
-    fontSize: tailles.grand,
-    fontWeight: '500',
+    ...styleChiffre,
+    fontSize: 40,
     color: couleurs.texte,
-    letterSpacing: -0.4,
-    fontFamily: polices.sans,
+    letterSpacing: -1,
   },
   aFaire: {
     fontSize: 12,
@@ -529,10 +454,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 999,
     backgroundColor: couleurs.erreurClair,
+    minHeight: 48,
   },
   pointUrgent: {
     width: 6,
@@ -548,7 +474,9 @@ const styles = StyleSheet.create({
   },
   detail: {
     gap: 2,
-    paddingBottom: 4,
+    paddingTop: espacements.s,
+    borderTopWidth: 1,
+    borderTopColor: couleurs.bordureDouce,
   },
   repere: {
     fontSize: tailles.petit,
@@ -569,24 +497,34 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   entete: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: couleurs.texteSecondaire,
-    fontFamily: polices.sans,
+    ...styleTitreSection,
+    fontSize: 11,
   },
   cellule: {
     fontSize: 12,
     color: couleurs.texte,
     fontFamily: polices.sans,
+    fontVariant: ['tabular-nums'],
   },
   orange: {
     color: couleurs.alerte,
     fontWeight: '600',
   },
+  legendeLigne: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: espacements.m,
+  },
+  legendePoint: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: couleurs.erreur,
+  },
   legende: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
-    marginTop: espacements.m,
     fontFamily: polices.sans,
   },
   calcul: {
@@ -594,5 +532,9 @@ const styles = StyleSheet.create({
     color: couleurs.texteSecondaire,
     marginTop: espacements.s,
     fontFamily: polices.sans,
+  },
+  appuye: {
+    opacity: 0.92,
+    transform: [{ scale: 0.99 }],
   },
 });

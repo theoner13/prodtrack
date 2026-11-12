@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatEuros } from '@/lib/format';
-import { couleurs, espacements, polices, tailles } from '@/theme';
+import { couleurs, espacements, ombres, polices, rayonCarte, tailles } from '@/theme';
 
 type Props = {
   nom: string;
@@ -18,7 +18,7 @@ type Props = {
   onPressNom?: () => void;
 };
 
-// Ligne produit : photo (ou initiale), nom, prix / étiquettes, action à droite.
+// Carte produit : photo (ou initiale), nom, prix / étiquettes, action à droite.
 export function CarteProduit({
   nom,
   prixCentimes,
@@ -37,7 +37,7 @@ export function CarteProduit({
   const aDetail = prixCentimes != null || Boolean(children);
 
   return (
-    <View style={[styles.ligneListe, alerte && styles.alerte]}>
+    <View style={[styles.carte, alerte && styles.alerte, ombres.douce]}>
       <View style={styles.ligne}>
         {photoUrl ? (
           <Image source={{ uri: photoUrl }} style={styles.photo} accessibilityIgnoresInvertColors />
@@ -69,7 +69,9 @@ export function CarteProduit({
               {children}
             </View>
           ) : null}
-          {sousTitre ? <Text style={styles.detail}>{sousTitre}</Text> : null}
+          {sousTitre ? (
+            <Text style={[styles.detail, alerte && styles.detailAlerte]}>{sousTitre}</Text>
+          ) : null}
         </View>
         {droite ? <View style={styles.droite}>{droite}</View> : null}
       </View>
@@ -81,12 +83,13 @@ export function CarteProduit({
 const TAILLE_PHOTO = 40;
 
 const styles = StyleSheet.create({
-  ligneListe: {
+  carte: {
     gap: espacements.s,
     paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: couleurs.bordure,
-    backgroundColor: couleurs.fond,
+    paddingHorizontal: 14,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.surface,
+    marginBottom: 10,
   },
   alerte: {
     backgroundColor: couleurs.erreurClair,
@@ -94,22 +97,23 @@ const styles = StyleSheet.create({
   ligne: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   photo: {
     width: TAILLE_PHOTO,
     height: TAILLE_PHOTO,
-    borderRadius: 12,
+    borderRadius: 14,
+    backgroundColor: couleurs.fondGroupe,
   },
   initiale: {
-    backgroundColor: couleurs.principal,
+    backgroundColor: couleurs.accentClair,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lettre: {
     fontSize: tailles.petit,
-    fontWeight: '500',
-    color: couleurs.texteSurPrincipal,
+    fontWeight: '600',
+    color: couleurs.accentFonce,
     fontFamily: polices.sans,
   },
   textes: {
@@ -119,7 +123,7 @@ const styles = StyleSheet.create({
   },
   nom: {
     fontSize: 16,
-    fontWeight: '400',
+    fontWeight: '500',
     letterSpacing: -0.1,
     color: couleurs.texte,
     fontFamily: polices.sans,
@@ -139,6 +143,11 @@ const styles = StyleSheet.create({
     fontSize: tailles.legend,
     color: couleurs.texteSecondaire,
     fontFamily: polices.sans,
+    flexShrink: 1,
+  },
+  detailAlerte: {
+    color: couleurs.erreur,
+    fontWeight: '600',
   },
   droite: {
     alignSelf: 'center',

@@ -5,12 +5,22 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Logo } from '@/components/logo';
-import { couleurs, espacements, polices, styleTitreEcran } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  haloAmbre,
+  ombres,
+  polices,
+  rayonCarte,
+  seuilOrdinateur,
+  styleTitreEcran,
+} from '@/theme';
 
 type Props = {
   titre: string;
@@ -25,17 +35,21 @@ type Props = {
   hautGauche?: ReactNode;
 };
 
-/** Cadre des écrans d’auth : logo, titre centré, bloc limité en largeur. */
+/** Cadre des écrans d’auth : fond crème + halo ambre, carte centrée sur ordinateur. */
 export function EcranAuth({
   titre,
   children,
-  largeurMax = 400,
+  largeurMax = 420,
   centrerVerticalement = true,
   avecLogo = true,
   hautGauche,
 }: Props) {
+  const { width } = useWindowDimensions();
+  const carte = width >= seuilOrdinateur;
+
   return (
-    <SafeAreaView style={styles.fond} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.fond} edges={['top', 'left', 'right', 'bottom']}>
+      <View pointerEvents="none" style={[styles.halo, haloAmbre()]} />
       {hautGauche ? <View style={styles.hautGauche}>{hautGauche}</View> : null}
       <KeyboardAvoidingView
         style={styles.flex}
@@ -49,7 +63,13 @@ export function EcranAuth({
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.bloc, { maxWidth: largeurMax }]}>
+          <View
+            style={[
+              styles.bloc,
+              { maxWidth: largeurMax },
+              carte ? [styles.carte, ombres.feuille] : null,
+            ]}
+          >
             {avecLogo ? (
               <View style={styles.logoWrap}>
                 <Logo variante="complet" taille={160} />
@@ -69,10 +89,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: couleurs.fond,
   },
+  halo: {
+    ...StyleSheet.absoluteFill,
+  },
   hautGauche: {
     paddingHorizontal: espacements.l,
     paddingTop: espacements.xs,
     alignSelf: 'flex-start',
+    zIndex: 2,
   },
   flex: {
     flex: 1,
@@ -89,14 +113,19 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     gap: espacements.s,
   },
+  carte: {
+    backgroundColor: couleurs.surface,
+    borderRadius: rayonCarte,
+    padding: espacements.xl,
+  },
   logoWrap: {
     alignItems: 'center',
-    marginBottom: espacements.s,
+    marginBottom: espacements.l,
   },
   titre: {
     ...styleTitreEcran,
     textAlign: 'center',
-    marginBottom: espacements.xs,
+    marginBottom: espacements.m,
     fontFamily: polices.sans,
   },
 });

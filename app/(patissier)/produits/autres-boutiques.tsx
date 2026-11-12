@@ -11,7 +11,15 @@ import { CarteProduit } from '@/components/carte-produit';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { formatEuros } from '@/lib/format';
-import { couleurs, espacements, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  ombres,
+  polices,
+  rayonPilule,
+  rayonPetit,
+  tailles,
+} from '@/theme';
 
 function nomNormalise(nom: string): string {
   return nom.trim().toLowerCase();
@@ -152,11 +160,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: espacements.s,
+    padding: espacements.s,
+    borderRadius: rayonPetit,
+    backgroundColor: couleurs.fondSegment,
+    marginBottom: espacements.m,
+    ...ombres.douce,
   },
   puce: {
-    height: 32,
+    minHeight: 36,
     paddingHorizontal: espacements.m,
-    borderRadius: 16,
+    borderRadius: rayonPilule,
     backgroundColor: couleurs.fondPuce,
     justifyContent: 'center',
   },
@@ -165,20 +178,23 @@ const styles = StyleSheet.create({
   },
   puceTexte: {
     fontSize: tailles.petit,
-    color: couleurs.texte,
-    fontWeight: '600',
+    color: couleurs.texteSecondaire,
+    fontWeight: '500',
+    fontFamily: polices.sans,
   },
   puceTexteActive: {
     color: couleurs.texteSurPrincipal,
+    fontWeight: '600',
   },
   badge: {
     overflow: 'hidden',
     backgroundColor: couleurs.principalClair,
     color: couleurs.principalFonce,
-    fontSize: 12,
+    fontSize: tailles.legend,
     fontWeight: '600',
     paddingHorizontal: espacements.s,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: rayonPetit,
+    fontFamily: polices.sans,
   },
 });

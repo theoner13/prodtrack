@@ -17,7 +17,15 @@ import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { etiquetteLaboratoire } from '@/lib/laboratoire';
 import { etiquetteBoutique } from '@/lib/production-exterieure';
-import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  polices,
+  rayonPilule,
+  rayonPetit,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 
 export default function EcranMesProduits() {
   const { profil } = useAuth();
@@ -255,13 +263,20 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     flexWrap: 'wrap',
     gap: espacements.m,
+    marginBottom: espacements.s,
   },
   lien: {
-    paddingVertical: espacements.xs,
+    minHeight: 44,
+    paddingVertical: espacements.s,
+    paddingHorizontal: espacements.m,
+    borderRadius: 999,
+    backgroundColor: couleurs.fondPuce,
+    justifyContent: 'center',
   },
   lienGauche: {
     alignSelf: 'flex-start',
     paddingVertical: espacements.xs,
+    paddingHorizontal: espacements.s,
   },
   lienTexte: {
     fontSize: tailles.petit,
@@ -271,14 +286,16 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: espacements.s,
+    marginTop: espacements.l,
   },
   titreSection: {
     ...styleTitreSection,
+    marginBottom: espacements.xs,
   },
   pastilleFabrique: {
     height: 36,
-    paddingHorizontal: 10,
-    borderRadius: 10,
+    paddingHorizontal: espacements.m,
+    borderRadius: rayonPilule,
     backgroundColor: couleurs.principal,
     justifyContent: 'center',
     alignItems: 'center',
@@ -299,14 +316,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: couleurs.principalClair,
     color: couleurs.principalFonce,
-    fontSize: 12,
+    fontSize: tailles.legend,
     fontWeight: '600',
     paddingHorizontal: espacements.s,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: rayonPetit,
+    fontFamily: polices.sans,
   },
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
   },
 });

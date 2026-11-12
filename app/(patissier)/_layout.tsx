@@ -1,24 +1,40 @@
 import { Tabs } from 'expo-router';
+import { useWindowDimensions } from 'react-native';
 
 import { useBadgeCommandesPatissier } from '@/api/commandes';
 import { useAuth } from '@/auth/AuthProvider';
 import { ActionsEntete } from '@/components/actions-entete';
+import { BarreOnglets, type PropsBarreOnglets } from '@/components/barre-onglets';
 import { LogoEntete } from '@/components/logo';
 import { OngletIcone } from '@/components/onglet-icone';
-import { optionsOngletsCommunes } from '@/lib/options-onglets';
-import { couleurs } from '@/theme';
+import { optionsOngletsPourEcran } from '@/lib/options-onglets';
+import { couleurs, largeurBarreLaterale, seuilOrdinateur } from '@/theme';
 
 export default function LayoutPatissier() {
   const { profil } = useAuth();
   const badge = useBadgeCommandesPatissier(profil?.boutique_id ?? null);
   const nombre = badge.data ?? 0;
+  const { width } = useWindowDimensions();
+  const ordinateur = width >= seuilOrdinateur;
 
   return (
     <Tabs
+      tabBar={(props) => <BarreOnglets {...(props as unknown as PropsBarreOnglets)} />}
       screenOptions={{
-        ...optionsOngletsCommunes,
-        headerLeft: () => <LogoEntete />,
-        headerRight: () => <ActionsEntete />,
+        ...optionsOngletsPourEcran(ordinateur),
+        tabBarPosition: ordinateur ? 'left' : 'bottom',
+        tabBarLabelPosition: ordinateur ? 'beside-icon' : 'below-icon',
+        tabBarStyle: ordinateur
+          ? {
+              backgroundColor: 'transparent',
+              borderTopWidth: 0,
+              borderRightWidth: 0,
+              elevation: 0,
+              width: largeurBarreLaterale,
+            }
+          : optionsOngletsPourEcran(ordinateur).tabBarStyle,
+        headerLeft: ordinateur ? undefined : () => <LogoEntete />,
+        headerRight: ordinateur ? undefined : () => <ActionsEntete />,
       }}
     >
       <Tabs.Screen

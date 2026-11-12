@@ -2,18 +2,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { z } from 'zod';
 
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { useBoutiques, useCreerBoutique } from '@/api/boutiques';
+import { AdminCarte } from '@/components/admin-carte';
 import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, espacements, polices, rayonPetit, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  polices,
+  rayonPilule,
+  seuilOrdinateur,
+  styleChiffre,
+  tailleToucheMin,
+  tailles,
+} from '@/theme';
 
 const schema = z.object({
   nom: z.string().trim().min(1, 'Indiquez le nom de la boutique.'),
@@ -27,6 +37,8 @@ function messageInvitation(nom: string, code: string): string {
 }
 
 export default function EcranBoutiques() {
+  const { width } = useWindowDimensions();
+  const ordinateur = width >= seuilOrdinateur;
   const { profil } = useAuth();
   const boutiques = useBoutiques();
   const creer = useCreerBoutique();
@@ -116,7 +128,7 @@ export default function EcranBoutiques() {
       </View>
 
       {formulaireOuvert ? (
-        <View style={styles.formulaire}>
+        <AdminCarte style={styles.formulaire}>
           <Text style={styles.titreFormulaire}>
             {creationLabo ? 'Nouveau laboratoire' : 'Nouvelle boutique'}
           </Text>
@@ -160,7 +172,7 @@ export default function EcranBoutiques() {
           >
             <Text style={styles.lienAnnulerTexte}>Annuler</Text>
           </Pressable>
-        </View>
+        </AdminCarte>
       ) : null}
 
       {boutiques.isLoading ? <EtatChargement /> : null}
@@ -170,26 +182,31 @@ export default function EcranBoutiques() {
       {boutiques.data && boutiques.data.length === 0 ? (
         <EtatVide message="Aucune boutique pour l’instant. Créez-en une avec + Nouvelle boutique." />
       ) : null}
-      {boutiques.data?.map((boutique) => (
-        <View key={boutique.id} style={styles.carte}>
-          <Text style={styles.nom}>{boutique.nom}</Text>
-          {boutique.est_laboratoire ? <Text style={styles.badge}>Laboratoire</Text> : null}
-          {boutique.adresse ? <Text style={styles.adresse}>{boutique.adresse}</Text> : null}
-          <Text style={styles.code} selectable>
-            {boutique.code_invitation}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Partager le code"
-            onPress={() => void partager(boutique.nom, boutique.code_invitation)}
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-            style={({ pressed }) => [styles.pastille, pressed && styles.pastilleAppuyee]}
+      <View style={[styles.grille, ordinateur && styles.grilleOrdi]}>
+        {boutiques.data?.map((boutique) => (
+          <AdminCarte
+            key={boutique.id}
+            style={[styles.carte, ordinateur && styles.carteOrdi]}
           >
-            <Ionicons name="share-outline" size={14} color={couleurs.texteSecondaire} />
-            <Text style={styles.pastilleTexte}>Partager le code</Text>
-          </Pressable>
-        </View>
-      ))}
+            <Text style={styles.nom}>{boutique.nom}</Text>
+            {boutique.est_laboratoire ? <Text style={styles.badge}>Laboratoire</Text> : null}
+            {boutique.adresse ? <Text style={styles.adresse}>{boutique.adresse}</Text> : null}
+            <Text style={styles.code} selectable>
+              {boutique.code_invitation}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Partager le code"
+              onPress={() => void partager(boutique.nom, boutique.code_invitation)}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              style={({ pressed }) => [styles.pastille, pressed && styles.pastilleAppuyee]}
+            >
+              <Ionicons name="share-outline" size={16} color={couleurs.texteSecondaire} />
+              <Text style={styles.pastilleTexte}>Partager le code</Text>
+            </Pressable>
+          </AdminCarte>
+        ))}
+      </View>
     </Ecran>
   );
 }
@@ -202,7 +219,13 @@ const styles = StyleSheet.create({
     gap: espacements.m,
   },
   lien: {
-    paddingVertical: espacements.xs,
+    minHeight: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: espacements.m,
+    borderRadius: rayonPilule,
+    backgroundColor: couleurs.fondPuce,
   },
   lienTexte: {
     fontSize: tailles.petit,
@@ -223,16 +246,19 @@ const styles = StyleSheet.create({
   badge: {
     overflow: 'hidden',
     alignSelf: 'flex-start',
-    backgroundColor: couleurs.principalClair,
-    color: couleurs.principalFonce,
+    backgroundColor: couleurs.accentClair,
+    color: couleurs.accentFonce,
     fontSize: 12,
     fontWeight: '600',
-    paddingHorizontal: espacements.s,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: rayonPilule,
+    fontFamily: polices.sans,
   },
   lienAnnuler: {
     alignSelf: 'flex-start',
+    minHeight: tailleToucheMin,
+    justifyContent: 'center',
     paddingVertical: espacements.xs,
   },
   lienAnnulerTexte: {
@@ -243,48 +269,63 @@ const styles = StyleSheet.create({
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
+  },
+  grille: {
+    marginTop: espacements.s,
+    gap: 10,
+  },
+  grilleOrdi: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 10,
+    columnGap: 0,
+    marginHorizontal: -5,
   },
   carte: {
-    gap: espacements.s,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: couleurs.bordure,
     alignItems: 'center',
+    gap: espacements.s,
+  },
+  carteOrdi: {
+    width: '50%',
+    paddingHorizontal: 5,
   },
   nom: {
-    fontSize: tailles.normal,
+    fontSize: tailles.grand,
     fontWeight: '600',
     color: couleurs.texte,
     alignSelf: 'stretch',
+    fontFamily: polices.sans,
   },
   adresse: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     alignSelf: 'stretch',
+    fontFamily: polices.sans,
   },
   code: {
+    ...styleChiffre,
     fontSize: tailles.titre,
-    fontWeight: '600',
     letterSpacing: 4,
     color: couleurs.principalFonce,
     textAlign: 'center',
+    marginVertical: espacements.s,
   },
   pastille: {
-    height: 32,
+    minHeight: tailleToucheMin,
     minWidth: 44,
-    paddingHorizontal: 10,
-    borderRadius: rayonPetit,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: couleurs.bordure,
-    backgroundColor: couleurs.principalClair,
+    paddingHorizontal: 14,
+    borderRadius: rayonPilule,
+    backgroundColor: couleurs.fondGroupe,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 6,
     alignSelf: 'center',
   },
   pastilleAppuyee: {
     opacity: 0.7,
+    transform: [{ scale: 0.97 }],
   },
   pastilleTexte: {
     fontSize: tailles.petit,

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { useBoutiques } from '@/api/boutiques';
 import { useEmployes } from '@/api/employes';
@@ -9,7 +9,15 @@ import { messageErreur } from '@/auth/erreurs';
 import { CarteProduit } from '@/components/carte-produit';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
-import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  polices,
+  rayonPilule,
+  seuilOrdinateur,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 import type { Profil } from '@/types/database';
 
 function description(employe: Profil): string {
@@ -27,6 +35,8 @@ function description(employe: Profil): string {
 }
 
 export default function EcranEmployes() {
+  const { width } = useWindowDimensions();
+  const ordinateur = width >= seuilOrdinateur;
   const [avecArchives, setAvecArchives] = useState(false);
   const boutiques = useBoutiques();
   const employes = useEmployes(avecArchives);
@@ -80,26 +90,29 @@ export default function EcranEmployes() {
                 Aucun employé. Partagez le code de la boutique pour inviter un pâtissier ou un compte vente.
               </Text>
             ) : (
-              liste.map((employe) => (
-                <Pressable
-                  key={employe.id}
-                  onPress={() =>
-                    router.push({ pathname: '/employes/[id]', params: { id: employe.id } })
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel={`Ouvrir la fiche de ${employe.prenom} ${employe.nom}`}
-                >
-                  <CarteProduit
-                    nom={`${employe.prenom} ${employe.nom}`}
-                    photoUrl={
-                      employe.photo_url
-                        ? (photos.data?.[employe.photo_url] ?? undefined)
-                        : undefined
+              <View style={[styles.liste, ordinateur && styles.listeOrdi]}>
+                {liste.map((employe) => (
+                  <Pressable
+                    key={employe.id}
+                    onPress={() =>
+                      router.push({ pathname: '/employes/[id]', params: { id: employe.id } })
                     }
-                    sousTitre={description(employe)}
-                  />
-                </Pressable>
-              ))
+                    accessibilityRole="button"
+                    accessibilityLabel={`Ouvrir la fiche de ${employe.prenom} ${employe.nom}`}
+                    style={ordinateur ? styles.colonne : undefined}
+                  >
+                    <CarteProduit
+                      nom={`${employe.prenom} ${employe.nom}`}
+                      photoUrl={
+                        employe.photo_url
+                          ? (photos.data?.[employe.photo_url] ?? undefined)
+                          : undefined
+                      }
+                      sousTitre={description(employe)}
+                    />
+                  </Pressable>
+                ))}
+              </View>
             )}
           </View>
         );
@@ -114,7 +127,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   lien: {
-    paddingVertical: espacements.xs,
+    minHeight: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: espacements.m,
+    borderRadius: rayonPilule,
+    backgroundColor: couleurs.fondPuce,
   },
   lienTexte: {
     fontSize: tailles.petit,
@@ -124,6 +143,7 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: espacements.s,
+    marginBottom: espacements.s,
   },
   titreSection: {
     ...styleTitreSection,
@@ -132,5 +152,20 @@ const styles = StyleSheet.create({
   vide: {
     fontSize: tailles.normal,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
+  },
+  liste: {
+    gap: 10,
+  },
+  listeOrdi: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 10,
+    columnGap: 0,
+    marginHorizontal: -5,
+  },
+  colonne: {
+    width: '50%',
+    paddingHorizontal: 5,
   },
 });

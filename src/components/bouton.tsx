@@ -2,11 +2,11 @@ import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
 import {
   couleurs,
-  espacements,
+  degradeBoutonPrincipal,
   hauteurBouton,
   hauteurBoutonCompact,
   polices,
-  rayon,
+  rayonPilule,
   tailles,
 } from '@/theme';
 
@@ -30,6 +30,12 @@ const textes: Record<Variante, string> = {
   danger: couleurs.erreur,
 };
 
+const fonds: Record<Variante, string | null> = {
+  principal: null,
+  secondaire: couleurs.fondPuce,
+  danger: couleurs.erreurClair,
+};
+
 export function Bouton({
   titre,
   onPress,
@@ -40,8 +46,8 @@ export function Bouton({
   compact = false,
 }: Props) {
   const inactif = desactive || chargement;
-  const texteSeul = variante === 'secondaire' || variante === 'danger';
   const hauteur = compact ? hauteurBoutonCompact : hauteurBouton;
+  const fondVariante = fonds[variante];
 
   return (
     <Pressable
@@ -51,13 +57,19 @@ export function Bouton({
       onPress={onPress}
       hitSlop={{ top: 2, bottom: 2, left: 4, right: 4 }}
       style={({ pressed }) => [
-        texteSeul ? styles.texteSeul : styles.bouton,
-        !texteSeul && {
+        styles.bouton,
+        {
           height: hauteur,
-          borderRadius: compact ? 14 : rayon,
-          backgroundColor: inactif ? couleurs.desactive : couleurs.principal,
+          borderRadius: rayonPilule,
+          ...(variante === 'principal'
+            ? inactif
+              ? { backgroundColor: couleurs.desactive }
+              : degradeBoutonPrincipal()
+            : {
+                backgroundColor: inactif ? couleurs.desactive : (fondVariante ?? couleurs.fondPuce),
+              }),
         },
-        pleineLargeur ? styles.pleineLargeur : !texteSeul && styles.autoLargeur,
+        pleineLargeur ? styles.pleineLargeur : styles.autoLargeur,
         pressed && styles.appuye,
       ]}
     >
@@ -66,11 +78,9 @@ export function Bouton({
       ) : (
         <Text
           style={[
-            texteSeul ? styles.texteLien : styles.texte,
+            styles.texte,
             {
               color: inactif ? couleurs.texteSecondaire : textes[variante],
-              textDecorationLine: texteSeul ? 'underline' : 'none',
-              textDecorationColor: couleurs.soulignement,
             },
           ]}
         >
@@ -83,7 +93,7 @@ export function Bouton({
 
 const styles = StyleSheet.create({
   bouton: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -93,26 +103,13 @@ const styles = StyleSheet.create({
   pleineLargeur: {
     alignSelf: 'stretch',
   },
-  texteSeul: {
-    minHeight: hauteurBoutonCompact,
-    paddingHorizontal: espacements.s,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    backgroundColor: 'transparent',
-  },
   appuye: {
-    opacity: 0.85,
+    opacity: 0.9,
     transform: [{ scale: 0.97 }],
   },
   texte: {
     fontSize: tailles.bouton,
-    fontWeight: '500',
-    fontFamily: polices.sans,
-  },
-  texteLien: {
-    fontSize: tailles.bouton,
-    fontWeight: '500',
+    fontWeight: '600',
     fontFamily: polices.sans,
   },
 });

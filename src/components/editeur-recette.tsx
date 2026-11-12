@@ -2,7 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRef, useState, type ComponentRef } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { couleurs, espacements, hauteurBouton, rayon, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  hauteurBouton,
+  ombres,
+  rayonCarte,
+  rayonPetit,
+  rayonPilule,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 
 export const UNITES = ['g', 'kg', 'ml', 'l', 'pièce', 'cuillère'] as const;
 export type Unite = (typeof UNITES)[number];
@@ -144,16 +154,20 @@ export function EditeurRecette({ lignes, onChange, erreurs = [] }: Props) {
 
 const styles = StyleSheet.create({
   bloc: {
-    gap: espacements.s,
+    gap: espacements.m,
+    padding: espacements.m,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.fondGroupe,
+    ...ombres.douce,
   },
   entete: {
     flexDirection: 'row',
     gap: espacements.s,
+    paddingHorizontal: espacements.xs,
   },
   titreColonne: {
-    fontSize: tailles.petit,
-    fontWeight: '600',
-    color: couleurs.texteSecondaire,
+    ...styleTitreSection,
+    fontSize: tailles.legend,
   },
   ligneBloc: {
     gap: espacements.xs,
@@ -178,9 +192,9 @@ const styles = StyleSheet.create({
   },
   champ: {
     height: hauteurBouton,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: couleurs.bordure,
-    borderRadius: rayon,
+    borderRadius: rayonPetit,
     paddingHorizontal: espacements.s,
     fontSize: tailles.petit,
     color: couleurs.texte,
@@ -214,13 +228,13 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   puce: {
-    height: 32,
+    height: 36,
     minWidth: 48,
     paddingHorizontal: espacements.m,
-    borderRadius: rayon,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: rayonPilule,
+    borderWidth: 1,
     borderColor: couleurs.bordure,
-    backgroundColor: couleurs.fond,
+    backgroundColor: couleurs.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },

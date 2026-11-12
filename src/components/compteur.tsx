@@ -2,10 +2,6 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { couleurs, polices, tailles } from '@/theme';
 
-const DIAMETRE = 32;
-/** hitSlop pour atteindre ≥ 48 px de zone tactile (32 + 8 × 2). */
-const HIT_SLOP = 8;
-
 type Props = {
   valeur: number;
   onChange: (valeur: number) => void;
@@ -15,7 +11,7 @@ type Props = {
   danger?: boolean;
 };
 
-// Compteur − / + en pilule beige / marron (maquettes Production / Fin de journée).
+// Compteur − / + : boutons ≥ 44 px, valeur lisible (doigts farinés).
 export function Compteur({
   valeur,
   onChange,
@@ -28,28 +24,45 @@ export function Compteur({
     onChange(chiffres === '' ? 0 : parseInt(chiffres, 10));
   }
 
+  // Boutons 44 px (doigts farinés) ; champ resserré pour laisser de la place au nom.
+  const diametre = 44;
   const actif = valeur > 0;
   const fondPilule = actif
     ? danger
       ? couleurs.erreur
       : couleurs.principal
     : couleurs.fondPuce;
-  const couleurValeur = actif ? couleurs.texteSurPrincipal : couleurs.texteMuet;
+  const couleurValeur = actif ? couleurs.texteSurPrincipal : couleurs.texte;
   const couleurMoins = actif ? couleurs.texteSurPrincipal : couleurs.texte;
   const fondPlus = actif ? couleurs.texteSurPrincipal : couleurs.principal;
   const couleurPlus = actif ? couleurs.principal : couleurs.texteSurPrincipal;
 
   return (
-    <View style={[styles.pilule, compact && styles.piluleCompact, { backgroundColor: fondPilule }]}>
+    <View
+      style={[
+        styles.pilule,
+        {
+          backgroundColor: fondPilule,
+          minHeight: diametre + 4,
+          borderRadius: (diametre + 4) / 2,
+          padding: 2,
+        },
+      ]}
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${libelle} : moins un`}
         disabled={valeur <= 0}
         onPress={() => onChange(Math.max(0, valeur - 1))}
-        hitSlop={HIT_SLOP}
         style={({ pressed }) => [
-          styles.bouton,
-          { opacity: actif ? 1 : 0.3 },
+          {
+            width: diametre,
+            height: diametre,
+            borderRadius: diametre / 2,
+            alignItems: 'center' as const,
+            justifyContent: 'center' as const,
+          },
+          !actif && styles.boutonMoinsRepos,
           pressed && styles.appuye,
         ]}
       >
@@ -66,7 +79,8 @@ export function Compteur({
           compact && styles.champCompact,
           {
             color: couleurValeur,
-            fontWeight: actif ? '500' : '400',
+            fontWeight: actif ? '600' : '500',
+            height: diametre,
           },
         ]}
       />
@@ -74,10 +88,15 @@ export function Compteur({
         accessibilityRole="button"
         accessibilityLabel={`${libelle} : plus un`}
         onPress={() => onChange(valeur + 1)}
-        hitSlop={HIT_SLOP}
         style={({ pressed }) => [
-          styles.bouton,
-          { backgroundColor: fondPlus },
+          {
+            width: diametre,
+            height: diametre,
+            borderRadius: diametre / 2,
+            alignItems: 'center' as const,
+            justifyContent: 'center' as const,
+            backgroundColor: fondPlus,
+          },
           pressed && styles.appuye,
         ]}
       >
@@ -92,42 +111,35 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
-    paddingHorizontal: 4,
-    borderRadius: 20,
+    minWidth: 124,
   },
-  piluleCompact: {
-    height: 36,
-    borderRadius: 18,
-  },
-  bouton: {
-    width: DIAMETRE,
-    height: DIAMETRE,
-    borderRadius: DIAMETRE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+  boutonMoinsRepos: {
+    backgroundColor: couleurs.surface,
+    borderWidth: 1,
+    borderColor: couleurs.bordure,
   },
   appuye: {
-    opacity: 0.75,
+    opacity: 0.8,
     transform: [{ scale: 0.92 }],
   },
   signe: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '500',
-    lineHeight: 20,
+    lineHeight: 24,
     fontFamily: polices.sans,
   },
   champ: {
-    width: 34,
-    height: DIAMETRE,
+    width: 36,
     borderWidth: 0,
     backgroundColor: 'transparent',
     textAlign: 'center',
-    fontSize: tailles.normal,
+    fontSize: tailles.grand,
     fontFamily: polices.sans,
+    fontVariant: ['tabular-nums'],
     padding: 0,
   },
   champCompact: {
-    width: 30,
+    width: 36,
+    fontSize: tailles.normal,
   },
 });

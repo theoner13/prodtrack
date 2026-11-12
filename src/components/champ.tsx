@@ -8,15 +8,22 @@ type Props = TextInputProps & {
 };
 
 // Champ texte avec libellé et message d'erreur.
-export function Champ({ libelle, erreur, style, ...props }: Props) {
+export function Champ({ libelle, erreur, style, multiline, ...props }: Props) {
   return (
     <View style={styles.conteneur}>
       <Text style={styles.libelle}>{libelle}</Text>
       <TextInput
         accessibilityLabel={libelle}
         placeholderTextColor={couleurs.texteMuet}
-        style={[styles.champ, erreur ? styles.champErreur : null, style]}
         {...props}
+        multiline={multiline}
+        textAlignVertical={multiline ? 'top' : props.textAlignVertical}
+        style={[
+          styles.champ,
+          multiline ? styles.champMultiligne : null,
+          erreur ? styles.champErreur : null,
+          style,
+        ]}
       />
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
     </View>
@@ -34,17 +41,22 @@ const styles = StyleSheet.create({
     fontFamily: polices.sans,
   },
   champ: {
-    minHeight: hauteurBouton - 12,
-    borderWidth: 0,
+    minHeight: hauteurBouton - 10,
+    borderWidth: 1,
+    borderColor: couleurs.bordure,
     borderRadius: rayonPetit,
     paddingHorizontal: espacements.m,
     fontSize: tailles.normal,
     color: couleurs.texte,
-    backgroundColor: couleurs.fondGroupe,
+    backgroundColor: couleurs.surface,
     fontFamily: polices.sans,
   },
+  champMultiligne: {
+    paddingVertical: 14,
+    minHeight: 88,
+    textAlignVertical: 'top',
+  },
   champErreur: {
-    borderWidth: 1,
     borderColor: couleurs.erreur,
   },
   erreur: {

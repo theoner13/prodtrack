@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -19,12 +20,23 @@ import { Bouton } from '@/components/bouton';
 import { BoutonRetour } from '@/components/bouton-retour';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
+import { AdminCarte } from '@/components/admin-carte';
 import { eurosVersCentimes, formatEuros } from '@/lib/format';
 import {
   etiquetteBoutique,
   etiquetteProvenanceAdmin,
 } from '@/lib/production-exterieure';
-import { couleurs, espacements, polices, rayonPetit, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  polices,
+  rayonCarte,
+  rayonPilule,
+  rayonPetit,
+  seuilOrdinateur,
+  tailleToucheMin,
+  tailles,
+} from '@/theme';
 
 const PAS_PRIX_CENTIMES = 10;
 const MIN_PRIX_CENTIMES = 10;
@@ -39,6 +51,8 @@ function formatSaisiePrix(centimes: number): string {
 }
 
 export default function EcranFicheProduitAdmin() {
+  const { width } = useWindowDimensions();
+  const ordinateur = width >= seuilOrdinateur;
   const { id } = useLocalSearchParams<{ id: string }>();
   const produitId = typeof id === 'string' ? id : id?.[0];
   const fiche = useFicheProduit(produitId ?? null);
@@ -190,6 +204,7 @@ export default function EcranFicheProduitAdmin() {
 
   return (
     <Ecran defilement>
+      <View style={ordinateur ? styles.colonneLimitee : undefined}>
       <BoutonRetour onPress={retour} />
 
       <View style={styles.entete}>
@@ -218,7 +233,7 @@ export default function EcranFicheProduitAdmin() {
         </View>
       </View>
 
-      <View style={styles.carte}>
+      <AdminCarte style={styles.carte}>
         {fabricantOuvert ? (
           <View style={[styles.lignePrixEdition, styles.ligneSeparee]}>
             <Text style={styles.ligneLibelle}>Fabricant</Text>
@@ -392,9 +407,10 @@ export default function EcranFicheProduitAdmin() {
         ) : (
           <Text style={styles.recetteAbsente}>Recette — non renseignée</Text>
         )}
-      </View>
+      </AdminCarte>
 
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
+      </View>
     </Ecran>
   );
 }
@@ -411,6 +427,11 @@ function LigneInfo({ libelle, valeur }: { libelle: string; valeur: string }) {
 const TAILLE_PHOTO = 88;
 
 const styles = StyleSheet.create({
+  colonneLimitee: {
+    maxWidth: 720,
+    width: '100%',
+    alignSelf: 'center',
+  },
   entete: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -420,10 +441,10 @@ const styles = StyleSheet.create({
   photo: {
     width: TAILLE_PHOTO,
     height: TAILLE_PHOTO,
-    borderRadius: rayonPetit,
+    borderRadius: rayonCarte,
   },
   initiale: {
-    backgroundColor: couleurs.principalClair,
+    backgroundColor: couleurs.fondGroupe,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -440,10 +461,11 @@ const styles = StyleSheet.create({
     minHeight: TAILLE_PHOTO,
   },
   nom: {
-    fontSize: tailles.grand,
+    fontSize: tailles.titreMoyen,
     fontWeight: '600',
     color: couleurs.texte,
     fontFamily: polices.sans,
+    letterSpacing: -0.4,
   },
   boutique: {
     fontSize: tailles.petit,
@@ -457,21 +479,18 @@ const styles = StyleSheet.create({
   },
   badge: {
     overflow: 'hidden',
-    backgroundColor: couleurs.principalClair,
-    color: couleurs.principalFonce,
+    backgroundColor: couleurs.fondGroupe,
+    color: couleurs.texteSecondaire,
     fontSize: 12,
     fontWeight: '600',
-    paddingHorizontal: espacements.s,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: rayonPilule,
     fontFamily: polices.sans,
   },
   carte: {
-    backgroundColor: couleurs.fondGroupe,
-    borderRadius: rayonPetit,
-    paddingHorizontal: espacements.m,
-    paddingVertical: espacements.xs,
     marginBottom: espacements.m,
+    paddingVertical: espacements.xs,
   },
   ligneInfo: {
     flexDirection: 'row',
@@ -479,10 +498,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: espacements.m,
     paddingVertical: espacements.m,
+    minHeight: tailleToucheMin,
   },
   ligneSeparee: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: couleurs.bordure,
+    borderBottomColor: couleurs.bordureDouce,
   },
   lignePresse: {
     opacity: 0.7,
@@ -521,10 +541,10 @@ const styles = StyleSheet.create({
     gap: espacements.s,
   },
   puce: {
-    height: 32,
+    minHeight: tailleToucheMin,
     paddingHorizontal: espacements.m,
-    borderRadius: 16,
-    backgroundColor: couleurs.fond,
+    borderRadius: rayonPilule,
+    backgroundColor: couleurs.fondGroupe,
     justifyContent: 'center',
   },
   puceActive: {
@@ -554,9 +574,7 @@ const styles = StyleSheet.create({
     minWidth: TOUCHER_MIN,
     minHeight: TOUCHER_MIN,
     borderRadius: TOUCHER_MIN / 2,
-    backgroundColor: couleurs.fond,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: couleurs.bordure,
+    backgroundColor: couleurs.fondGroupe,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -604,6 +622,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: espacements.m,
+    minHeight: tailleToucheMin,
   },
   recetteTitre: {
     fontSize: tailles.normal,
@@ -636,6 +655,7 @@ const styles = StyleSheet.create({
     fontSize: tailles.normal,
     color: couleurs.texteSecondaire,
     fontFamily: polices.sans,
+    fontVariant: ['tabular-nums'],
   },
   recetteAbsente: {
     fontSize: tailles.normal,
@@ -650,3 +670,4 @@ const styles = StyleSheet.create({
     fontFamily: polices.sans,
   },
 });
+

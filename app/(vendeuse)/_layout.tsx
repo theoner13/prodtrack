@@ -1,17 +1,35 @@
 import { Tabs } from 'expo-router';
+import { useWindowDimensions } from 'react-native';
 
 import { ActionsEntete } from '@/components/actions-entete';
+import { BarreOnglets, type PropsBarreOnglets } from '@/components/barre-onglets';
 import { LogoEntete } from '@/components/logo';
 import { OngletIcone } from '@/components/onglet-icone';
-import { optionsOngletsCommunes } from '@/lib/options-onglets';
+import { optionsOngletsPourEcran } from '@/lib/options-onglets';
+import { largeurBarreLaterale, seuilOrdinateur } from '@/theme';
 
 export default function LayoutVendeuse() {
+  const { width } = useWindowDimensions();
+  const ordinateur = width >= seuilOrdinateur;
+
   return (
     <Tabs
+      tabBar={(props) => <BarreOnglets {...(props as unknown as PropsBarreOnglets)} />}
       screenOptions={{
-        ...optionsOngletsCommunes,
-        headerLeft: () => <LogoEntete />,
-        headerRight: () => <ActionsEntete />,
+        ...optionsOngletsPourEcran(ordinateur),
+        tabBarPosition: ordinateur ? 'left' : 'bottom',
+        tabBarLabelPosition: ordinateur ? 'beside-icon' : 'below-icon',
+        tabBarStyle: ordinateur
+          ? {
+              backgroundColor: 'transparent',
+              borderTopWidth: 0,
+              borderRightWidth: 0,
+              elevation: 0,
+              width: largeurBarreLaterale,
+            }
+          : optionsOngletsPourEcran(ordinateur).tabBarStyle,
+        headerLeft: ordinateur ? undefined : () => <LogoEntete />,
+        headerRight: ordinateur ? undefined : () => <ActionsEntete />,
       }}
     >
       <Tabs.Screen

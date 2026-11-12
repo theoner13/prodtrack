@@ -12,7 +12,7 @@ import { BoutonRetour } from '@/components/bouton-retour';
 import { Champ } from '@/components/champ';
 import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
-import { couleurs, tailles } from '@/theme';
+import { couleurs, polices, tailles } from '@/theme';
 
 const schema = z.object({
   entreprise: z.string().trim().min(1, 'Indiquez le nom de l’entreprise.'),
@@ -120,5 +120,6 @@ const styles = StyleSheet.create({
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
   },
 });

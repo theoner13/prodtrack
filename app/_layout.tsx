@@ -13,6 +13,7 @@ import { View } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import { AnimationAccueil } from '@/components/animation-accueil';
+import { styleTitreEntete } from '@/lib/options-onglets';
 import { couleurs } from '@/theme';
 import type { Profil } from '@/types/database';
 
@@ -24,10 +25,12 @@ const optionsAvecEntete = {
   headerShown: true as const,
   headerStyle: {
     backgroundColor: couleurs.fond,
+    borderBottomWidth: 0,
   },
   headerShadowVisible: false,
   headerTintColor: couleurs.texte,
-  headerTitleStyle: { fontSize: 16, fontWeight: '500' as const },
+  headerTitleStyle: styleTitreEntete(false),
+  headerTitleAlign: 'left' as const,
   headerBackVisible: false,
 };
 

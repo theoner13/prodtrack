@@ -5,7 +5,7 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'rea
 import { cameraDisponible, choisirPhoto, envoyerPhoto, supprimerPhoto, useUrlSignee } from '@/api/photos';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import { couleurs, espacements, ombres, polices, rayonCarte, rayonPetit, tailles } from '@/theme';
 
 type Props = {
   chemin: string | null;
@@ -208,10 +208,18 @@ export function ChoixPhoto({
 
 const styles = StyleSheet.create({
   bloc: {
-    gap: 12,
+    gap: espacements.m,
+    padding: espacements.m,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.surface,
+    ...ombres.douce,
   },
   blocCompact: {
     gap: espacements.s,
+    padding: espacements.m,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.surface,
+    ...ombres.douce,
   },
   ligneCompact: {
     flexDirection: 'row',
@@ -226,16 +234,16 @@ const styles = StyleSheet.create({
   photo: {
     width: 160,
     height: 160,
-    borderRadius: rayon,
+    borderRadius: rayonCarte,
     alignSelf: 'center',
   },
   photoCompact: {
     width: 80,
     height: 80,
-    borderRadius: rayon,
+    borderRadius: rayonPetit,
   },
   vide: {
-    backgroundColor: couleurs.principalClair,
+    backgroundColor: couleurs.accentClair,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -246,7 +254,8 @@ const styles = StyleSheet.create({
   },
   videTexte: {
     fontSize: tailles.petit,
-    color: couleurs.principalFonce,
+    color: couleurs.accentFonce,
+    fontFamily: polices.sans,
   },
   liens: {
     flexDirection: 'row',
@@ -258,6 +267,7 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     fontWeight: '600',
     color: couleurs.principal,
+    fontFamily: polices.sans,
   },
   envoi: {
     flexDirection: 'row',
@@ -267,13 +277,16 @@ const styles = StyleSheet.create({
   envoiTexte: {
     fontSize: tailles.normal,
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   envoiTexteCompact: {
     fontSize: tailles.petit,
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
   },
 });

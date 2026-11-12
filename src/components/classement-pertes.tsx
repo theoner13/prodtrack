@@ -1,38 +1,53 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { AdminCarte } from '@/components/admin-carte';
 import { formatTauxPerte, type ProduitClasse } from '@/lib/ca';
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/theme';
 
 type Props = {
   produits: ProduitClasse[];
+  /** Légende boutique sous le nom, indexée par cle produit. */
+  legendes?: Record<string, string>;
 };
 
 /** Tableau Produit | Jetés | Vendus | Taux, rang devant le nom, jetés et taux en orange si > 0. */
-export function ClassementPertes({ produits }: Props) {
+export function ClassementPertes({ produits, legendes }: Props) {
   if (produits.length === 0) {
     return <Text style={styles.vide}>Aucune perte sur la période.</Text>;
   }
 
   return (
-    <View style={styles.conteneur}>
+    <AdminCarte style={styles.conteneur}>
       <Text style={styles.titre}>Produits qui se perdent le plus</Text>
       <View style={styles.tableau}>
         <View style={styles.ligne} accessibilityRole="header">
-          <Text style={[styles.entete, styles.colLibelle]}>Produit</Text>
-          <Text style={[styles.entete, styles.colNombre]}>Jetés</Text>
-          <Text style={[styles.entete, styles.colNombre]}>Vendus</Text>
-          <Text style={[styles.entete, styles.colTaux]}>Taux</Text>
+          <Text style={[styles.entete, styles.colLibelle]} numberOfLines={1}>
+            Produit
+          </Text>
+          <Text style={[styles.entete, styles.colNombre]} numberOfLines={1}>
+            Jetés
+          </Text>
+          <Text style={[styles.entete, styles.colNombre]} numberOfLines={1}>
+            Vendus
+          </Text>
+          <Text style={[styles.entete, styles.colTaux]} numberOfLines={1}>
+            Taux
+          </Text>
         </View>
         {produits.map((p, i) => {
           const libelle = `${i + 1}. ${p.nom}`;
+          const legende = legendes?.[p.cle];
           return (
             <View
               key={p.cle}
               style={styles.ligne}
               accessible
-              accessibilityLabel={`${libelle} : ${p.jete} jetés, ${p.vendu} vendus, taux ${formatTauxPerte(p.tauxPerte)}`}
+              accessibilityLabel={`${libelle}${legende ? ` · ${legende}` : ''} : ${p.jete} jetés, ${p.vendu} vendus, taux ${formatTauxPerte(p.tauxPerte)}`}
             >
-              <Text style={[styles.texte, styles.colLibelle]}>{libelle}</Text>
+              <View style={styles.colLibelle}>
+                <Text style={styles.texte}>{libelle}</Text>
+                {legende ? <Text style={styles.legende}>{legende}</Text> : null}
+              </View>
               <Text
                 style={[
                   styles.texte,
@@ -56,11 +71,11 @@ export function ClassementPertes({ produits }: Props) {
           );
         })}
       </View>
-    </View>
+    </AdminCarte>
   );
 }
 
-const LARGEUR_NOMBRE = 48;
+const LARGEUR_NOMBRE = 64;
 const LARGEUR_TAUX = 64;
 
 const styles = StyleSheet.create({
@@ -70,31 +85,40 @@ const styles = StyleSheet.create({
     marginTop: espacements.s,
   },
   titre: {
-    fontSize: tailles.section,
-    fontWeight: '600',
-    color: couleurs.texteSecondaire,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    ...styleTitreSection,
   },
   tableau: {
     width: '100%',
+    overflow: 'hidden',
+    marginHorizontal: -4,
   },
   ligne: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 6,
+    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: couleurs.bordure,
+    borderBottomColor: couleurs.bordureDouce,
     gap: 4,
   },
   entete: {
     fontSize: 13,
-    color: couleurs.texteSecondaire,
-    fontWeight: '500',
+    color: couleurs.texteMuet,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    fontFamily: polices.sans,
   },
   texte: {
     fontSize: tailles.petit,
     color: couleurs.texte,
+    fontFamily: polices.sans,
+    fontVariant: ['tabular-nums'],
+  },
+  legende: {
+    fontSize: tailles.legend,
+    color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
+    marginTop: 2,
   },
   colLibelle: {
     flex: 1,
@@ -110,12 +134,13 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   alerte: {
-    color: couleurs.alerte,
+    color: couleurs.accentFonce,
   },
   vide: {
     fontSize: tailles.petit,
     color: couleurs.texte,
     paddingVertical: espacements.s,
     marginTop: espacements.s,
+    fontFamily: polices.sans,
   },
 });

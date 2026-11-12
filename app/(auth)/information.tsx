@@ -6,7 +6,7 @@ import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
-import { couleurs, tailles } from '@/theme';
+import { couleurs, polices, tailles } from '@/theme';
 
 export default function EcranInformation() {
   const { session, profil, rechargerProfil } = useAuth();
@@ -68,9 +68,11 @@ const styles = StyleSheet.create({
     fontSize: tailles.normal,
     color: couleurs.texte,
     lineHeight: 26,
+    fontFamily: polices.sans,
   },
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
   },
 });

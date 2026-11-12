@@ -12,7 +12,7 @@ import { BoutonRetour } from '@/components/bouton-retour';
 import { Champ } from '@/components/champ';
 import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
-import { couleurs, tailles } from '@/theme';
+import { couleurs, polices, tailles } from '@/theme';
 
 const schema = z
   .object({
@@ -166,14 +166,17 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     fontWeight: '600',
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   aide: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     lineHeight: 20,
+    fontFamily: polices.sans,
   },
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
   },
 });

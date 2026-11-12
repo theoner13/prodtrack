@@ -230,11 +230,16 @@ const styles = StyleSheet.create({
     gap: 20,
     padding: 16,
     borderRadius: rayon,
-    backgroundColor: couleurs.fondGroupe,
+    backgroundColor: couleurs.surface,
     minHeight: 120,
+    shadowColor: '#2B1A10',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.07,
+    shadowRadius: 30,
+    elevation: 3,
   },
   tuileAppuyee: {
-    transform: [{ scale: 0.96 }],
+    transform: [{ scale: 0.97 }],
     opacity: 0.92,
   },
   photo: {

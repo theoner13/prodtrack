@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
 import { ClocheNotifications } from '@/components/cloche-notifications';
-import { couleurs, polices } from '@/theme';
+import { couleurs, polices, tailleToucheMin } from '@/theme';
 
 /** Cloche + avatar Profil (initiale), pour les en-têtes d'onglets. */
 export function ActionsEntete() {
@@ -14,8 +14,10 @@ export function ActionsEntete() {
     <View style={styles.ligne}>
       <ClocheNotifications />
       <Link href="/profil" accessibilityLabel="Profil">
-        <View style={styles.avatar} accessibilityRole="button">
-          <Text style={styles.initiale}>{initiale}</Text>
+        <View style={styles.avatarZone} accessibilityRole="button">
+          <View style={styles.avatar}>
+            <Text style={styles.initiale}>{initiale}</Text>
+          </View>
         </View>
       </Link>
     </View>
@@ -26,21 +28,27 @@ const styles = StyleSheet.create({
   ligne: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     marginRight: 16,
   },
+  avatarZone: {
+    width: tailleToucheMin,
+    height: tailleToucheMin,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: couleurs.principal,
     alignItems: 'center',
     justifyContent: 'center',
   },
   initiale: {
     color: couleurs.texteSurPrincipal,
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
     fontFamily: polices.sans,
   },
 });

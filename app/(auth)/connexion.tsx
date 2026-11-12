@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet, Text, View } from 'react-native';
@@ -12,7 +12,7 @@ import { BoutonRetour } from '@/components/bouton-retour';
 import { Champ } from '@/components/champ';
 import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, polices, tailles } from '@/theme';
 
 const schema = z.object({
   email: z.email('Adresse email invalide.'),
@@ -135,25 +135,33 @@ export default function EcranConnexion() {
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
       <Bouton
         titre="Se connecter"
+        pleineLargeur
         chargement={formState.isSubmitting}
         onPress={handleSubmit(connecter)}
       />
-      <Link href="/inscription" style={styles.lien}>
-        Créer un compte
-      </Link>
+      <Bouton
+        titre="Créer un compte"
+        variante="secondaire"
+        pleineLargeur
+        onPress={() => router.push('/inscription')}
+      />
       {afficherConnexionRapide ? (
         <View style={styles.rapide}>
           <Text style={styles.rapideTitre}>Connexion rapide (test)</Text>
-          {comptesTest.map((compte) => (
-            <Bouton
-              key={compte.email}
-              titre={compte.libelle}
-              variante="secondaire"
-              chargement={emailRapide === compte.email}
-              desactive={emailRapide !== null && emailRapide !== compte.email}
-              onPress={() => connecterRapide(compte.email)}
-            />
-          ))}
+          <View style={styles.rapidePuces}>
+            {comptesTest.map((compte) => (
+              <View key={compte.email} style={styles.rapidePuce}>
+                <Bouton
+                  titre={compte.libelle}
+                  variante="secondaire"
+                  compact
+                  chargement={emailRapide === compte.email}
+                  desactive={emailRapide !== null && emailRapide !== compte.email}
+                  onPress={() => connecterRapide(compte.email)}
+                />
+              </View>
+            ))}
+          </View>
         </View>
       ) : null}
     </EcranAuth>
@@ -164,12 +172,7 @@ const styles = StyleSheet.create({
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
-  },
-  lien: {
-    fontSize: tailles.normal,
-    color: couleurs.principal,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontFamily: polices.sans,
   },
   rapide: {
     marginTop: espacements.l,
@@ -177,8 +180,17 @@ const styles = StyleSheet.create({
   },
   rapideTitre: {
     fontSize: tailles.normal,
-    fontWeight: '700',
+    fontWeight: '600',
     color: couleurs.texteSecondaire,
     marginBottom: espacements.xs,
+    fontFamily: polices.sans,
+  },
+  rapidePuces: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: espacements.s,
+  },
+  rapidePuce: {
+    flexGrow: 0,
   },
 });

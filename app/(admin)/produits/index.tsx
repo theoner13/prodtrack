@@ -1,19 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { useBoutiques } from '@/api/boutiques';
 import { useUrlsSignees } from '@/api/photos';
 import { useProduits } from '@/api/produits';
 import { messageErreur } from '@/auth/erreurs';
+import { AdminPuce } from '@/components/admin-puce';
 import { CarteProduit } from '@/components/carte-produit';
 import { ChoixSegmente } from '@/components/choix-segmente';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { FormulaireImposer } from '@/components/formulaire-imposer';
 import { etiquetteProvenanceAdmin } from '@/lib/production-exterieure';
-import { couleurs, espacements, polices, styleTitreSection, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  polices,
+  rayonPilule,
+  seuilOrdinateur,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 
 type FiltreProduits = 'vente' | 'intermediaire';
 
@@ -23,6 +32,8 @@ const OPTIONS_FILTRE: { valeur: FiltreProduits; libelle: string }[] = [
 ];
 
 export default function EcranProduits() {
+  const { width } = useWindowDimensions();
+  const ordinateur = width >= seuilOrdinateur;
   const boutiques = useBoutiques();
   const [boutiqueId, setBoutiqueId] = useState<string | null>(null);
   const [filtre, setFiltre] = useState<FiltreProduits>('vente');
@@ -87,28 +98,16 @@ export default function EcranProduits() {
       {boutiques.data && boutiques.data.length > 0 ? (
         <>
           <Text style={styles.section}>Boutique</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.puces}
-          >
-            {boutiques.data.map((boutique) => {
-              const active = choisi === boutique.id;
-              return (
-                <Pressable
-                  key={boutique.id}
-                  onPress={() => setBoutiqueId(boutique.id)}
-                  style={[styles.puce, active && styles.puceActive]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                >
-                  <Text style={[styles.puceTexte, active && styles.puceTexteActive]}>
-                    {boutique.nom}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          <View style={styles.puces}>
+            {boutiques.data.map((boutique) => (
+              <AdminPuce
+                key={boutique.id}
+                libelle={boutique.nom}
+                active={choisi === boutique.id}
+                onPress={() => setBoutiqueId(boutique.id)}
+              />
+            ))}
+          </View>
 
           <ChoixSegmente
             options={OPTIONS_FILTRE}
@@ -131,32 +130,35 @@ export default function EcranProduits() {
       {!chargement && choisi && !produits.isError && produitsFiltres.length === 0 ? (
         <EtatVide message={messageVide} />
       ) : null}
-      {produitsFiltres.map((produit) => (
-        <Pressable
-          key={produit.id}
-          onPress={() =>
-            router.push({ pathname: '/produits/[id]', params: { id: produit.id } })
-          }
-          accessibilityRole="button"
-          accessibilityLabel={`Ouvrir le produit ${produit.nom}`}
-        >
-          <CarteProduit
-            nom={produit.nom}
-            prixCentimes={produit.intermediaire ? undefined : produit.prix_centimes}
-            photoUrl={
-              produit.photo_url ? (photos.data?.[produit.photo_url] ?? undefined) : undefined
+      <View style={[styles.liste, ordinateur && styles.listeOrdi]}>
+        {produitsFiltres.map((produit) => (
+          <Pressable
+            key={produit.id}
+            onPress={() =>
+              router.push({ pathname: '/produits/[id]', params: { id: produit.id } })
             }
+            accessibilityRole="button"
+            accessibilityLabel={`Ouvrir le produit ${produit.nom}`}
+            style={ordinateur ? styles.colonne : undefined}
           >
-            {produit.impose_par_admin ? <Text style={styles.badge}>Imposé</Text> : null}
-            {!produit.fabricant_id ? <Text style={styles.badge}>Sans pâtissier</Text> : null}
-            {produit.provenanceBoutiqueNom ? (
-              <Text style={styles.badge}>
-                {etiquetteProvenanceAdmin(produit.provenanceBoutiqueNom)}
-              </Text>
-            ) : null}
-          </CarteProduit>
-        </Pressable>
-      ))}
+            <CarteProduit
+              nom={produit.nom}
+              prixCentimes={produit.intermediaire ? undefined : produit.prix_centimes}
+              photoUrl={
+                produit.photo_url ? (photos.data?.[produit.photo_url] ?? undefined) : undefined
+              }
+            >
+              {produit.impose_par_admin ? <Text style={styles.badge}>Imposé</Text> : null}
+              {!produit.fabricant_id ? <Text style={styles.badge}>Sans pâtissier</Text> : null}
+              {produit.provenanceBoutiqueNom ? (
+                <Text style={styles.badge}>
+                  {etiquetteProvenanceAdmin(produit.provenanceBoutiqueNom)}
+                </Text>
+              ) : null}
+            </CarteProduit>
+          </Pressable>
+        ))}
+      </View>
     </Ecran>
   );
 }
@@ -170,7 +172,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingVertical: espacements.xs,
+    minHeight: 48,
+    height: 48,
+    paddingHorizontal: espacements.m,
+    borderRadius: rayonPilule,
+    backgroundColor: couleurs.fondPuce,
   },
   boutonImposerTexte: {
     fontSize: tailles.petit,
@@ -180,38 +186,38 @@ const styles = StyleSheet.create({
   },
   section: {
     ...styleTitreSection,
+    marginBottom: 4,
   },
   puces: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: espacements.s,
+    paddingVertical: 2,
   },
-  puce: {
-    height: 32,
-    paddingHorizontal: espacements.m,
-    borderRadius: 16,
-    backgroundColor: couleurs.fondPuce,
-    justifyContent: 'center',
+  liste: {
+    marginTop: espacements.s,
   },
-  puceActive: {
-    backgroundColor: couleurs.principal,
+  listeOrdi: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 10,
+    columnGap: 0,
+    marginHorizontal: -5,
   },
-  puceTexte: {
-    fontSize: tailles.petit,
-    color: couleurs.texteSecondaire,
-    fontWeight: '500',
-  },
-  puceTexteActive: {
-    color: couleurs.texteSurPrincipal,
+  colonne: {
+    width: '50%',
+    paddingHorizontal: 5,
   },
   badge: {
     overflow: 'hidden',
-    backgroundColor: couleurs.principalClair,
-    color: couleurs.principalFonce,
+    backgroundColor: couleurs.fondGroupe,
+    color: couleurs.texteSecondaire,
     fontSize: 12,
     fontWeight: '600',
-    paddingHorizontal: espacements.s,
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: rayonPilule,
+    fontFamily: polices.sans,
   },
 });

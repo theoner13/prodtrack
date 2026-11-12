@@ -37,7 +37,17 @@ import { EtatChargement, EtatErreur } from '@/components/etats';
 import { eurosVersCentimes } from '@/lib/format';
 import { etiquetteLaboratoire } from '@/lib/laboratoire';
 import { etiquetteBoutique } from '@/lib/production-exterieure';
-import { couleurs, espacements, rayon, rayonPetit, styleTitreSection, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  ombres,
+  polices,
+  rayonCarte,
+  rayonPetit,
+  rayonPilule,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 
 const schema = z
   .object({
@@ -452,6 +462,7 @@ export default function EcranFicheProduit() {
         />
         <Bouton
           titre="Enregistrer la production"
+          pleineLargeur
           chargement={enregistrerProduction.isPending}
           onPress={() => void soumettreProduction()}
         />
@@ -623,7 +634,8 @@ export default function EcranFicheProduit() {
           </View>
         ) : null}
 
-        <View style={[styles.ligneChamps, !deuxColonnes && styles.colonne]}>
+        <View style={styles.bloc}>
+          <View style={[styles.ligneChamps, !deuxColonnes && styles.colonne]}>
           {afficherPrix ? (
             <View style={styles.colonneChamp}>
               <Controller
@@ -700,6 +712,7 @@ export default function EcranFicheProduit() {
             </View>
           ) : null}
         </View>
+        </View>
 
         <View style={styles.bloc}>
           <Text style={styles.titreSection}>Recette · facultatif</Text>
@@ -718,31 +731,35 @@ export default function EcranFicheProduit() {
         </View>
 
         {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
-        <Bouton
-          titre={creation ? 'Enregistrer le produit' : 'Enregistrer les modifications'}
-          chargement={formState.isSubmitting}
-          pleineLargeur
-          onPress={handleSubmit(sauver)}
-        />
+        <View style={styles.zoneEnregistrement}>
+          <Bouton
+            titre={creation ? 'Enregistrer le produit' : 'Enregistrer les modifications'}
+            chargement={formState.isSubmitting}
+            pleineLargeur
+            onPress={handleSubmit(sauver)}
+          />
+        </View>
 
         {!creation && !impose ? (
-          demandeRetrait ? (
-            <View style={styles.confirmation}>
-              <Text style={styles.texte}>
-                Retirer ce produit ? Il n’apparaîtra plus dans vos listes. L’historique de production
-                est conservé.
-              </Text>
-              <Bouton
-                titre="Retirer ce produit"
-                variante="danger"
-                chargement={archiver.isPending}
-                onPress={() => void confirmerRetrait()}
-              />
-              <Bouton titre="Annuler" variante="secondaire" onPress={() => setDemandeRetrait(false)} />
-            </View>
-          ) : (
-            <Bouton titre="Retirer ce produit" variante="danger" onPress={() => setDemandeRetrait(true)} />
-          )
+          <View style={styles.zoneDestructive}>
+            {demandeRetrait ? (
+              <View style={styles.confirmation}>
+                <Text style={styles.texte}>
+                  Retirer ce produit ? Il n’apparaîtra plus dans vos listes. L’historique de production
+                  est conservé.
+                </Text>
+                <Bouton
+                  titre="Retirer ce produit"
+                  variante="danger"
+                  chargement={archiver.isPending}
+                  onPress={() => void confirmerRetrait()}
+                />
+                <Bouton titre="Annuler" variante="secondaire" onPress={() => setDemandeRetrait(false)} />
+              </View>
+            ) : (
+              <Bouton titre="Retirer ce produit" variante="danger" onPress={() => setDemandeRetrait(true)} />
+            )}
+          </View>
         ) : null}
       </View>
     </Ecran>
@@ -770,22 +787,32 @@ function RecetteLecture({
 
 const styles = StyleSheet.create({
   formulaire: {
-    gap: espacements.m,
+    gap: espacements.l,
   },
   libelle: {
-    fontSize: tailles.petit,
-    fontWeight: '600',
-    color: couleurs.texte,
+    fontSize: tailles.legend,
+    fontWeight: '500',
+    color: couleurs.texteSecondaire,
     marginBottom: espacements.xs,
+    fontFamily: polices.sans,
   },
   titreSection: {
     ...styleTitreSection,
+    marginBottom: espacements.xs,
   },
   bloc: {
-    gap: espacements.s,
+    gap: espacements.m,
+    padding: espacements.m,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.surface,
+    ...ombres.douce,
   },
   zoneStock: {
     gap: espacements.m,
+    padding: espacements.m,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.surface,
+    ...ombres.douce,
   },
   ligneChamps: {
     flexDirection: 'row',
@@ -805,20 +832,34 @@ const styles = StyleSheet.create({
   aide: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
   },
   texte: {
     fontSize: tailles.normal,
     color: couleurs.texte,
+    fontFamily: polices.sans,
+  },
+  zoneEnregistrement: {
+    // Espace sous le bouton pour rester au-dessus de la barre d'onglets flottante.
+    paddingBottom: espacements.xl,
+  },
+  zoneDestructive: {
+    marginTop: espacements.s,
+    paddingTop: espacements.m,
+    paddingBottom: espacements.xl,
   },
   confirmation: {
-    gap: espacements.s,
+    gap: espacements.m,
     padding: espacements.m,
-    borderRadius: rayon,
-    backgroundColor: couleurs.erreurClair,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.fondGroupe,
+    borderWidth: 1,
+    borderColor: couleurs.bordureDouce,
   },
   recette: {
     gap: espacements.s,
@@ -827,11 +868,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: espacements.s,
+    padding: espacements.s,
+    borderRadius: rayonPetit,
+    backgroundColor: couleurs.fondSegment,
   },
   puce: {
-    height: 32,
+    minHeight: 36,
     paddingHorizontal: espacements.m,
-    borderRadius: rayonPetit,
+    paddingVertical: espacements.xs,
+    borderRadius: rayonPilule,
     backgroundColor: couleurs.fondPuce,
     justifyContent: 'center',
   },
@@ -842,8 +887,10 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
     fontWeight: '500',
+    fontFamily: polices.sans,
   },
   puceTexteActive: {
     color: couleurs.texteSurPrincipal,
+    fontWeight: '600',
   },
 });

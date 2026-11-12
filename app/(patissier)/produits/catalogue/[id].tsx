@@ -15,7 +15,16 @@ import { Bouton } from '@/components/bouton';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur } from '@/components/etats';
 import { formatEuros } from '@/lib/format';
-import { couleurs, espacements, rayon, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  ombres,
+  polices,
+  rayonCarte,
+  rayonPetit,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 
 function nomNormalise(nom: string): string {
   return nom.trim().toLowerCase();
@@ -111,44 +120,51 @@ export default function EcranCatalogueProduit() {
 
   return (
     <Ecran defilement>
-      <View style={styles.entete}>
-        {produit.photo_url && photo.data ? (
-          <Image
-            source={{ uri: photo.data }}
-            style={styles.photo}
-            accessibilityIgnoresInvertColors
-          />
+      <View style={styles.carte}>
+        <View style={styles.entete}>
+          {produit.photo_url && photo.data ? (
+            <Image
+              source={{ uri: photo.data }}
+              style={styles.photo}
+              accessibilityIgnoresInvertColors
+            />
+          ) : (
+            <View style={[styles.photo, styles.initiale]}>
+              <Text style={styles.lettre}>{produit.nom.trim().charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
+          <Text style={styles.nom}>{produit.nom}</Text>
+        </View>
+        {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
+      </View>
+
+      <View style={styles.carte}>
+        <Text style={styles.detail}>Boutique : {boutique ?? '—'}</Text>
+        {!produit.intermediaire ? (
+          <Text style={styles.prixDiscret}>Prix pratiqué : {formatEuros(produit.prix_centimes)}</Text>
+        ) : null}
+        <Text style={styles.detail}>
+          Conservation : {conservationLibelle}
+          {produit.duree_conservation_jours != null
+            ? ` — ${produit.duree_conservation_jours} jour${produit.duree_conservation_jours > 1 ? 's' : ''}`
+            : ''}
+        </Text>
+      </View>
+
+      <View style={styles.carte}>
+        <Text style={styles.titre}>Recette</Text>
+        {lignes.length === 0 ? (
+          <Text style={styles.aide}>Aucune recette n’a été saisie pour ce produit.</Text>
         ) : (
-          <View style={[styles.photo, styles.initiale]}>
-            <Text style={styles.lettre}>{produit.nom.trim().charAt(0).toUpperCase()}</Text>
+          <View style={styles.recette}>
+            {lignes.map((ligne) => (
+              <Text key={`${ligne.ordre}-${ligne.ingredient}`} style={styles.texte}>
+                {ligne.ingredient} — {quantiteTexte(ligne.quantite)} {ligne.unite}
+              </Text>
+            ))}
           </View>
         )}
-        <Text style={styles.nom}>{produit.nom}</Text>
       </View>
-      {produit.intermediaire ? <Text style={styles.badge}>Intermédiaire</Text> : null}
-      <Text style={styles.detail}>Boutique : {boutique ?? '—'}</Text>
-      {!produit.intermediaire ? (
-        <Text style={styles.prixDiscret}>Prix pratiqué : {formatEuros(produit.prix_centimes)}</Text>
-      ) : null}
-      <Text style={styles.detail}>
-        Conservation : {conservationLibelle}
-        {produit.duree_conservation_jours != null
-          ? ` — ${produit.duree_conservation_jours} jour${produit.duree_conservation_jours > 1 ? 's' : ''}`
-          : ''}
-      </Text>
-
-      <Text style={styles.titre}>Recette</Text>
-      {lignes.length === 0 ? (
-        <Text style={styles.aide}>Aucune recette n’a été saisie pour ce produit.</Text>
-      ) : (
-        <View style={styles.recette}>
-          {lignes.map((ligne) => (
-            <Text key={`${ligne.ordre}-${ligne.ingredient}`} style={styles.texte}>
-              {ligne.ingredient} — {quantiteTexte(ligne.quantite)} {ligne.unite}
-            </Text>
-          ))}
-        </View>
-      )}
 
       {dejaChezMoi ? (
         <Text style={styles.aide}>Ce produit est déjà dans votre boutique.</Text>
@@ -165,14 +181,23 @@ export default function EcranCatalogueProduit() {
 }
 
 const styles = StyleSheet.create({
+  carte: {
+    gap: espacements.s,
+    padding: espacements.m,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.surface,
+    marginBottom: espacements.m,
+    ...ombres.douce,
+  },
   entete: {
     gap: espacements.s,
+    alignItems: 'center',
   },
   photo: {
     width: '100%',
     aspectRatio: 1,
-    maxHeight: 280,
-    borderRadius: rayon,
+    maxHeight: 220,
+    borderRadius: rayonPetit,
     alignSelf: 'center',
   },
   initiale: {
@@ -184,52 +209,60 @@ const styles = StyleSheet.create({
     fontSize: tailles.titre,
     fontWeight: '700',
     color: couleurs.principalFonce,
+    fontFamily: polices.sans,
   },
   nom: {
-    fontSize: tailles.grand,
-    fontWeight: '700',
+    fontSize: tailles.titreMoyen,
+    fontWeight: '600',
     color: couleurs.texte,
+    fontFamily: polices.sans,
+    textAlign: 'center',
   },
   detail: {
     fontSize: tailles.normal,
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   prixDiscret: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   badge: {
     alignSelf: 'flex-start',
     overflow: 'hidden',
     backgroundColor: couleurs.principalClair,
     color: couleurs.principalFonce,
-    fontSize: tailles.petit,
-    fontWeight: '700',
+    fontSize: tailles.legend,
+    fontWeight: '600',
     paddingHorizontal: espacements.s,
     paddingVertical: espacements.xs,
-    borderRadius: rayon,
+    borderRadius: rayonPetit,
+    fontFamily: polices.sans,
   },
   titre: {
-    fontSize: tailles.section,
-    fontWeight: '600',
-    color: couleurs.texteSecondaire,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-    marginTop: espacements.s,
+    ...styleTitreSection,
+    marginBottom: espacements.xs,
   },
   aide: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
+    marginBottom: espacements.s,
   },
   texte: {
     fontSize: tailles.normal,
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   recette: {
     gap: espacements.s,
+    paddingTop: espacements.xs,
   },
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
+    marginBottom: espacements.s,
   },
 });

@@ -18,7 +18,8 @@ import {
   espacements,
   ombres,
   polices,
-  rayon,
+  rayonCarte,
+  rayonPetit,
   styleTitreSection,
   tailles,
 } from '@/theme';
@@ -54,8 +55,6 @@ export function ContenuFicheCommande({
           </View>
           <PastilleStatut statut={commande.statut} />
         </View>
-
-        <View style={styles.enteteTrait} />
 
         <View style={styles.enteteGateau}>
           <Text style={styles.gateauTitre}>{commande.gateau}</Text>
@@ -137,7 +136,7 @@ export function ContenuFicheCommande({
           />
           {reste != null ? (
             <>
-              <View style={styles.traitPaiement} />
+              <View style={styles.ecartPaiement} />
               {reste === 0 ? (
                 <Text style={styles.paye}>Payé</Text>
               ) : (
@@ -420,10 +419,10 @@ const styles = StyleSheet.create({
     gap: espacements.m,
   },
   entete: {
-    backgroundColor: couleurs.fondGroupe,
-    borderRadius: rayon,
-    padding: espacements.m,
-    gap: espacements.s,
+    backgroundColor: couleurs.surface,
+    borderRadius: rayonCarte,
+    padding: espacements.l,
+    gap: espacements.m,
     ...ombres.douce,
   },
   enteteHaut: {
@@ -455,10 +454,6 @@ const styles = StyleSheet.create({
     fontFamily: polices.sans,
     marginTop: 2,
   },
-  enteteTrait: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: couleurs.bordure,
-  },
   enteteGateau: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -478,9 +473,9 @@ const styles = StyleSheet.create({
   },
   bandeauNonRecue: {
     backgroundColor: couleurs.erreurClair,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderRadius: rayonPetit,
+    paddingHorizontal: espacements.m,
+    paddingVertical: espacements.s,
   },
   bandeauNonRecueTexte: {
     fontSize: 12,
@@ -488,14 +483,13 @@ const styles = StyleSheet.create({
     fontFamily: polices.sans,
   },
   plaque: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: couleurs.bordure,
-    borderRadius: rayon,
-    paddingVertical: espacements.m,
+    borderRadius: rayonCarte,
+    paddingVertical: espacements.l,
     paddingHorizontal: espacements.m,
     alignItems: 'center',
-    gap: 4,
+    gap: espacements.xs,
     backgroundColor: couleurs.surface,
+    ...ombres.douce,
   },
   plaqueLegende: {
     fontSize: 11,
@@ -515,12 +509,11 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   bloc: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: couleurs.bordure,
-    borderRadius: rayon,
+    borderRadius: rayonCarte,
     backgroundColor: couleurs.surface,
-    padding: espacements.m,
-    gap: espacements.s,
+    padding: espacements.l,
+    gap: espacements.m,
+    ...ombres.douce,
   },
   blocTitreLigne: {
     flexDirection: 'row',
@@ -532,25 +525,25 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   blocCorps: {
-    gap: 0,
+    gap: espacements.s,
   },
   ligne: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: espacements.s,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: couleurs.bordure,
+    paddingVertical: espacements.s,
+    paddingHorizontal: espacements.s,
+    borderRadius: rayonPetit,
+    backgroundColor: couleurs.fondGroupe,
   },
-  ligneSansBord: {
-    borderBottomWidth: 0,
-  },
+  ligneSansBord: {},
   ligneLongue: {
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: couleurs.bordure,
-    gap: 4,
+    paddingVertical: espacements.s,
+    paddingHorizontal: espacements.s,
+    borderRadius: rayonPetit,
+    backgroundColor: couleurs.fondGroupe,
+    gap: espacements.xs,
   },
   libelle: {
     fontSize: tailles.petit,
@@ -604,10 +597,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  traitPaiement: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: couleurs.bordure,
-    marginVertical: 4,
+  ecartPaiement: {
+    height: espacements.s,
   },
   libelleReste: {
     fontSize: tailles.normal,
@@ -630,13 +621,17 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   frise: {
-    gap: 0,
-    paddingTop: 4,
+    gap: espacements.xs,
+    paddingTop: espacements.xs,
+    paddingHorizontal: espacements.xs,
+    paddingBottom: espacements.s,
+    borderRadius: rayonPetit,
+    backgroundColor: couleurs.fondGroupe,
   },
   friseEtape: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
+    gap: espacements.m,
     minHeight: 36,
   },
   friseColonne: {
@@ -685,15 +680,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   lienDanger: {
-    paddingVertical: 8,
+    paddingVertical: espacements.s,
     minHeight: 36,
     justifyContent: 'center',
     alignItems: 'center',
+    opacity: 0.85,
   },
   lienDangerTexte: {
-    fontSize: 13,
-    color: couleurs.erreur,
+    fontSize: tailles.legend,
+    color: couleurs.texteMuet,
     fontFamily: polices.sans,
+    textDecorationLine: 'underline',
+    textDecorationColor: couleurs.erreur,
   },
   lienSec: {
     paddingVertical: 10,

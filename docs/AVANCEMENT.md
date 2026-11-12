@@ -37,6 +37,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-11-12 : Refonte du design « Fournil 2 » (crème, espresso, ambre) : nouveau thème et composants, barre d'onglets flottante sur téléphone et barre latérale sur ordinateur, tous les écrans des 4 profils, design seul sans changement de texte ni de logique (Cursor, vérifié par Claude Code)
 - 2026-11-12 : Laboratoire : commandes marquées prêtes puis effectuées (Cursor)
 - 2026-11-07 : Laboratoire : onglet Planning jour par jour, total par produit et détail par client (Cursor)
 - 2026-11-07 : Laboratoire, étape 2 : commandes, prévisionnel et CA laboratoire (Cursor)

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import type { CommandeEnrichie } from '@/api/commandes';
 import { libelleStatut } from '@/api/commandes';
@@ -15,8 +15,11 @@ import { aujourdhuiParis } from '@/lib/format';
 import {
   couleurs,
   espacements,
+  ombres,
   polices,
+  rayonCarte,
   rayonPilule,
+  seuilOrdinateur,
   styleTitreSection,
   tailles,
 } from '@/theme';
@@ -42,25 +45,47 @@ export function FiltresCommandes({
   boutiques,
   libelleToutes = 'Toutes',
 }: PropsFiltres) {
+  const { width } = useWindowDimensions();
+  const telephone = width < seuilOrdinateur;
   const avecBoutiques = Boolean(onBoutique && boutiques);
+
+  const pucesStatut = FILTRES_STATUT.map((f) => {
+    const actif = filtreStatut === f.id;
+    return (
+      <Pressable
+        key={f.id}
+        onPress={() => onFiltreStatut(f.id)}
+        style={[
+          styles.puce,
+          telephone && styles.puceTelephone,
+          actif && styles.puceActive,
+        ]}
+        accessibilityRole="button"
+        accessibilityState={{ selected: actif }}
+      >
+        <Text
+          style={[styles.puceTexte, actif && styles.puceTexteActive]}
+          numberOfLines={1}
+        >
+          {f.libelle}
+        </Text>
+      </Pressable>
+    );
+  });
+
   return (
     <View style={styles.filtres}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.puces}>
-        {FILTRES_STATUT.map((f) => {
-          const actif = filtreStatut === f.id;
-          return (
-            <Pressable
-              key={f.id}
-              onPress={() => onFiltreStatut(f.id)}
-              style={[styles.puce, actif && styles.puceActive]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: actif }}
-            >
-              <Text style={[styles.puceTexte, actif && styles.puceTexteActive]}>{f.libelle}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      {telephone ? (
+        <View style={styles.pucesGrille}>{pucesStatut}</View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.puces}
+        >
+          {pucesStatut}
+        </ScrollView>
+      )}
       {avecBoutiques ? (
         <ScrollView
           horizontal
@@ -114,7 +139,7 @@ export function ListeCommandesGroupees({
     <View style={styles.liste}>
       {groupes.map((groupe) => (
         <View key={groupe.cle} style={styles.groupe}>
-          <Text style={[styles.titreGroupe, stickyWeb]}>
+          <Text style={[styles.titreGroupe, stickyWeb as object | undefined]}>
             {groupe.libelle} · {groupe.commandes.length}
           </Text>
           {groupe.commandes.map((c) => (
@@ -179,7 +204,7 @@ export function LigneCommande({
               style={styles.iconeBoutique}
             />
           ) : null}
-          <Text style={styles.gateau} numberOfLines={1}>
+          <Text style={styles.gateau} numberOfLines={2}>
             {commande.gateau} · {commande.nb_parts} parts
           </Text>
         </View>
@@ -236,55 +261,76 @@ const styles = StyleSheet.create({
   },
   puces: {
     flexDirection: 'row',
-    gap: 6,
-    paddingVertical: 2,
+    gap: espacements.s,
+    padding: espacements.s,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.fondSegment,
+  },
+  pucesGrille: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: espacements.s,
+    padding: espacements.s,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.fondSegment,
   },
   puce: {
-    minHeight: 28,
-    paddingHorizontal: 10,
+    minHeight: 44,
+    paddingHorizontal: espacements.m,
     borderRadius: rayonPilule,
     backgroundColor: couleurs.fondPuce,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  puceTelephone: {
+    flex: 1,
+    minWidth: '40%',
+    minHeight: 44,
+  },
   puceActive: {
     backgroundColor: couleurs.principal,
   },
   puceTexte: {
-    fontSize: 12,
+    fontSize: 13,
     color: couleurs.texteSecondaire,
     fontFamily: polices.sans,
   },
   puceTexteActive: {
     color: couleurs.texteSurPrincipal,
-    fontWeight: '500',
+    fontWeight: '600',
+    fontFamily: polices.sans,
   },
   liste: {
     gap: espacements.s,
   },
   groupe: {
-    gap: 0,
+    gap: espacements.s,
+    marginBottom: espacements.m,
   },
   titreGroupe: {
     ...styleTitreSection,
-    backgroundColor: couleurs.fond,
-    paddingVertical: 6,
-    marginBottom: 0,
+    paddingVertical: espacements.xs,
+    marginBottom: espacements.xs,
+    fontFamily: polices.sans,
   },
   ligne: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: espacements.s,
-    paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: couleurs.bordure,
+    paddingVertical: espacements.m,
+    paddingHorizontal: espacements.m,
+    marginBottom: espacements.s,
     minHeight: 56,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.surface,
+    ...ombres.douce,
   },
   ligneAppuyee: {
-    opacity: 0.7,
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
   heureBloc: {
-    width: 48,
+    width: 58,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -335,13 +381,15 @@ const styles = StyleSheet.create({
   },
   pastille: {
     borderRadius: rayonPilule,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: espacements.s,
+    paddingVertical: espacements.xs,
+    maxWidth: 110,
   },
   pastilleTexte: {
-    fontSize: 11,
+    fontSize: tailles.legend,
     fontFamily: polices.sans,
-    fontWeight: '500',
+    fontWeight: '600',
+    textAlign: 'center',
   },
   chevron: {
     fontSize: 18,

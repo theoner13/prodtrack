@@ -8,13 +8,14 @@ import { useBoutiques } from '@/api/boutiques';
 import { usePatissiersActifs } from '@/api/employes';
 import { useImposerProduits } from '@/api/produits';
 import { messageErreur } from '@/auth/erreurs';
+import { AdminCarte } from '@/components/admin-carte';
 import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
 import { ChoixSegmente } from '@/components/choix-segmente';
 import { EditeurRecette, estVide, UNITES } from '@/components/editeur-recette';
 import { EtatChargement, EtatErreur } from '@/components/etats';
 import { eurosVersCentimes } from '@/lib/format';
-import { couleurs, styleTitreSection, tailles } from '@/theme';
+import { couleurs, polices, styleTitreSection, tailles } from '@/theme';
 import type { Profil } from '@/types/database';
 
 /** Chaîne vide = aucun pâtissier (premier qui le prend). */
@@ -179,101 +180,47 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
 
   return (
     <View style={styles.bloc}>
-      <Text style={styles.titre}>Imposer un produit</Text>
-      <Text style={styles.libelle}>Boutique</Text>
-      {boutiques.data?.map((item) => (
-        <Bouton
-          key={item.id}
-          titre={item.nom}
-          variante={item.id === boutiqueId ? 'principal' : 'secondaire'}
-          onPress={() => choisirBoutique(item.id)}
-        />
-      ))}
+      <Text style={styles.titrePage}>Imposer un produit</Text>
 
-      <Text style={styles.libelle}>Pâtissier fabricant (facultatif)</Text>
-      {fabricants.length === 0 ? (
-        <Text style={styles.info}>
-          Aucun pâtissier actif : le premier qui rejoint pourra prendre ce produit.
-        </Text>
-      ) : null}
-      <Bouton
-        titre="Aucun : le premier pâtissier qui le prend"
-        variante={fabricantId === AUCUN_PATISSIER ? 'principal' : 'secondaire'}
-        onPress={() => setValue('fabricantId', AUCUN_PATISSIER, { shouldValidate: true })}
-      />
-      {fabricants.map((personne) => (
-        <Bouton
-          key={personne.id}
-          titre={`${personne.prenom} ${personne.nom}`}
-          variante={fabricantId === personne.id ? 'principal' : 'secondaire'}
-          onPress={() => setValue('fabricantId', personne.id, { shouldValidate: true })}
-        />
-      ))}
+      <AdminCarte style={styles.section}>
+        <Text style={styles.libelle}>Boutique</Text>
+        {boutiques.data?.map((item) => (
+          <Bouton
+            key={item.id}
+            titre={item.nom}
+            variante={item.id === boutiqueId ? 'principal' : 'secondaire'}
+            onPress={() => choisirBoutique(item.id)}
+          />
+        ))}
 
-      <Controller
-        control={control}
-        name="nom"
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Nom du produit"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            erreur={fieldState.error?.message}
+        <Text style={styles.libelle}>Pâtissier fabricant (facultatif)</Text>
+        {fabricants.length === 0 ? (
+          <Text style={styles.info}>
+            Aucun pâtissier actif : le premier qui rejoint pourra prendre ce produit.
+          </Text>
+        ) : null}
+        <Bouton
+          titre="Aucun : le premier pâtissier qui le prend"
+          variante={fabricantId === AUCUN_PATISSIER ? 'principal' : 'secondaire'}
+          onPress={() => setValue('fabricantId', AUCUN_PATISSIER, { shouldValidate: true })}
+        />
+        {fabricants.map((personne) => (
+          <Bouton
+            key={personne.id}
+            titre={`${personne.prenom} ${personne.nom}`}
+            variante={fabricantId === personne.id ? 'principal' : 'secondaire'}
+            onPress={() => setValue('fabricantId', personne.id, { shouldValidate: true })}
           />
-        )}
-      />
-      <Controller
-        control={control}
-        name="prix"
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Prix (€)"
-            keyboardType="decimal-pad"
-            placeholder="3,50"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            erreur={fieldState.error?.message}
-          />
-        )}
-      />
-      <Text style={styles.libelle}>Conservation (facultatif, défaut : frais)</Text>
-      <ChoixSegmente
-        options={[
-          { valeur: 'frais', libelle: 'Frais' },
-          { valeur: 'surgele', libelle: 'Surgelé' },
-        ]}
-        valeur={conservation}
-        onChange={(valeur) => {
-          setValue('conservation', valeur);
-          if (valeur === 'frais') setValue('seuil', '');
-        }}
-      />
-      <Controller
-        control={control}
-        name="duree"
-        render={({ field, fieldState }) => (
-          <Champ
-            libelle="Durée de conservation en jours (facultatif)"
-            keyboardType="number-pad"
-            placeholder="2"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            erreur={fieldState.error?.message}
-          />
-        )}
-      />
-      {conservation === 'surgele' ? (
+        ))}
+      </AdminCarte>
+
+      <AdminCarte style={styles.section}>
         <Controller
           control={control}
-          name="seuil"
+          name="nom"
           render={({ field, fieldState }) => (
             <Champ
-              libelle="Seuil minimum de stock (facultatif)"
-              keyboardType="number-pad"
-              placeholder="0"
+              libelle="Nom du produit"
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -281,75 +228,138 @@ export function FormulaireImposer({ boutiqueInitialeId, onTermine, onAnnuler }: 
             />
           )}
         />
-      ) : null}
-
-      <Text style={styles.titre}>Recette (facultatif)</Text>
-      <Controller
-        control={control}
-        name="lignes"
-        render={({ field }) => (
-          <EditeurRecette
-            lignes={field.value}
-            onChange={field.onChange}
-            erreurs={field.value.map((_, index) => {
-              const e = formState.errors.lignes?.[index];
-              return e?.ingredient?.message ?? e?.quantite?.message;
-            })}
-          />
-        )}
-      />
-
-      <Text style={styles.titre}>Imposer aussi dans d’autres boutiques</Text>
-      {autres.length === 0 ? (
-        <Text style={styles.info}>Il n’y a pas d’autre boutique.</Text>
-      ) : (
-        autres.map((item) => {
-          const equipe = patissiersDe(item.id);
-          const choisi = item.id in aussi;
-          return (
-            <View key={item.id} style={styles.autre}>
-              <Bouton
-                titre={choisi ? `Retirer ${item.nom}` : `Imposer aussi dans ${item.nom}`}
-                variante={choisi ? 'principal' : 'secondaire'}
-                onPress={() =>
-                  setAussi((actuel) => {
-                    const copie = { ...actuel };
-                    if (item.id in copie) delete copie[item.id];
-                    else copie[item.id] = AUCUN_PATISSIER;
-                    return copie;
-                  })
-                }
+        <Controller
+          control={control}
+          name="prix"
+          render={({ field, fieldState }) => (
+            <Champ
+              libelle="Prix (€)"
+              keyboardType="decimal-pad"
+              placeholder="3,50"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              erreur={fieldState.error?.message}
+            />
+          )}
+        />
+        <Text style={styles.libelle}>Conservation (facultatif, défaut : frais)</Text>
+        <ChoixSegmente
+          options={[
+            { valeur: 'frais', libelle: 'Frais' },
+            { valeur: 'surgele', libelle: 'Surgelé' },
+          ]}
+          valeur={conservation}
+          onChange={(valeur) => {
+            setValue('conservation', valeur);
+            if (valeur === 'frais') setValue('seuil', '');
+          }}
+        />
+        <Controller
+          control={control}
+          name="duree"
+          render={({ field, fieldState }) => (
+            <Champ
+              libelle="Durée de conservation en jours (facultatif)"
+              keyboardType="number-pad"
+              placeholder="2"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              erreur={fieldState.error?.message}
+            />
+          )}
+        />
+        {conservation === 'surgele' ? (
+          <Controller
+            control={control}
+            name="seuil"
+            render={({ field, fieldState }) => (
+              <Champ
+                libelle="Seuil minimum de stock (facultatif)"
+                keyboardType="number-pad"
+                placeholder="0"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                erreur={fieldState.error?.message}
               />
-              {choisi ? (
-                <>
-                  {equipe.length === 0 ? (
-                    <Text style={styles.info}>
-                      Aucun pâtissier actif : le premier pourra le prendre.
-                    </Text>
-                  ) : null}
-                  <Bouton
-                    titre="Aucun : le premier pâtissier qui le prend"
-                    variante={aussi[item.id] === AUCUN_PATISSIER ? 'principal' : 'secondaire'}
-                    onPress={() =>
-                      setAussi((actuel) => ({ ...actuel, [item.id]: AUCUN_PATISSIER }))
-                    }
-                  />
-                  {equipe.map((personne) => (
+            )}
+          />
+        ) : null}
+      </AdminCarte>
+
+      <AdminCarte style={styles.section}>
+        <Text style={styles.titre}>Recette (facultatif)</Text>
+        <Controller
+          control={control}
+          name="lignes"
+          render={({ field }) => (
+            <EditeurRecette
+              lignes={field.value}
+              onChange={field.onChange}
+              erreurs={field.value.map((_, index) => {
+                const e = formState.errors.lignes?.[index];
+                return e?.ingredient?.message ?? e?.quantite?.message;
+              })}
+            />
+          )}
+        />
+      </AdminCarte>
+
+      <AdminCarte style={styles.section}>
+        <Text style={styles.titre}>Imposer aussi dans d’autres boutiques</Text>
+        {autres.length === 0 ? (
+          <Text style={styles.info}>Il n’y a pas d’autre boutique.</Text>
+        ) : (
+          autres.map((item) => {
+            const equipe = patissiersDe(item.id);
+            const choisi = item.id in aussi;
+            return (
+              <View key={item.id} style={styles.autre}>
+                <Bouton
+                  titre={choisi ? `Retirer ${item.nom}` : `Imposer aussi dans ${item.nom}`}
+                  variante={choisi ? 'principal' : 'secondaire'}
+                  onPress={() =>
+                    setAussi((actuel) => {
+                      const copie = { ...actuel };
+                      if (item.id in copie) delete copie[item.id];
+                      else copie[item.id] = AUCUN_PATISSIER;
+                      return copie;
+                    })
+                  }
+                />
+                {choisi ? (
+                  <>
+                    {equipe.length === 0 ? (
+                      <Text style={styles.info}>
+                        Aucun pâtissier actif : le premier pourra le prendre.
+                      </Text>
+                    ) : null}
                     <Bouton
-                      key={personne.id}
-                      titre={`${personne.prenom} ${personne.nom}`}
-                      variante={aussi[item.id] === personne.id ? 'principal' : 'secondaire'}
+                      titre="Aucun : le premier pâtissier qui le prend"
+                      variante={aussi[item.id] === AUCUN_PATISSIER ? 'principal' : 'secondaire'}
                       onPress={() =>
-                        setAussi((actuel) => ({ ...actuel, [item.id]: personne.id }))
+                        setAussi((actuel) => ({ ...actuel, [item.id]: AUCUN_PATISSIER }))
                       }
                     />
-                  ))}
-                </>
-              ) : null}
-            </View>
-          );
-        })
-      )}
+                    {equipe.map((personne) => (
+                      <Bouton
+                        key={personne.id}
+                        titre={`${personne.prenom} ${personne.nom}`}
+                        variante={aussi[item.id] === personne.id ? 'principal' : 'secondaire'}
+                        onPress={() =>
+                          setAussi((actuel) => ({ ...actuel, [item.id]: personne.id }))
+                        }
+                      />
+                    ))}
+                  </>
+                ) : null}
+              </View>
+            );
+          })
+        )}
+      </AdminCarte>
 
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
       <Bouton
@@ -366,6 +376,17 @@ const styles = StyleSheet.create({
   bloc: {
     gap: 12,
   },
+  titrePage: {
+    fontSize: tailles.titreMoyen,
+    fontWeight: '600',
+    color: couleurs.texte,
+    fontFamily: polices.sans,
+    letterSpacing: -0.4,
+    marginBottom: 4,
+  },
+  section: {
+    gap: 12,
+  },
   titre: {
     ...styleTitreSection,
   },
@@ -375,10 +396,12 @@ const styles = StyleSheet.create({
   info: {
     fontSize: tailles.normal,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
   },
   autre: {
     gap: 8,

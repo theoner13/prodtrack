@@ -10,7 +10,7 @@ import { Ecran } from '@/components/ecran';
 import { Logo } from '@/components/logo';
 import { PaveNumerique } from '@/components/pave-numerique';
 import { creerPin } from '@/lib/pin';
-import { couleurs, espacements, tailles } from '@/theme';
+import { couleurs, espacements, polices, tailles } from '@/theme';
 
 export default function EcranCreerPin() {
   const { session, rechargerPin, deverrouiller, tablettePartagee } = useAuth();
@@ -129,15 +129,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: couleurs.texte,
     textAlign: 'center',
+    fontFamily: polices.sans,
   },
   consigne: {
     fontSize: tailles.normal,
     color: couleurs.texte,
     textAlign: 'center',
+    fontFamily: polices.sans,
   },
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
     textAlign: 'center',
+    fontFamily: polices.sans,
   },
 });

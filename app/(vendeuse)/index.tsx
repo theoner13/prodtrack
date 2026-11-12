@@ -4,6 +4,7 @@ import {
   Text,
   useWindowDimensions,
   View,
+  type LayoutChangeEvent,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
@@ -20,11 +21,13 @@ import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
+import { CarteHeros } from '@/components/carte-heros';
 import { CarteProduit } from '@/components/carte-produit';
 import { ChoixSegmente } from '@/components/choix-segmente';
 import { Compteur } from '@/components/compteur';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
+import { VenteApparition } from '@/components/vente-apparition';
 import {
   aujourdhuiParis,
   formatJourComplet,
@@ -37,11 +40,21 @@ import {
   texteMisEnVente,
 } from '@/lib/mis-en-vente';
 import { etiquetteBoutique } from '@/lib/production-exterieure';
-import { couleurs, espacements, ombres, polices, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  polices,
+  rayonPuce,
+  seuilOrdinateur,
+  styleChiffre,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 
 type ValeursProduit = { vendu: number; jete: number; reste: number };
 
-const LARGEUR_TABLETTE = 700;
+/** Largeur mini d'une colonne de compteur (Vendu / Jeté / Reste côte à côte). */
+const LARGEUR_MIN_COLONNE_COMPTEUR = 136;
 
 function jourAutorise(valeur: string | undefined, aujourdhui: string, hier: string): string {
   if (valeur === aujourdhui || valeur === hier) return valeur;
@@ -57,7 +70,7 @@ export default function EcranFinDeJournee() {
   const { profil, verrouillerApresSaisie } = useAuth();
   const boutiqueId = profil?.boutique_id ?? null;
   const { width } = useWindowDimensions();
-  const etroit = width < LARGEUR_TABLETTE;
+  const grille = width >= seuilOrdinateur;
 
   const params = useLocalSearchParams<{ jour?: string }>();
   const aujourdhui = aujourdhuiParis();
@@ -191,12 +204,33 @@ export default function EcranFinDeJournee() {
     return count;
   }, [listeVendables, valeurs, saisiesParProduit]);
 
+  const nombreSaisis = useMemo(() => {
+    let count = 0;
+    for (const produit of listeVendables) {
+      const v = valeurs[produit.id] ?? { vendu: 0, jete: 0, reste: 0 };
+      if (
+        saisiesParProduit.has(produit.id) ||
+        v.vendu > 0 ||
+        v.jete > 0 ||
+        v.reste > 0
+      ) {
+        count += 1;
+      }
+    }
+    return count;
+  }, [listeVendables, valeurs, saisiesParProduit]);
+
   const texteModifications =
     nombreModifications === 0
       ? null
       : nombreModifications === 1
         ? 'Modifications non enregistrées : 1 produit'
         : `Modifications non enregistrées : ${nombreModifications} produits`;
+
+  const resumePied =
+    listeVendables.length === 0
+      ? null
+      : `${nombreSaisis} produits sur ${listeVendables.length} saisis`;
 
   async function rafraichir() {
     await Promise.all([produits.refetch(), saisies.refetch(), misEnVente.refetch()]);
@@ -277,7 +311,8 @@ export default function EcranFinDeJournee() {
       onRafraichir={() => void rafraichir()}
       pied={
         liste.length > 0 ? (
-          <View style={styles.piedFeuille}>
+          <>
+            {resumePied ? <Text style={styles.resumePied}>{resumePied}</Text> : null}
             {texteModifications ? (
               <Text style={styles.confirmation}>{texteModifications}</Text>
             ) : null}
@@ -288,11 +323,10 @@ export default function EcranFinDeJournee() {
               onPress={() => void soumettre()}
               chargement={enregistrer.isPending}
             />
-          </View>
+          </>
         ) : undefined
       }
     >
-      <Text style={styles.date}>{majusculeInitiale(formatJourComplet(jour))}</Text>
       <ChoixSegmente
         options={[
           { valeur: 'aujourdhui', libelle: "Aujourd'hui" },
@@ -307,47 +341,60 @@ export default function EcranFinDeJournee() {
       />
 
       {liste.length > 0 ? (
-        <View style={styles.totaux}>
-          <View style={styles.totalColonne}>
-            <Text style={styles.totalLibelle}>Vendus</Text>
-            <Text style={styles.totalValeur}>{totaux.vendus}</Text>
+        <CarteHeros
+          libelle="Vendus"
+          chiffre={totaux.vendus}
+          sousTitre={majusculeInitiale(formatJourComplet(jour))}
+        >
+          <View style={styles.totauxHeros}>
+            <View style={styles.totalHeros}>
+              <Text style={styles.totalHerosLibelle}>Jetés</Text>
+              <Text style={styles.totalHerosValeur}>{totaux.jetes}</Text>
+            </View>
+            <View style={styles.totalHeros}>
+              <Text style={styles.totalHerosLibelle}>Reste</Text>
+              <Text style={styles.totalHerosValeur}>{totaux.reste}</Text>
+            </View>
           </View>
-          <View style={[styles.totalColonne, styles.totalColonneMilieu]}>
-            <Text style={styles.totalLibelle}>Jetés</Text>
-            <Text style={styles.totalValeur}>{totaux.jetes}</Text>
-          </View>
-          <View style={[styles.totalColonne, styles.totalColonneMilieu]}>
-            <Text style={styles.totalLibelle}>Reste</Text>
-            <Text style={styles.totalValeur}>{totaux.reste}</Text>
-          </View>
-        </View>
+        </CarteHeros>
       ) : null}
 
       {liste.length === 0 ? (
         <EtatVide message="Aucun produit dans cette boutique pour l'instant." />
       ) : null}
 
-      {liste.map((produit) => {
-        const mis = misParProduit.get(produit.id);
-        const arrivee = mis?.arrivee ?? 0;
-        const restes = mis?.restes_veille ?? 0;
-        const total = mis?.total ?? 0;
-        const v = valeurs[produit.id] ?? { vendu: 0, jete: 0, reste: 0 };
-        return (
-          <LigneVente
-            key={produit.id}
-            produit={produit}
-            photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
-            valeurs={v}
-            dejaEnregistre={saisiesParProduit.has(produit.id)}
-            texteMis={texteMisEnVente(produit.conservation, arrivee, restes)}
-            totalMis={total}
-            depassement={depassementMisEnVente(v.vendu, v.jete, v.reste, total)}
-            etroit={etroit}
-            onChange={(champ, valeur) => definirValeur(produit.id, champ, valeur)}
-          />
-        );
-      })}
+      <View style={grille ? styles.grille2 : styles.grille}>
+        {liste.map((produit, index) => {
+          const mis = misParProduit.get(produit.id);
+          const arrivee = mis?.arrivee ?? 0;
+          const restes = mis?.restes_veille ?? 0;
+          const total = mis?.total ?? 0;
+          const v = valeurs[produit.id] ?? { vendu: 0, jete: 0, reste: 0 };
+          return (
+            <View
+              key={produit.id}
+              style={
+                grille
+                  ? [styles.colonne, index % 2 === 0 ? styles.colonneGauche : styles.colonneDroite]
+                  : undefined
+              }
+            >
+              <VenteApparition index={index}>
+                <LigneVente
+                  produit={produit}
+                  photoUrl={produit.photo_url ? photos.data?.[produit.photo_url] : null}
+                  valeurs={v}
+                  dejaEnregistre={saisiesParProduit.has(produit.id)}
+                  texteMis={texteMisEnVente(produit.conservation, arrivee, restes)}
+                  totalMis={total}
+                  depassement={depassementMisEnVente(v.vendu, v.jete, v.reste, total)}
+                  onChange={(champ, valeur) => definirValeur(produit.id, champ, valeur)}
+                />
+              </VenteApparition>
+            </View>
+          );
+        })}
+      </View>
     </Ecran>
   );
 }
@@ -360,7 +407,6 @@ function LigneVente({
   texteMis,
   totalMis,
   depassement,
-  etroit,
   onChange,
 }: {
   produit: ProduitListe;
@@ -370,13 +416,25 @@ function LigneVente({
   texteMis: string;
   totalMis: number;
   depassement: boolean;
-  etroit: boolean;
   onChange: (champ: keyof ValeursProduit, valeur: number) => void;
 }) {
+  const [largeurCarte, setLargeurCarte] = useState(0);
+  const etroit =
+    largeurCarte > 0
+      ? largeurCarte < LARGEUR_MIN_COLONNE_COMPTEUR * 3 + espacements.s * 2
+      : true;
+
+  function onLayoutCarte(e: LayoutChangeEvent) {
+    setLargeurCarte(e.nativeEvent.layout.width);
+  }
+
   const sousTitre = dejaEnregistre ? `${texteMis} · Déjà enregistré` : texteMis;
 
   const compteurs = (
-    <View style={etroit ? styles.compteursEtroit : styles.compteursLarge}>
+    <View
+      style={etroit ? styles.compteursEtroit : styles.compteursLarge}
+      onLayout={onLayoutCarte}
+    >
       <ChampCompteur
         etiquette="Vendu"
         libelle={`Vendu ${produit.nom}`}
@@ -467,48 +525,46 @@ function ChampCompteur({
 }
 
 const styles = StyleSheet.create({
-  date: {
-    fontSize: tailles.grand,
-    fontWeight: '500',
-    color: couleurs.texte,
-    fontFamily: polices.sans,
-  },
-  totaux: {
-    marginTop: espacements.s,
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: couleurs.bordure,
+  totauxHeros: {
     flexDirection: 'row',
+    gap: espacements.s,
+    marginTop: espacements.s,
   },
-  totalColonne: {
+  totalHeros: {
     flex: 1,
+    backgroundColor: 'rgba(255,248,239,0.1)',
+    borderRadius: rayonPuce,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     gap: 2,
   },
-  totalColonneMilieu: {
-    paddingLeft: espacements.m,
-    borderLeftWidth: 1,
-    borderLeftColor: couleurs.bordure,
+  totalHerosLibelle: {
+    ...styleTitreSection,
+    color: couleurs.texteSurSombreDoux,
+    fontSize: 11,
   },
-  totalLibelle: {
-    fontSize: 12,
-    color: couleurs.texteSecondaire,
-    fontFamily: polices.sans,
+  totalHerosValeur: {
+    ...styleChiffre,
+    fontSize: tailles.grand,
+    color: couleurs.texteSurSombre,
   },
-  totalValeur: {
-    fontSize: 22,
-    fontWeight: '400',
-    letterSpacing: -0.6,
-    color: couleurs.texte,
-    fontFamily: polices.sans,
+  grille: {
+    gap: 10,
   },
-  piedFeuille: {
-    backgroundColor: couleurs.fondGroupe,
-    borderRadius: 18,
-    padding: 8,
-    paddingLeft: espacements.m,
-    gap: espacements.s,
-    ...ombres.feuille,
+  grille2: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 10,
+    columnGap: 0,
+  },
+  colonne: {
+    width: '50%',
+  },
+  colonneGauche: {
+    paddingRight: 5,
+  },
+  colonneDroite: {
+    paddingLeft: 5,
   },
   sousLignePleine: {
     alignSelf: 'stretch',
@@ -516,21 +572,27 @@ const styles = StyleSheet.create({
   },
   compteursEtroit: {
     gap: espacements.s,
+    alignSelf: 'stretch',
+    width: '100%',
   },
   compteursLarge: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     justifyContent: 'space-between',
     gap: espacements.s,
+    alignSelf: 'stretch',
+    width: '100%',
   },
   ligneEtroit: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: espacements.m,
+    minHeight: 48,
   },
   colonneLarge: {
     flex: 1,
+    minWidth: LARGEUR_MIN_COLONNE_COMPTEUR,
     alignItems: 'center',
     gap: espacements.xs,
   },
@@ -545,6 +607,13 @@ const styles = StyleSheet.create({
     fontSize: tailles.petit,
     fontWeight: '600',
     color: couleurs.texte,
+    textAlign: 'center',
+    fontFamily: polices.sans,
+  },
+  resumePied: {
+    ...styleChiffre,
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
     textAlign: 'center',
     fontFamily: polices.sans,
   },
@@ -567,9 +636,9 @@ const styles = StyleSheet.create({
     color: couleurs.texteSecondaire,
     fontSize: 11,
     fontWeight: '500',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: rayonPuce,
     fontFamily: polices.sans,
   },
 });

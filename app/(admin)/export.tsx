@@ -5,6 +5,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -18,6 +19,8 @@ import {
 } from '@/api/ca';
 import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
+import { AdminCarte } from '@/components/admin-carte';
+import { AdminPuce } from '@/components/admin-puce';
 import { Banniere } from '@/components/banniere';
 import { Champ } from '@/components/champ';
 import { Ecran } from '@/components/ecran';
@@ -43,8 +46,10 @@ import {
   couleurs,
   espacements,
   polices,
-  rayonPetit,
+  rayonPilule,
+  seuilOrdinateur,
   styleTitreSection,
+  tailleToucheMin,
   tailles,
 } from '@/theme';
 
@@ -93,6 +98,8 @@ const EXPORTS: {
 ];
 
 export default function EcranExport() {
+  const { width } = useWindowDimensions();
+  const ordinateur = width >= seuilOrdinateur;
   const aujourdhui = aujourdhuiParis();
   const { profil } = useAuth();
   const boutiques = useBoutiques();
@@ -251,13 +258,13 @@ export default function EcranExport() {
 
       <Text style={styles.section}>Boutique</Text>
       <View style={styles.puces}>
-        <Puce
+        <AdminPuce
           libelle="Toutes"
           active={boutiqueId === null}
           onPress={() => setBoutiqueId(null)}
         />
         {(boutiques.data ?? []).map((b) => (
-          <Puce
+          <AdminPuce
             key={b.id}
             libelle={b.est_laboratoire ? `${b.nom} (labo)` : b.nom}
             active={boutiqueId === b.id}
@@ -269,7 +276,7 @@ export default function EcranExport() {
       <Text style={styles.section}>Période</Text>
       <View style={styles.puces}>
         {PERIODES.map((p) => (
-          <Puce
+          <AdminPuce
             key={p.id}
             libelle={p.libelle}
             active={periode === p.id}
@@ -307,32 +314,36 @@ export default function EcranExport() {
         </View>
       ) : null}
 
-      {EXPORTS.map((item) => (
-        <View key={item.id} style={styles.blocExport}>
-          <Text style={styles.titreExport}>{item.titre}</Text>
-          <Text style={styles.descExport}>{item.description}</Text>
-          <View style={styles.rangBoutons}>
-            <PastilleExport
-              titre="Excel"
-              icone="document-outline"
-              onPress={() => {
-                void exporter(item.id, 'xlsx');
-              }}
-              chargement={exportEnCours === `${item.id}-xlsx`}
-              desactive={desactive}
-            />
-            <PastilleExport
-              titre="PDF"
-              icone="document-text-outline"
-              onPress={() => {
-                void exporter(item.id, 'pdf');
-              }}
-              chargement={exportEnCours === `${item.id}-pdf`}
-              desactive={desactive}
-            />
+      <View style={[styles.listeExports, ordinateur && styles.listeExportsOrdi]}>
+        {EXPORTS.map((item) => (
+          <View key={item.id} style={ordinateur ? styles.colonneExport : undefined}>
+            <AdminCarte style={styles.blocExport}>
+              <Text style={styles.titreExport}>{item.titre}</Text>
+              <Text style={styles.descExport}>{item.description}</Text>
+              <View style={styles.rangBoutons}>
+                <PastilleExport
+                  titre="Excel"
+                  icone="document-outline"
+                  onPress={() => {
+                    void exporter(item.id, 'xlsx');
+                  }}
+                  chargement={exportEnCours === `${item.id}-xlsx`}
+                  desactive={desactive}
+                />
+                <PastilleExport
+                  titre="PDF"
+                  icone="document-text-outline"
+                  onPress={() => {
+                    void exporter(item.id, 'pdf');
+                  }}
+                  chargement={exportEnCours === `${item.id}-pdf`}
+                  desactive={desactive}
+                />
+              </View>
+            </AdminCarte>
           </View>
-        </View>
-      ))}
+        ))}
+      </View>
     </Ecran>
   );
 }
@@ -370,7 +381,7 @@ function PastilleExport({
         <ActivityIndicator size="small" color={couleurIcone} />
       ) : (
         <>
-          <Ionicons name={icone} size={14} color={couleurIcone} />
+          <Ionicons name={icone} size={16} color={couleurIcone} />
           <Text style={[styles.pastilleTexte, inactif && styles.pastilleTexteInactif]}>
             {titre}
           </Text>
@@ -380,54 +391,16 @@ function PastilleExport({
   );
 }
 
-function Puce({
-  libelle,
-  active,
-  onPress,
-}: {
-  libelle: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.puce, active && styles.puceActive]}
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-    >
-      <Text style={[styles.puceTexte, active && styles.puceTexteActive]}>{libelle}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   section: {
     ...styleTitreSection,
     marginTop: espacements.m,
+    marginBottom: 4,
   },
   puces: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: espacements.s,
-  },
-  puce: {
-    height: 32,
-    paddingHorizontal: espacements.m,
-    borderRadius: 16,
-    backgroundColor: couleurs.fondPuce,
-    justifyContent: 'center',
-  },
-  puceActive: {
-    backgroundColor: couleurs.principal,
-  },
-  puceTexte: {
-    fontSize: tailles.petit,
-    color: couleurs.texte,
-    fontWeight: '600',
-  },
-  puceTexteActive: {
-    color: couleurs.texteSurPrincipal,
   },
   datesPerso: {
     gap: espacements.m,
@@ -435,47 +408,62 @@ const styles = StyleSheet.create({
   erreurFiltre: {
     fontSize: tailles.petit,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
+  },
+  listeExports: {
+    gap: 10,
+    marginTop: espacements.m,
+  },
+  listeExportsOrdi: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 10,
+    columnGap: 0,
+    marginHorizontal: -5,
+  },
+  colonneExport: {
+    width: '50%',
+    paddingHorizontal: 5,
   },
   blocExport: {
     gap: espacements.s,
-    paddingVertical: espacements.m,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: couleurs.bordure,
+    flex: 1,
   },
   titreExport: {
     fontSize: tailles.normal,
     fontWeight: '600',
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   descExport: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   rangBoutons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: espacements.s,
     alignSelf: 'flex-end',
+    marginTop: espacements.xs,
   },
   pastille: {
-    height: 32,
+    minHeight: tailleToucheMin,
     minWidth: 44,
-    paddingHorizontal: 10,
-    borderRadius: rayonPetit,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: couleurs.bordure,
-    backgroundColor: couleurs.principalClair,
+    paddingHorizontal: 14,
+    borderRadius: rayonPilule,
+    backgroundColor: couleurs.fondGroupe,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 6,
   },
   pastilleInactive: {
     backgroundColor: couleurs.desactive,
-    borderColor: couleurs.desactive,
   },
   pastilleAppuyee: {
     opacity: 0.7,
+    transform: [{ scale: 0.97 }],
   },
   pastilleTexte: {
     fontSize: tailles.petit,

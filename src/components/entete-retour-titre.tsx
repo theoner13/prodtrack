@@ -53,5 +53,6 @@ const styles = StyleSheet.create({
     fontFamily: polices.sans,
     color: couleurs.texte,
     textAlign: 'center',
+    letterSpacing: -0.3,
   },
 });

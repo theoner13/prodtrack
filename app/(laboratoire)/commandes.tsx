@@ -13,6 +13,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { messageErreur } from '@/auth/erreurs';
 import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
+import { ChoixSegmente } from '@/components/choix-segmente';
 import { Compteur } from '@/components/compteur';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
@@ -29,27 +30,29 @@ import {
 import {
   couleurs,
   espacements,
-  hauteurBouton,
+  ombres,
   polices,
-  rayonPuce,
+  rayonCarte,
+  rayonPilule,
   styleTitreSection,
+  tailleToucheMin,
   tailles,
 } from '@/theme';
 
-function couleurPastille(statut: StatutCommandeLabo): {
+function stylePastilleStatut(statut: StatutCommandeLabo): {
   fond: string;
   texte: string;
 } {
   if (statut === 'prete') {
-    return { fond: couleurs.succesClair, texte: couleurs.succes };
+    return { fond: couleurs.accentClair, texte: couleurs.accentFonce };
   }
   if (statut === 'effectuee') {
-    return { fond: couleurs.principalClair, texte: couleurs.principalFonce };
+    return { fond: couleurs.succesClair, texte: couleurs.succes };
   }
   if (statut === 'annulee') {
-    return { fond: couleurs.fondSegment, texte: couleurs.texteSecondaire };
+    return { fond: couleurs.fondPuce, texte: couleurs.texteSecondaire };
   }
-  return { fond: couleurs.fondSegment, texte: couleurs.texteSecondaire };
+  return { fond: couleurs.fondPuce, texte: couleurs.texteSecondaire };
 }
 
 export default function EcranCommandesLabo() {
@@ -181,83 +184,94 @@ export default function EcranCommandesLabo() {
 
   if (formulaireOuvert) {
     return (
-      <Ecran defilement>
+      <Ecran
+        defilement
+        pied={
+          <Bouton
+            titre="Enregistrer la commande"
+            pleineLargeur
+            onPress={() => void enregistrer()}
+            chargement={creer.isPending}
+            desactive={listeProduits.length === 0}
+          />
+        }
+      >
         <Text style={styles.titreForm}>Nouvelle commande</Text>
         {erreurForm ? <Text style={styles.erreur}>{erreurForm}</Text> : null}
 
-        <Text style={styles.label}>Produit</Text>
-        {listeProduits.length === 0 ? (
-          <Text style={styles.aide}>Aucun produit au laboratoire pour l’instant.</Text>
-        ) : (
-          <View style={styles.puces}>
-            {listeProduits.map((p) => {
-              const actif = produitId === p.id;
-              return (
-                <Pressable
-                  key={p.id}
-                  onPress={() => setProduitId(p.id)}
-                  style={[styles.puce, actif && styles.puceActive]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: actif }}
-                >
-                  <Text style={[styles.puceTexte, actif && styles.puceTexteActive]}>
-                    {p.nom}
-                    {p.fabricantNom ? ` · ${p.fabricantNom}` : ''}
-                  </Text>
-                </Pressable>
-              );
-            })}
+        <View style={styles.carteForm}>
+          <Text style={styles.label}>Produit</Text>
+          {listeProduits.length === 0 ? (
+            <Text style={styles.aide}>Aucun produit au laboratoire pour l’instant.</Text>
+          ) : (
+            <View style={styles.pucesWrap}>
+              {listeProduits.map((p) => {
+                const actif = produitId === p.id;
+                return (
+                  <Pressable
+                    key={p.id}
+                    onPress={() => setProduitId(p.id)}
+                    style={[styles.puce, actif && styles.puceActive]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: actif }}
+                  >
+                    <Text style={[styles.puceTexte, actif && styles.puceTexteActive]}>
+                      {p.nom}
+                      {p.fabricantNom ? ` · ${p.fabricantNom}` : ''}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+
+          <Text style={styles.label}>Quantité</Text>
+          <Compteur valeur={quantite} onChange={setQuantite} libelle="Quantité" />
+
+          <Text style={styles.label}>Jour</Text>
+          <View style={styles.bandePuces}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.pucesContenu}
+            >
+              {jours.map((j) => {
+                const actif = pourLe === j.jour;
+                return (
+                  <Pressable
+                    key={j.jour}
+                    onPress={() => setPourLe(j.jour)}
+                    style={[styles.puce, actif && styles.puceActive]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: actif }}
+                  >
+                    <Text style={[styles.puceTexte, actif && styles.puceTexteActive]}>
+                      {j.libelle}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
-        )}
+        </View>
 
-        <Text style={styles.label}>Quantité</Text>
-        <Compteur valeur={quantite} onChange={setQuantite} libelle="Quantité" />
+        <View style={styles.carteForm}>
+          <Champ
+            libelle="Client (facultatif)"
+            value={client}
+            onChangeText={setClient}
+            placeholder="Ex. Hôtel du Port"
+            autoCapitalize="words"
+          />
+          <Champ
+            libelle="Note (facultatif)"
+            value={note}
+            onChangeText={setNote}
+            placeholder="Précisions"
+            multiline
+          />
+        </View>
 
-        <Text style={styles.label}>Jour</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.puces}
-        >
-          {jours.map((j) => {
-            const actif = pourLe === j.jour;
-            return (
-              <Pressable
-                key={j.jour}
-                onPress={() => setPourLe(j.jour)}
-                style={[styles.puce, actif && styles.puceActive]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: actif }}
-              >
-                <Text style={[styles.puceTexte, actif && styles.puceTexteActive]}>
-                  {j.libelle}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        <Champ
-          libelle="Client (facultatif)"
-          value={client}
-          onChangeText={setClient}
-          placeholder="Ex. Hôtel du Port"
-          autoCapitalize="words"
-        />
-        <Champ
-          libelle="Note (facultatif)"
-          value={note}
-          onChangeText={setNote}
-          placeholder="Précisions"
-          multiline
-        />
-
-        <Bouton
-          titre="Enregistrer la commande"
-          onPress={() => void enregistrer()}
-          chargement={creer.isPending}
-          desactive={listeProduits.length === 0}
-        />
         <Bouton
           titre="Annuler"
           variante="secondaire"
@@ -270,33 +284,18 @@ export default function EcranCommandesLabo() {
   return (
     <Ecran
       defilement
+      pied={<Bouton titre="+ Nouvelle commande" pleineLargeur onPress={ouvrirFormulaire} />}
       enRafraichissement={commandes.isRefetching}
       onRafraichir={() => void rafraichir()}
     >
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.puces}
-      >
-        {FILTRES_COMMANDES_LABO.map((f) => {
-          const actif = filtre === f.id;
-          return (
-            <Pressable
-              key={f.id}
-              onPress={() => setFiltre(f.id)}
-              style={[styles.puce, actif && styles.puceActive]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: actif }}
-            >
-              <Text style={[styles.puceTexte, actif && styles.puceTexteActive]}>
-                {f.libelle}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      <Bouton titre="+ Nouvelle commande" onPress={ouvrirFormulaire} />
+      <ChoixSegmente
+        options={FILTRES_COMMANDES_LABO.map((f) => ({
+          valeur: f.id,
+          libelle: f.libelle,
+        }))}
+        valeur={filtre}
+        onChange={setFiltre}
+      />
 
       {erreurAction ? <Text style={styles.erreur}>{erreurAction}</Text> : null}
 
@@ -318,7 +317,7 @@ export default function EcranCommandesLabo() {
           {groupe.commandes.map((c) => {
             const commande = c as CommandeLaboEnrichie;
             const statut = statutCommandeLabo(commande);
-            const pastille = couleurPastille(statut);
+            const pastille = stylePastilleStatut(statut);
             const enConfirmation = annulerId === commande.id;
             const enCours = statutEnCoursId === commande.id;
             const peutStatut = filtre !== 'annulees' && statut !== 'annulee';
@@ -345,34 +344,23 @@ export default function EcranCommandesLabo() {
                 {peutStatut ? (
                   <View style={styles.actionsStatut}>
                     {statut === 'a_faire' ? (
-                      <Pressable
+                      <Bouton
+                        titre="Marquer prête"
+                        variante="secondaire"
+                        pleineLargeur
+                        desactive={enCours}
                         onPress={() => void appliquerStatut(commande, 'prete')}
-                        disabled={enCours}
-                        accessibilityRole="button"
-                        accessibilityLabel="Marquer prête"
-                        style={styles.boutonSecondaireStatut}
-                      >
-                        <Text style={styles.boutonSecondaireStatutTexte}>
-                          Marquer prête
-                        </Text>
-                      </Pressable>
+                      />
                     ) : null}
 
                     {statut === 'a_faire' || statut === 'prete' ? (
-                      <Pressable
+                      <Bouton
+                        titre="Marquer effectuée"
+                        variante="principal"
+                        pleineLargeur
+                        desactive={enCours}
                         onPress={() => void appliquerStatut(commande, 'effectuee')}
-                        disabled={enCours}
-                        accessibilityRole="button"
-                        accessibilityLabel="Marquer effectuée"
-                        style={[
-                          styles.boutonPrincipalStatut,
-                          enCours && styles.boutonPrincipalStatutInactif,
-                        ]}
-                      >
-                        <Text style={styles.boutonPrincipalStatutTexte}>
-                          Marquer effectuée
-                        </Text>
-                      </Pressable>
+                      />
                     ) : null}
 
                     {statut === 'prete' || statut === 'effectuee' ? (
@@ -431,33 +419,53 @@ export default function EcranCommandesLabo() {
 }
 
 const styles = StyleSheet.create({
+  carteForm: {
+    gap: espacements.m,
+    padding: espacements.m,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.surface,
+    ...ombres.douce,
+    marginBottom: espacements.m,
+  },
   titreForm: {
     ...styleTitreSection,
     marginBottom: espacements.s,
   },
   label: {
-    fontSize: tailles.petit,
-    fontWeight: '600',
+    fontSize: tailles.legend,
+    fontWeight: '500',
     color: couleurs.texteSecondaire,
-    marginTop: espacements.s,
-    marginBottom: espacements.xs,
     fontFamily: polices.sans,
   },
   aide: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
-  puces: {
+  pucesWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: espacements.s,
-    marginBottom: espacements.s,
+    padding: espacements.s,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.fondSegment,
+    overflow: 'hidden',
+  },
+  bandePuces: {
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.fondSegment,
+    overflow: 'hidden',
+  },
+  pucesContenu: {
+    flexDirection: 'row',
+    gap: espacements.s,
+    padding: espacements.s,
   },
   puce: {
     paddingHorizontal: espacements.m,
     paddingVertical: espacements.s,
-    borderRadius: rayonPuce,
-    backgroundColor: couleurs.fondSegment,
+    borderRadius: rayonPilule,
+    backgroundColor: couleurs.fondPuce,
   },
   puceActive: {
     backgroundColor: couleurs.principal,
@@ -479,10 +487,11 @@ const styles = StyleSheet.create({
     ...styleTitreSection,
   },
   carte: {
-    gap: 4,
-    paddingVertical: espacements.s,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: couleurs.bordure,
+    gap: espacements.xs,
+    padding: espacements.m,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.surface,
+    ...ombres.douce,
   },
   enteteCarte: {
     flexDirection: 'row',
@@ -492,6 +501,7 @@ const styles = StyleSheet.create({
   },
   lignePrincipale: {
     flex: 1,
+    flexShrink: 1,
     fontSize: tailles.normal,
     fontWeight: '600',
     color: couleurs.texte,
@@ -500,11 +510,13 @@ const styles = StyleSheet.create({
   ligneSecondaire: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
   pastilleStatut: {
+    flexShrink: 0,
     paddingHorizontal: espacements.s,
     paddingVertical: 4,
-    borderRadius: rayonPuce,
+    borderRadius: rayonPilule,
   },
   pastilleStatutTexte: {
     fontSize: tailles.petit,
@@ -515,39 +527,9 @@ const styles = StyleSheet.create({
     gap: espacements.s,
     marginTop: espacements.s,
   },
-  boutonPrincipalStatut: {
-    minHeight: hauteurBouton,
-    borderRadius: 14,
-    backgroundColor: couleurs.principal,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: espacements.m,
-  },
-  boutonPrincipalStatutInactif: {
-    backgroundColor: couleurs.desactive,
-  },
-  boutonPrincipalStatutTexte: {
-    fontSize: tailles.normal,
-    fontWeight: '600',
-    color: couleurs.texteSurPrincipal,
-    fontFamily: polices.sans,
-  },
-  boutonSecondaireStatut: {
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: espacements.m,
-  },
-  boutonSecondaireStatutTexte: {
-    fontSize: tailles.normal,
-    fontWeight: '600',
-    color: couleurs.principal,
-    fontFamily: polices.sans,
-    textDecorationLine: 'underline',
-  },
   lienStatut: {
     alignSelf: 'flex-start',
-    minHeight: 44,
+    minHeight: tailleToucheMin,
     justifyContent: 'center',
   },
   lienStatutTexte: {
@@ -556,25 +538,36 @@ const styles = StyleSheet.create({
     fontFamily: polices.sans,
   },
   lienAnnuler: {
-    alignSelf: 'flex-start',
-    marginTop: 4,
+    alignSelf: 'flex-end',
+    minHeight: tailleToucheMin,
+    justifyContent: 'center',
+    paddingHorizontal: espacements.m,
+    borderRadius: rayonPilule,
+    backgroundColor: couleurs.erreurClair,
+    marginTop: espacements.xs,
   },
   lienAnnulerTexte: {
     fontSize: tailles.petit,
     color: couleurs.erreur,
-    fontWeight: '600',
+    fontWeight: '500',
+    fontFamily: polices.sans,
   },
   confirmation: {
     gap: espacements.s,
     marginTop: espacements.s,
+    padding: espacements.m,
+    borderRadius: rayonCarte,
+    backgroundColor: couleurs.fondGroupe,
   },
   confirmationTexte: {
     fontSize: tailles.petit,
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   erreur: {
     fontSize: tailles.petit,
     color: couleurs.erreur,
     marginBottom: espacements.s,
+    fontFamily: polices.sans,
   },
 });

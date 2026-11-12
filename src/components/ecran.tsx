@@ -1,13 +1,27 @@
 import type { ReactNode } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import {
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { couleurs, espacements, polices, styleTitreEcran } from '@/theme';
-
-/** Largeur max du contenu sur ordinateur (l’en-tête reste pleine largeur). */
-const LARGEUR_MAX_CONTENU = 720;
-/** En dessous, le contenu reste pleine largeur (téléphone / tablette). */
-const SEUIL_ECRAN_LARGE = 1000;
+import {
+  couleurs,
+  espacements,
+  hauteurBarreOngletsFlottante,
+  largeurMaxContenu,
+  ombres,
+  polices,
+  seuilOrdinateur,
+  styleTitreEcran,
+} from '@/theme';
 
 type Props = {
   titre?: string;
@@ -19,7 +33,7 @@ type Props = {
   pied?: ReactNode;
 };
 
-// Cadre commun à tous les écrans : marges 20, fond blanc, titre et défilement.
+// Cadre commun : fond crème, largeur max adaptée, pied flottant au-dessus de la barre.
 export function Ecran({
   titre,
   defilement = false,
@@ -29,10 +43,28 @@ export function Ecran({
   pied,
 }: Props) {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const ordinateur = width >= seuilOrdinateur;
+  const [hauteurPied, setHauteurPied] = useState(0);
   const styleLargeur =
-    width > SEUIL_ECRAN_LARGE
-      ? { maxWidth: LARGEUR_MAX_CONTENU, width: '100%' as const, alignSelf: 'center' as const }
+    width > seuilOrdinateur
+      ? { maxWidth: largeurMaxContenu, width: '100%' as const, alignSelf: 'center' as const }
       : null;
+
+  const margeBarre = ordinateur
+    ? 0
+    : hauteurBarreOngletsFlottante + Math.max(insets.bottom, 12);
+
+  const paddingBasScroll = pied
+    ? hauteurPied + (ordinateur ? espacements.l : margeBarre + 12)
+    : ordinateur
+      ? espacements.xl
+      : margeBarre + 20;
+
+  function mesurerPied(event: LayoutChangeEvent) {
+    const suivante = event.nativeEvent.layout.height;
+    setHauteurPied((actuelle) => (actuelle === suivante ? actuelle : suivante));
+  }
 
   const contenu = (
     <>
@@ -50,27 +82,50 @@ export function Ecran({
     />
   ) : undefined;
 
+  const piedFlottant = pied ? (
+    <View
+      onLayout={mesurerPied}
+      style={[
+        styles.pied,
+        ordinateur
+          ? styles.piedOrdinateur
+          : {
+              marginBottom: margeBarre + 12,
+            },
+        Platform.OS === 'web'
+          ? ({
+              backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)',
+            } as object)
+          : null,
+      ]}
+    >
+      {pied}
+    </View>
+  ) : null;
+
   return (
     <SafeAreaView
       style={styles.fond}
-      edges={pied ? ['top', 'left', 'right', 'bottom'] : ['top', 'left', 'right']}
+      edges={pied ? ['top', 'left', 'right'] : ['top', 'left', 'right']}
     >
       {defilement ? (
         <View style={[styles.colonne, styleLargeur]}>
           <ScrollView
             style={styles.flex}
-            contentContainerStyle={styles.contenu}
+            contentContainerStyle={[styles.contenu, { paddingBottom: paddingBasScroll }]}
             keyboardShouldPersistTaps="handled"
             refreshControl={refreshControl}
+            showsVerticalScrollIndicator={ordinateur}
           >
             {contenu}
           </ScrollView>
-          {pied ? <View style={styles.pied}>{pied}</View> : null}
+          {piedFlottant}
         </View>
       ) : (
-        <View style={[styles.contenu, styles.plein, styleLargeur]}>
+        <View style={[styles.contenu, styles.plein, styleLargeur, { paddingBottom: pied ? 0 : paddingBasScroll }]}>
           {contenu}
-          {pied ? <View style={styles.pied}>{pied}</View> : null}
+          {piedFlottant}
         </View>
       )}
     </SafeAreaView>
@@ -101,12 +156,16 @@ const styles = StyleSheet.create({
     fontFamily: polices.sans,
   },
   pied: {
-    paddingHorizontal: espacements.l,
-    paddingTop: espacements.s,
-    paddingBottom: espacements.s,
+    marginHorizontal: espacements.m,
+    paddingHorizontal: espacements.m,
+    paddingVertical: espacements.s,
     gap: espacements.s,
-    borderTopWidth: 1,
-    borderTopColor: couleurs.bordure,
-    backgroundColor: couleurs.fond,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    ...ombres.douce,
+  },
+  piedOrdinateur: {
+    marginBottom: espacements.m,
+    marginTop: espacements.s,
   },
 });

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet, Text } from 'react-native';
@@ -10,7 +10,7 @@ import { Bouton } from '@/components/bouton';
 import { Champ } from '@/components/champ';
 import { EcranAuth } from '@/components/ecran-auth';
 import { supabase } from '@/lib/supabase';
-import { couleurs, tailles } from '@/theme';
+import { couleurs, polices, tailles } from '@/theme';
 
 const schema = z
   .object({
@@ -104,12 +104,16 @@ export default function EcranInscription() {
       {info ? <Text style={styles.info}>{info}</Text> : null}
       <Bouton
         titre="Créer mon compte"
+        pleineLargeur
         chargement={formState.isSubmitting}
         onPress={handleSubmit(inscrire)}
       />
-      <Link href="/connexion" style={styles.lien}>
-        J'ai déjà un compte
-      </Link>
+      <Bouton
+        titre="J'ai déjà un compte"
+        variante="secondaire"
+        pleineLargeur
+        onPress={() => router.push('/connexion')}
+      />
     </EcranAuth>
   );
 }
@@ -118,15 +122,11 @@ const styles = StyleSheet.create({
   erreur: {
     fontSize: tailles.normal,
     color: couleurs.erreur,
+    fontFamily: polices.sans,
   },
   info: {
     fontSize: tailles.normal,
     color: couleurs.texte,
-  },
-  lien: {
-    fontSize: tailles.normal,
-    color: couleurs.principal,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontFamily: polices.sans,
   },
 });

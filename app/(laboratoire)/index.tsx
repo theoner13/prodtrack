@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { useUrlsSignees } from '@/api/photos';
 import { useProduits } from '@/api/produits';
@@ -12,7 +12,17 @@ import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { etiquetteBoutique } from '@/lib/production-exterieure';
 import { grouperParPatissierLabo } from '@/lib/laboratoire';
-import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
+import {
+  couleurs,
+  degradeCarteHeros,
+  espacements,
+  haloAmbre,
+  ombres,
+  rayonCarte,
+  styleChiffre,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 
 function sansAccents(texte: string): string {
   return texte.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -75,6 +85,10 @@ export default function EcranStockLaboratoire() {
   }
 
   const total = produits.data?.length ?? 0;
+  const totalStock = liste.reduce(
+    (sum, produit) => sum + (stockParProduit.get(produit.id) ?? 0),
+    0,
+  );
 
   return (
     <Ecran
@@ -82,6 +96,20 @@ export default function EcranStockLaboratoire() {
       enRafraichissement={produits.isRefetching || stock.isRefetching}
       onRafraichir={() => void rafraichir()}
     >
+      {total > 0 ? (
+        <View
+          style={[
+            styles.herosCompact,
+            ombres.feuille,
+            degradeCarteHeros(),
+            Platform.OS === 'web' ? haloAmbre() : null,
+          ]}
+        >
+          <Text style={styles.herosLibelle}>Stock laboratoire</Text>
+          <Text style={styles.herosChiffre}>{totalStock}</Text>
+        </View>
+      ) : null}
+
       {total > 10 ? (
         <Champ
           libelle="Rechercher un produit ou un pâtissier"
@@ -129,17 +157,36 @@ export default function EcranStockLaboratoire() {
 }
 
 const styles = StyleSheet.create({
+  herosCompact: {
+    borderRadius: rayonCarte,
+    paddingVertical: espacements.m,
+    paddingHorizontal: espacements.l,
+    gap: 2,
+    overflow: 'hidden',
+    marginBottom: espacements.s,
+  },
+  herosLibelle: {
+    ...styleTitreSection,
+    color: couleurs.texteSurSombreDoux,
+  },
+  herosChiffre: {
+    ...styleChiffre,
+    fontSize: tailles.ca,
+    color: couleurs.texteSurSombre,
+    letterSpacing: -1,
+  },
   section: {
     gap: espacements.s,
-    marginBottom: espacements.m,
+    marginBottom: espacements.l,
   },
   titreSection: {
     ...styleTitreSection,
+    marginBottom: espacements.xs,
   },
   chiffre: {
-    fontSize: tailles.titre,
-    fontWeight: '700',
-    color: couleurs.texte,
+    ...styleChiffre,
+    fontSize: tailles.ca,
+    letterSpacing: -1,
     minWidth: 48,
     textAlign: 'right',
   },

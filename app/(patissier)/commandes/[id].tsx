@@ -62,7 +62,7 @@ export default function EcranDetailCommandePatissier() {
     }
   }
 
-  const actionPrincipale =
+  const pied =
     fabriqueeChezMoi && c.statut === 'a_faire' ? (
       <Bouton
         titre="Marquer prête"
@@ -77,17 +77,14 @@ export default function EcranDetailCommandePatissier() {
   return (
     <Ecran
       defilement
+      pied={pied}
       enRafraichissement={detail.isRefetching}
       onRafraichir={() => void detail.refetch()}
     >
       {ok ? <Banniere message={ok} onFermer={() => setOk(null)} /> : null}
       {erreur ? <Text style={styles.erreur}>{erreur}</Text> : null}
 
-      <ContenuFicheCommande
-        commande={c}
-        afficherBoutiqueRetrait
-        actionPrincipale={actionPrincipale}
-      />
+      <ContenuFicheCommande commande={c} afficherBoutiqueRetrait />
 
       <View style={styles.actions}>
         {jeSuisFabricant && c.statut === 'prete' ? (

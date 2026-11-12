@@ -1,31 +1,72 @@
-import { couleurs, polices, tailles } from '@/theme';
+import {
+  couleurs,
+  espacements,
+  largeurMaxContenu,
+  polices,
+} from '@/theme';
 
-/** Options communes des barres d'onglets (admin, pâtissier, vente). */
+/** Style du titre d'en-tête : plus grand sur ordinateur. */
+export function styleTitreEntete(ordinateur: boolean) {
+  return ordinateur
+    ? {
+        fontSize: 28,
+        fontWeight: '600' as const,
+        letterSpacing: -0.6,
+        fontFamily: polices.sans,
+        color: couleurs.texte,
+      }
+    : {
+        fontSize: 17,
+        fontWeight: '600' as const,
+        fontFamily: polices.sans,
+        color: couleurs.texte,
+      };
+}
+
+/** Style de la barre d'en-tête (plus haute sur ordinateur). */
+export function styleEntete(ordinateur: boolean) {
+  return {
+    backgroundColor: couleurs.fond,
+    borderBottomWidth: 0,
+    ...(ordinateur ? { height: 56 } : null),
+  };
+}
+
+/**
+ * Aligne le titre d'en-tête sur le bord gauche du contenu
+ * (même largeur max et padding que Ecran).
+ */
+export function styleConteneurTitreEntete(ordinateur: boolean) {
+  if (!ordinateur) return undefined;
+  return {
+    maxWidth: largeurMaxContenu,
+    width: '100%' as const,
+    alignSelf: 'center' as const,
+    paddingHorizontal: espacements.l,
+    left: 0,
+    right: 0,
+  };
+}
+
+/** Options communes des barres d'onglets (admin, pâtissier, vente, laboratoire).
+ *  `tabBar` se passe sur `<Tabs>` (pas dans screenOptions). */
 export const optionsOngletsCommunes = {
   headerStyle: {
     backgroundColor: couleurs.fond,
-    borderBottomWidth: 1,
-    borderBottomColor: couleurs.bordure,
+    borderBottomWidth: 0,
   },
   headerShadowVisible: false,
   headerTintColor: couleurs.texte,
-  headerTitleStyle: {
-    fontSize: 16,
-    fontWeight: '500' as const,
-    fontFamily: polices.sans,
-    color: couleurs.texte,
-  },
-  tabBarActiveTintColor: couleurs.texte,
+  headerTitleStyle: styleTitreEntete(false),
+  headerTitleAlign: 'left' as const,
+  tabBarActiveTintColor: couleurs.texteSurPrincipal,
   tabBarInactiveTintColor: couleurs.ongletInactifTexte,
-  // Toujours icône au-dessus du texte (évite le décalage de la pastille sur écran large).
-  tabBarLabelPosition: 'below-icon' as const,
   tabBarStyle: {
-    backgroundColor: 'rgba(255,255,255,0.96)',
-    borderTopWidth: 1,
-    borderTopColor: couleurs.bordure,
-    height: 84,
-    paddingTop: 8,
-    paddingBottom: 24,
+    position: 'absolute' as const,
+    backgroundColor: 'transparent',
+    borderTopWidth: 0,
+    elevation: 0,
+    borderRightWidth: 0,
   },
   tabBarLabelStyle: {
     fontSize: 10,
@@ -34,3 +75,14 @@ export const optionsOngletsCommunes = {
   },
   sceneStyle: { backgroundColor: couleurs.fond },
 };
+
+/** Options d'onglets adaptées à la largeur (titre et hauteur d'en-tête). */
+export function optionsOngletsPourEcran(ordinateur: boolean) {
+  return {
+    ...optionsOngletsCommunes,
+    headerStyle: styleEntete(ordinateur),
+    headerTitleStyle: styleTitreEntete(ordinateur),
+    headerTitleAlign: 'left' as const,
+    headerTitleContainerStyle: styleConteneurTitreEntete(ordinateur),
+  };
+}

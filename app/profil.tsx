@@ -1,6 +1,6 @@
 import { router, Stack, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { useDefinirPhotoProfil } from '@/api/produits';
 import { useAuth } from '@/auth/AuthProvider';
@@ -8,8 +8,19 @@ import { Banniere } from '@/components/banniere';
 import { Bouton } from '@/components/bouton';
 import { BoutonRetour } from '@/components/bouton-retour';
 import { ChoixPhoto } from '@/components/choix-photo';
+import { ChoixSegmente } from '@/components/choix-segmente';
 import { Ecran } from '@/components/ecran';
-import { couleurs, espacements, styleTitreSection, tailles } from '@/theme';
+import { styleEntete, styleTitreEntete } from '@/lib/options-onglets';
+import {
+  couleurs,
+  espacements,
+  ombres,
+  polices,
+  rayonCarte,
+  seuilOrdinateur,
+  styleTitreSection,
+  tailles,
+} from '@/theme';
 import type { RoleEmploye } from '@/types/database';
 
 const ROLES: Record<RoleEmploye, string> = {
@@ -31,6 +42,8 @@ export default function EcranProfil() {
     retirerMonCompte,
   } = useAuth();
   const definirPhoto = useDefinirPhotoProfil();
+  const { width } = useWindowDimensions();
+  const ordinateur = width >= seuilOrdinateur;
   const [confirmation, setConfirmation] = useState<string | null>(null);
   const [confirmerRetrait, setConfirmerRetrait] = useState(false);
   const [chargementTablette, setChargementTablette] = useState(false);
@@ -86,6 +99,10 @@ export default function EcranProfil() {
     <Ecran defilement>
       <Stack.Screen
         options={{
+          title: ordinateur ? '' : 'Profil',
+          headerStyle: styleEntete(ordinateur),
+          headerTitleStyle: styleTitreEntete(ordinateur),
+          headerTitleAlign: 'left',
           headerLeft: () => (
             <View style={styles.enteteRetour}>
               <BoutonRetour onPress={retour} />
@@ -93,79 +110,84 @@ export default function EcranProfil() {
           ),
         }}
       />
-      <Banniere message={confirmation} onFermer={fermer} />
-      <ChoixPhoto
-        chemin={moi.photo_url}
-        dossier="profils"
-        proprietaireId={moi.id}
-        camera="avant"
-        onChange={photoChange}
-      />
-      <Text style={styles.ligne}>
-        {moi.prenom} {moi.nom}
-      </Text>
-      <Text style={styles.ligne}>Rôle : {ROLES[moi.role]}</Text>
-      <Text style={styles.ligne}>Boutique : {boutiqueNom ?? '—'}</Text>
-      <Bouton titre="Changer mon code PIN" variante="secondaire" onPress={() => router.push('/creer-pin?changer=1')} />
-
-      <Text style={styles.section}>Cet appareil</Text>
-      <Text style={styles.aide}>Pour une tablette utilisée par plusieurs employés en boutique.</Text>
-      <Text style={styles.ligne}>Tablette partagée : {tablettePartagee ? 'oui' : 'non'}</Text>
-      <View style={styles.choix}>
-        <View style={styles.choixBouton}>
-          <Bouton
-            titre="Oui"
-            variante={tablettePartagee ? 'principal' : 'secondaire'}
-            chargement={chargementTablette && !tablettePartagee}
-            desactive={chargementTablette}
-            onPress={() => void changerTablette(true)}
+      <View style={styles.colonne}>
+        {ordinateur ? <Text style={styles.titrePage}>Profil</Text> : null}
+        <Banniere message={confirmation} onFermer={fermer} />
+        <View style={[styles.carteIdentite, ombres.douce]}>
+          <ChoixPhoto
+            chemin={moi.photo_url}
+            dossier="profils"
+            proprietaireId={moi.id}
+            camera="avant"
+            onChange={photoChange}
           />
+          <Text style={styles.nom}>
+            {moi.prenom} {moi.nom}
+          </Text>
+          <Text style={styles.meta}>Rôle : {ROLES[moi.role]}</Text>
+          <Text style={styles.meta}>Boutique : {boutiqueNom ?? '—'}</Text>
         </View>
-        <View style={styles.choixBouton}>
+        <Bouton
+          titre="Changer mon code PIN"
+          variante="secondaire"
+          pleineLargeur
+          onPress={() => router.push('/creer-pin?changer=1')}
+        />
+
+        <Text style={styles.section}>Cet appareil</Text>
+        <Text style={styles.aide}>Pour une tablette utilisée par plusieurs employés en boutique.</Text>
+        <Text style={styles.ligne}>Tablette partagée</Text>
+        <ChoixSegmente
+          options={[
+            { valeur: 'oui', libelle: 'Oui' },
+            { valeur: 'non', libelle: 'Non' },
+          ]}
+          valeur={tablettePartagee ? 'oui' : 'non'}
+          desactive={chargementTablette}
+          onChange={(valeur) => void changerTablette(valeur === 'oui')}
+        />
+
+        {afficherChangerPersonne ? (
           <Bouton
-            titre="Non"
-            variante={!tablettePartagee ? 'principal' : 'secondaire'}
-            chargement={chargementTablette && tablettePartagee}
-            desactive={chargementTablette}
-            onPress={() => void changerTablette(false)}
+            titre="Changer de personne"
+            variante="secondaire"
+            pleineLargeur
+            onPress={() => void changerDePersonne()}
           />
+        ) : null}
+
+        <View style={styles.actionsBas}>
+          {confirmerRetrait ? (
+            <View style={styles.confirmation}>
+              <Text style={styles.aide}>
+                Retirer votre compte de cet appareil ? Il faudra votre email et votre mot de passe pour
+                revenir.
+              </Text>
+              <Bouton
+                titre="Oui, retirer mon compte"
+                variante="danger"
+                pleineLargeur
+                chargement={chargementRetrait}
+                onPress={() => void confirmerRetirer()}
+              />
+              <Bouton
+                titre="Annuler"
+                variante="secondaire"
+                pleineLargeur
+                desactive={chargementRetrait}
+                onPress={() => setConfirmerRetrait(false)}
+              />
+            </View>
+          ) : (
+            <Bouton
+              titre="Retirer mon compte de cet appareil"
+              variante="danger"
+              pleineLargeur
+              onPress={() => setConfirmerRetrait(true)}
+            />
+          )}
         </View>
       </View>
-
-      {afficherChangerPersonne ? (
-        <Bouton
-          titre="Changer de personne"
-          variante="secondaire"
-          onPress={() => void changerDePersonne()}
-        />
-      ) : null}
-
-      {confirmerRetrait ? (
-        <View style={styles.confirmation}>
-          <Text style={styles.aide}>
-            Retirer votre compte de cet appareil ? Il faudra votre email et votre mot de passe pour
-            revenir.
-          </Text>
-          <Bouton
-            titre="Oui, retirer mon compte"
-            variante="danger"
-            chargement={chargementRetrait}
-            onPress={() => void confirmerRetirer()}
-          />
-          <Bouton
-            titre="Annuler"
-            variante="secondaire"
-            desactive={chargementRetrait}
-            onPress={() => setConfirmerRetrait(false)}
-          />
-        </View>
-      ) : (
-        <Bouton
-          titre="Retirer mon compte de cet appareil"
-          variante="danger"
-          onPress={() => setConfirmerRetrait(true)}
-        />
-      )}
     </Ecran>
   );
 }
@@ -174,9 +196,42 @@ const styles = StyleSheet.create({
   enteteRetour: {
     marginLeft: 4,
   },
+  colonne: {
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+    gap: espacements.s,
+  },
+  titrePage: {
+    fontSize: 28,
+    fontWeight: '600',
+    letterSpacing: -0.6,
+    color: couleurs.texte,
+    fontFamily: polices.sans,
+    marginBottom: espacements.xs,
+  },
+  carteIdentite: {
+    backgroundColor: couleurs.surface,
+    borderRadius: rayonCarte,
+    padding: espacements.l,
+    gap: espacements.s,
+    marginBottom: espacements.s,
+  },
+  nom: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: couleurs.texte,
+    fontFamily: polices.sans,
+  },
+  meta: {
+    fontSize: tailles.petit,
+    color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
+  },
   ligne: {
     fontSize: tailles.normal,
     color: couleurs.texte,
+    fontFamily: polices.sans,
   },
   section: {
     ...styleTitreSection,
@@ -185,13 +240,10 @@ const styles = StyleSheet.create({
   aide: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
+    fontFamily: polices.sans,
   },
-  choix: {
-    flexDirection: 'row',
-    gap: espacements.s,
-  },
-  choixBouton: {
-    flex: 1,
+  actionsBas: {
+    marginTop: espacements.xl,
   },
   confirmation: {
     gap: espacements.s,
