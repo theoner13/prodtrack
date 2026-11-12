@@ -136,7 +136,7 @@ export default function EcranProfil() {
 
         <Text style={styles.section}>Cet appareil</Text>
         <Text style={styles.aide}>Pour une tablette utilisée par plusieurs employés en boutique.</Text>
-        <Text style={styles.ligne}>Tablette partagée</Text>
+        <Text style={styles.ligne}>Tablette partagée : {tablettePartagee ? 'oui' : 'non'}</Text>
         <ChoixSegmente
           options={[
             { valeur: 'oui', libelle: 'Oui' },

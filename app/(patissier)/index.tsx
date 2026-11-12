@@ -332,7 +332,9 @@ export default function EcranPlanning() {
           chiffre={chiffreHeros}
           sousTitre={nbAFaire === 0 ? 'Rien à fabriquer' : undefined}
         />
-      ) : null}
+      ) : (
+        <Text style={styles.jourActif}>{groupeActif.libelle}</Text>
+      )}
 
       {groupeActif.lignes.length === 0 ? null : (
         <View style={[styles.grille, grille && styles.grille2]}>
@@ -367,6 +369,10 @@ export default function EcranPlanning() {
 }
 
 const styles = StyleSheet.create({
+  jourActif: {
+    ...styleTitreSection,
+    marginTop: espacements.s,
+  },
   indicative: {
     fontSize: tailles.petit,
     color: couleurs.texteSecondaire,
