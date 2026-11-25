@@ -29,7 +29,8 @@
 - Évolution (hors cahier des charges, validée par le propriétaire) : catalogue des autres boutiques pour les pâtissiers
 - Base Supabase vide et prête. Confirmation par email désactivée (dev) : à réactiver avant la production.
 - ⏰ 03/11/2026 : renouveler le jeton Supabase « claude-code-prodtrack » (supabase.com/dashboard/account/tokens), puis `npx supabase login --token ...`.
-- Comptes de test : mot de passe `Test1234!`.
+- Comptes de test : mot de passe `Test1234!`, sauf les 3 comptes démo (Claire Martin, Julien Girard, Nadia Benali) : `demo-prodtrack`, public.
+- Version démo : page /demo (Admin, Pâtissier, Vente de « Boulangerie Démo »), barre en bas pour changer de profil. La base remet la démo à zéro chaque nuit à 1 h 45 UTC (`demo.reinitialiser()`, migration 0024), dates décalées pour finir aujourd'hui. Ne pas faire de tests à garder dans « Boulangerie Démo » : tout y est effacé chaque nuit.
 - Web en mode « single » (app.json) : le mode « server » restait bloqué sur le chargement sous Windows. Après un changement de app.json, relancer le serveur avec `npx expo start --web --clear`.
 - Tests des calculs : `npm test`
 - En ligne sur Vercel : https://prodtrack-zeta.vercel.app. Chaque push sur `main` redéploie (voir AGENTS.md section 6).
@@ -37,6 +38,7 @@
 
 ## Journal (le plus récent en haut, une ligne par session)
 
+- 2026-11-26 : Version démo : page /demo, barre en bas pour passer d'Admin à Pâtissier ou Vente, données « Boulangerie Démo » remises à zéro et à la date du jour chaque nuit (Claude Code)
 - 2026-11-12 : Refonte du design « Fournil 2 » (crème, espresso, ambre) : nouveau thème et composants, barre d'onglets flottante sur téléphone et barre latérale sur ordinateur, tous les écrans des 4 profils, design seul sans changement de texte ni de logique (Cursor, vérifié par Claude Code)
 - 2026-11-12 : Laboratoire : commandes marquées prêtes puis effectuées (Cursor)
 - 2026-11-07 : Laboratoire : onglet Planning jour par jour, total par produit et détail par client (Cursor)
