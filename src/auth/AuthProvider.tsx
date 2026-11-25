@@ -26,6 +26,7 @@ import {
   retirerCompteAppareil,
   type CompteAppareil,
 } from '@/lib/comptes-appareil';
+import { compteDemo } from '@/lib/demo';
 import { pinExiste, verifierPin } from '@/lib/pin';
 import {
   demarrerEcouteNotifications,
@@ -248,7 +249,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let annule = false;
     setChargement(true);
     // Comparer à l'userId (pas un booléen à usage unique) : survit aussi au remontage.
-    if (deverrouillePour === userId) {
+    // Comptes démo : jamais de code à l'ouverture.
+    if (deverrouillePour === userId || compteDemo(userId)) {
       setVerrouille(false);
     } else if (!modeAjoutCompteRef.current) {
       setVerrouille(true);

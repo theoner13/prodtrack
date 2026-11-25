@@ -13,6 +13,7 @@ import { View } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import { AnimationAccueil } from '@/components/animation-accueil';
+import { BarreDemo } from '@/components/barre-demo';
 import { styleTitreEntete } from '@/lib/options-onglets';
 import { couleurs } from '@/theme';
 import type { Profil } from '@/types/database';
@@ -41,13 +42,16 @@ export default function LayoutRacine() {
     <QueryClientProvider client={queryClient}>
       <View style={{ flex: 1 }}>
         <AuthProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="profil" options={{ ...optionsAvecEntete, title: 'Profil' }} />
-            <Stack.Screen
-              name="notifications"
-              options={{ ...optionsAvecEntete, title: 'Notifications' }}
-            />
-          </Stack>
+          <View style={{ flex: 1 }}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="profil" options={{ ...optionsAvecEntete, title: 'Profil' }} />
+              <Stack.Screen
+                name="notifications"
+                options={{ ...optionsAvecEntete, title: 'Notifications' }}
+              />
+            </Stack>
+          </View>
+          <BarreDemo />
           <Gardien />
           <AnimationAccueil />
         </AuthProvider>
@@ -192,6 +196,9 @@ function destination(etat: {
     if (etat.racine === '(auth)' && etat.suite === 'connexion') return null;
     return '/connexion';
   }
+
+  // Page de la démo : ouverte à tous, connecté ou non.
+  if (etat.racine === 'demo') return null;
 
   if (!etat.connecte) {
     if (etat.nombreComptes > 0) {

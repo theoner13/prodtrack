@@ -145,6 +145,12 @@ export default function EcranConnexion() {
         pleineLargeur
         onPress={() => router.push('/inscription')}
       />
+      <Bouton
+        titre="Essayer la démo"
+        variante="secondaire"
+        pleineLargeur
+        onPress={() => router.replace('/demo')}
+      />
       {afficherConnexionRapide ? (
         <View style={styles.rapide}>
           <Text style={styles.rapideTitre}>Connexion rapide (test)</Text>
