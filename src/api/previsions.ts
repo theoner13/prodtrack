@@ -94,3 +94,37 @@ export function useMesPrevisions(userId: string | null) {
     },
   });
 }
+
+export type ProductionBoutique = {
+  jour: string;
+  produitId: string;
+  nom: string;
+  boutiqueId: string;
+  boutiqueNom: string;
+  quantite: number;
+  dejaProduit: number;
+};
+
+/** Produits frais à produire pour les boutiques, jour par jour (calcul en base). */
+export function useProductionBoutiques(userId: string | null, debut: string, jours = 7) {
+  return useQuery({
+    queryKey: ['production-boutiques', userId, debut, jours],
+    enabled: Boolean(userId),
+    queryFn: async (): Promise<ProductionBoutique[]> => {
+      const { data, error } = await db().rpc('production_boutiques', {
+        p_debut: debut,
+        p_jours: jours,
+      });
+      if (error) throw error;
+      return (data ?? []).map((ligne) => ({
+        jour: ligne.jour,
+        produitId: ligne.produit_id,
+        nom: ligne.nom,
+        boutiqueId: ligne.boutique_id,
+        boutiqueNom: ligne.boutique_nom,
+        quantite: ligne.quantite,
+        dejaProduit: ligne.deja_produit,
+      }));
+    },
+  });
+}

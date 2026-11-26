@@ -989,6 +989,18 @@ export type Database = {
           total: number
         }[]
       }
+      production_boutiques: {
+        Args: { p_debut: string; p_jours: number }
+        Returns: {
+          boutique_id: string
+          boutique_nom: string
+          deja_produit: number
+          jour: string
+          nom: string
+          produit_id: string
+          quantite: number
+        }[]
+      }
       mon_entreprise: { Args: never; Returns: string }
       mon_role: {
         Args: never

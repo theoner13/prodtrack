@@ -3,7 +3,12 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { useNomsBoutiquesEntreprise } from '@/api/boutiques';
-import { useMesPrevisions, type PrevisionProduit } from '@/api/previsions';
+import { useCommandes } from '@/api/commandes';
+import {
+  useMesPrevisions,
+  useProductionBoutiques,
+  type PrevisionProduit,
+} from '@/api/previsions';
 import { useMesProduits } from '@/api/produits';
 import { useStockFabricant } from '@/api/stock';
 import { useAuth } from '@/auth/AuthProvider';
@@ -13,6 +18,9 @@ import { CarteHeros } from '@/components/carte-heros';
 import { Ecran } from '@/components/ecran';
 import { EtatChargement, EtatErreur, EtatVide } from '@/components/etats';
 import { FriseJours } from '@/components/frise-jours';
+import { LigneCommande } from '@/components/liste-commandes';
+import { TableauProductionBoutiques } from '@/components/tableau-production-boutiques';
+import { jourRetraitParis } from '@/lib/commandes';
 import { aujourdhuiParis } from '@/lib/format';
 import { etiquetteLaboratoire } from '@/lib/laboratoire';
 import {
@@ -172,6 +180,12 @@ export default function EcranPlanning() {
   const previsions = useMesPrevisions(profil?.id ?? null);
   const stock = useStockFabricant(profil?.id ?? null);
   const nomsEntreprise = useNomsBoutiquesEntreprise();
+  const aujourdhui = aujourdhuiParis();
+  const commandes = useCommandes({
+    filtreStatut: 'a_venir',
+    boutiqueFabricationId: profil?.boutique_id ?? null,
+  });
+  const production = useProductionBoutiques(profil?.id ?? null, aujourdhui);
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [jourSelectionne, setJourSelectionne] = useState<string | null>(null);
   const { width } = useWindowDimensions();
@@ -183,10 +197,25 @@ export default function EcranPlanning() {
       previsions.refetch(),
       stock.refetch(),
       nomsEntreprise.refetch(),
+      commandes.refetch(),
+      production.refetch(),
     ]);
   }
 
-  if (mes.isLoading || previsions.isLoading || stock.isLoading) {
+  const enRafraichissement =
+    mes.isRefetching ||
+    previsions.isRefetching ||
+    stock.isRefetching ||
+    commandes.isRefetching ||
+    production.isRefetching;
+
+  if (
+    mes.isLoading ||
+    previsions.isLoading ||
+    stock.isLoading ||
+    commandes.isLoading ||
+    production.isLoading
+  ) {
     return (
       <Ecran>
         <EtatChargement />
@@ -194,11 +223,13 @@ export default function EcranPlanning() {
     );
   }
 
-  if (mes.isError || previsions.isError || stock.isError) {
+  if (mes.isError || previsions.isError || stock.isError || commandes.isError || production.isError) {
     return (
       <Ecran>
         <EtatErreur
-          message={messageErreur(mes.error ?? previsions.error ?? stock.error)}
+          message={messageErreur(
+            mes.error ?? previsions.error ?? stock.error ?? commandes.error ?? production.error,
+          )}
           onReessayer={() => void rafraichir()}
         />
       </Ecran>
@@ -210,7 +241,7 @@ export default function EcranPlanning() {
     return (
       <Ecran
         defilement
-        enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
+        enRafraichissement={enRafraichissement}
         onRafraichir={() => void rafraichir()}
       >
         <EtatVide message="Vous n'avez aucun produit. Ajoutez-en dans Mes produits." />
@@ -220,17 +251,6 @@ export default function EcranPlanning() {
   }
 
   const surgeles = produits.filter((produit) => produit.conservation === 'surgele');
-  if (surgeles.length === 0) {
-    return (
-      <Ecran
-        defilement
-        enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
-        onRafraichir={() => void rafraichir()}
-      >
-        <EtatVide message="Aucun produit surgelé à planifier." />
-      </Ecran>
-    );
-  }
 
   const stockParProduit = new Map(
     (stock.data ?? [])
@@ -243,8 +263,6 @@ export default function EcranPlanning() {
 
   const lignesPrevision = previsions.data ?? [];
   const previsionParId = new Map(lignesPrevision.map((ligne) => [ligne.produitId, ligne]));
-  const aujourdhui = aujourdhuiParis();
-
   const idsLaboratoires = new Set(
     (nomsEntreprise.data ?? []).filter((b) => b.est_laboratoire).map((b) => b.id),
   );
@@ -286,21 +304,45 @@ export default function EcranPlanning() {
     '',
   );
 
-  const totalPieces = groupeActif.lignes.reduce(
-    (sum, ligne) => sum + (ligne.quantite ?? 0),
+  const listeCommandes = commandes.data ?? [];
+  const listeProduction = production.data ?? [];
+  const commandesDuJour = (jour: string) =>
+    listeCommandes.filter((commande) => jourRetraitParis(commande.retrait_le) === jour);
+  const productionDuJour = (jour: string) =>
+    listeProduction.filter((ligne) => ligne.jour === jour);
+
+  const commandesActives = commandesDuJour(groupeActif.jour);
+  const productionActive = productionDuJour(groupeActif.jour);
+  const estAujourdhui = groupeActif.jour === aujourdhui;
+
+  // Pièces encore à produire : surgelés + produits frais (aujourd'hui : moins le déjà produit).
+  const piecesSurgeles = groupeActif.lignes.reduce((sum, ligne) => sum + (ligne.quantite ?? 0), 0);
+  const piecesFrais = productionActive.reduce(
+    (sum, ligne) => sum + Math.max(0, ligne.quantite - (estAujourdhui ? ligne.dejaProduit : 0)),
     0,
   );
-  const nbAFaire = groupeActif.lignes.length;
-  // Jamais de « 0 » si des produits sont à faire (ex. « dès que possible », quantité nulle).
-  const chiffreHeros =
-    nbAFaire === 0 ? '—' : totalPieces > 0 ? totalPieces : undefined;
-  // Sans chiffre utile, la carte héros n’apporte rien de plus que la frise.
-  const afficherHeros = chiffreHeros != null;
+  const totalPieces = piecesSurgeles + piecesFrais;
+  const nbProduitsFrais = new Set(productionActive.map((ligne) => ligne.nom)).size;
+  const nbSurgeles = groupeActif.lignes.length;
+  const resume = [
+    commandesActives.length > 0
+      ? `${commandesActives.length} commande${commandesActives.length > 1 ? 's' : ''} de gâteaux`
+      : null,
+    nbProduitsFrais > 0 ? `${nbProduitsFrais} produit${nbProduitsFrais > 1 ? 's' : ''} frais` : null,
+    nbSurgeles > 0 ? `${nbSurgeles} surgelé${nbSurgeles > 1 ? 's' : ''}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const sousTitreHeros = !resume
+    ? 'Rien à fabriquer'
+    : totalPieces > 0
+      ? `${estAujourdhui ? 'pièces restant à produire' : 'pièces à produire'} · ${resume}`
+      : resume;
 
   return (
     <Ecran
       defilement
-      enRafraichissement={mes.isRefetching || previsions.isRefetching || stock.isRefetching}
+      enRafraichissement={enRafraichissement}
       onRafraichir={() => void rafraichir()}
     >
       {aIndicative ? (
@@ -316,7 +358,12 @@ export default function EcranPlanning() {
           numero: numeroJour(groupe.jour),
           libelle: groupe.libelle,
           estAujourdhui: groupe.jour === aujourdhui,
-          points: Math.min(groupe.lignes.length, 3),
+          points: Math.min(
+            groupe.lignes.length +
+              commandesDuJour(groupe.jour).length +
+              (productionDuJour(groupe.jour).length > 0 ? 1 : 0),
+            3,
+          ),
           pointsAlerte: groupe.lignes.slice(0, 3).map((l) => l.sousSeuil),
         }))}
         selection={groupeActif.jour}
@@ -326,34 +373,65 @@ export default function EcranPlanning() {
         }}
       />
 
-      {afficherHeros ? (
-        <CarteHeros
-          libelle={groupeActif.libelle}
-          chiffre={chiffreHeros}
-          sousTitre={nbAFaire === 0 ? 'Rien à fabriquer' : undefined}
-        />
-      ) : (
-        <Text style={styles.jourActif}>{groupeActif.libelle}</Text>
-      )}
+      <CarteHeros
+        libelle={groupeActif.libelle}
+        chiffre={totalPieces > 0 ? totalPieces : '—'}
+        sousTitre={sousTitreHeros}
+      />
+
+      {commandesActives.length > 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.titreSection}>Commandes de gâteaux</Text>
+          <View style={styles.carteListe}>
+            {commandesActives.map((commande) => (
+              <LigneCommande
+                key={commande.id}
+                commande={commande}
+                afficherRetraitBoutique
+                onPress={() => router.push(`/(patissier)/commandes/${commande.id}` as Href)}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      {productionActive.length > 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.titreSection}>Production pour les boutiques</Text>
+          <TableauProductionBoutiques
+            key={groupeActif.jour}
+            lignes={productionActive}
+            maBoutiqueId={profil?.boutique_id ?? null}
+            estAujourdhui={estAujourdhui}
+          />
+        </View>
+      ) : null}
 
       {groupeActif.lignes.length === 0 ? null : (
-        <View style={[styles.grille, grille && styles.grille2]}>
-          {groupeActif.lignes.map((ligne) => (
-            <View
-              key={ligne.produitId}
-              style={grille ? [styles.colonne, groupeActif.lignes.length === 1 && styles.colonneUnique] : undefined}
-            >
-              <CarteProduitPlanning
-                ligne={ligne}
-                aujourdhui={aujourdhui}
-                prevision={previsionParId.get(ligne.produitId)}
-                deplie={ouvert === ligne.produitId}
-                onBasculer={() =>
-                  setOuvert((actuel) => (actuel === ligne.produitId ? null : ligne.produitId))
+        <View style={styles.section}>
+          <Text style={styles.titreSection}>Surgelés à refaire</Text>
+          <View style={[styles.grille, grille && styles.grille2]}>
+            {groupeActif.lignes.map((ligne) => (
+              <View
+                key={ligne.produitId}
+                style={
+                  grille
+                    ? [styles.colonne, groupeActif.lignes.length === 1 && styles.colonneUnique]
+                    : undefined
                 }
-              />
-            </View>
-          ))}
+              >
+                <CarteProduitPlanning
+                  ligne={ligne}
+                  aujourdhui={aujourdhui}
+                  prevision={previsionParId.get(ligne.produitId)}
+                  deplie={ouvert === ligne.produitId}
+                  onBasculer={() =>
+                    setOuvert((actuel) => (actuel === ligne.produitId ? null : ligne.produitId))
+                  }
+                />
+              </View>
+            ))}
+          </View>
         </View>
       )}
 
@@ -369,9 +447,15 @@ export default function EcranPlanning() {
 }
 
 const styles = StyleSheet.create({
-  jourActif: {
-    ...styleTitreSection,
+  section: {
+    gap: espacements.s,
     marginTop: espacements.s,
+  },
+  titreSection: {
+    ...styleTitreSection,
+  },
+  carteListe: {
+    gap: espacements.s,
   },
   indicative: {
     fontSize: tailles.petit,
